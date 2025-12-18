@@ -1,0 +1,583 @@
+# LMS Node.js Development Checklist
+
+## Document Version: 1.0
+**Last Updated:** December 18, 2025  
+**Project:** School Management System (LMS Node.js)
+
+---
+
+## PHASE 1: CRITICAL SECURITY FIXES
+
+### 1.1 Environment & Configuration Security
+- [ ] Remove `.env` file from git repository
+- [ ] Add `.env` to `.gitignore`
+- [ ] Create `.env.example` template file
+- [ ] Remove `.env` from git history using `git filter-branch` or `BFG Repo-Cleaner`
+- [ ] Generate strong JWT secret (minimum 256-bit)
+- [ ] Move all hardcoded secrets to environment variables
+- [ ] Install `dotenv-safe` package
+- [ ] Create `.env.required` file listing all mandatory environment variables
+- [ ] Update `config/dbConnect.js` to use environment variables only
+- [ ] Document environment variable requirements in README.md
+- [ ] **Verification:** No secrets exist in committed code
+- [ ] **Verification:** Application fails to start without required env vars
+
+### 1.2 JWT Token Security
+- [ ] Update `utils/generateToken.js` to use `process.env.JWT_SECRET`
+- [ ] Update `utils/verifyToken.js` to use `process.env.JWT_SECRET`
+- [ ] Add JWT expiry to environment variable
+- [ ] Implement token refresh mechanism
+- [ ] Add token blacklist for logout functionality
+- [ ] Update all authentication middleware to use secure token verification
+- [ ] **Verification:** Tokens cannot be forged with hardcoded secret
+- [ ] **Verification:** Expired tokens are rejected
+- [ ] **Verification:** Logged out tokens are invalidated
+
+### 1.3 Password Security
+- [ ] Install `validator` package for password strength validation
+- [ ] Update `utils/helpers.js` to enforce password complexity rules
+  - [ ] Minimum 8 characters
+  - [ ] At least one uppercase letter
+  - [ ] At least one lowercase letter
+  - [ ] At least one number
+  - [ ] At least one special character
+- [ ] Add password confirmation validation
+- [ ] Implement password change endpoint with old password verification
+- [ ] Add password reset functionality with time-limited tokens
+- [ ] **Verification:** Weak passwords are rejected
+- [ ] **Verification:** Password confirmation mismatch is rejected
+- [ ] **Verification:** Old password required for password changes
+
+---
+
+## PHASE 2: AUTHENTICATION & AUTHORIZATION CONSOLIDATION
+
+### 2.1 Middleware Consolidation
+- [ ] Review all authentication middleware files:
+  - [ ] `middlewares/isLogin.js`
+  - [ ] `middlewares/isTeacherLogin.js`
+  - [ ] `middlewares/isStudentLogin.js`
+  - [ ] `middlewares/isAuthenticated.js`
+- [ ] Create unified `middlewares/auth.js` with single authentication function
+- [ ] Update `isAuthenticated.js` to be the primary auth middleware
+- [ ] Migrate all routes to use `isAuthenticated` middleware
+- [ ] Delete deprecated middleware files
+- [ ] **Verification:** All routes use consistent authentication
+- [ ] **Verification:** No duplicate authentication logic exists
+
+### 2.2 Role-Based Access Control
+- [ ] Review role-checking middleware:
+  - [ ] `middlewares/isAdmin.js`
+  - [ ] `middlewares/isTeacher.js`
+  - [ ] `middlewares/isStudent.js`
+  - [ ] `middlewares/roleRestriction.js`
+- [ ] Enhance `roleRestriction.js` to handle multiple roles
+- [ ] Replace all specific role middleware with `roleRestriction`
+- [ ] Update route definitions to use `roleRestriction(['admin', 'teacher'])`
+- [ ] Delete deprecated role middleware files
+- [ ] Create role constants file (`constants/roles.js`)
+- [ ] Document role hierarchy and permissions
+- [ ] **Verification:** All routes use `roleRestriction` middleware
+- [ ] **Verification:** Role-based access properly restricts endpoints
+- [ ] **Verification:** Multi-role access works correctly
+
+### 2.3 Session Management
+- [ ] Implement session tracking in database
+- [ ] Add active session limit per user
+- [ ] Create session revocation endpoint
+- [ ] Add "logout all devices" functionality
+- [ ] Track last login time and IP address
+- [ ] **Verification:** Users can view active sessions
+- [ ] **Verification:** Users can revoke specific sessions
+- [ ] **Verification:** Session limits are enforced
+
+---
+
+## PHASE 3: ERROR HANDLING STANDARDIZATION
+
+### 3.1 Custom Error Classes
+- [ ] Create `utils/errors/AppError.js` base error class
+- [ ] Create `utils/errors/ValidationError.js`
+- [ ] Create `utils/errors/AuthenticationError.js`
+- [ ] Create `utils/errors/AuthorizationError.js`
+- [ ] Create `utils/errors/NotFoundError.js`
+- [ ] Create `utils/errors/DatabaseError.js`
+- [ ] Export all error classes from `utils/errors/index.js`
+- [ ] **Verification:** All custom error classes extend Error properly
+- [ ] **Verification:** Error classes include appropriate status codes
+
+### 3.2 Global Error Handler
+- [ ] Create `middlewares/errorHandler.js`
+- [ ] Handle operational vs programming errors
+- [ ] Implement environment-specific error responses
+  - [ ] Development: Full stack traces
+  - [ ] Production: Sanitized error messages
+- [ ] Add error logging integration
+- [ ] Handle specific error types (MongoDB, JWT, Validation)
+- [ ] Add error response standardization
+- [ ] Update `app/app.js` to use global error handler
+- [ ] **Verification:** All errors return consistent JSON structure
+- [ ] **Verification:** Stack traces hidden in production
+- [ ] **Verification:** Database errors sanitized
+
+### 3.3 Controller Error Refactoring
+- [ ] Update `controller/academics/adminCtrl.js` error handling
+- [ ] Update `controller/academics/studentCtrl.js` error handling
+- [ ] Update `controller/academics/teachersCtrl.js` error handling
+- [ ] Update `controller/academics/academicYear.js` error handling
+- [ ] Update `controller/academics/academicTerm.js` error handling
+- [ ] Update `controller/academics/classLevel.js` error handling
+- [ ] Update `controller/academics/program.js` error handling
+- [ ] Update `controller/academics/subjects.js` error handling
+- [ ] Update `controller/academics/yearGroups.js` error handling
+- [ ] Update `controller/academics/examsCtrl.js` error handling
+- [ ] Update `controller/academics/questionsCtrl.js` error handling
+- [ ] Remove all `try-catch` blocks in favor of `express-async-handler`
+- [ ] Replace `throw new Error()` with custom error classes
+- [ ] Remove direct `res.json()` error responses
+- [ ] **Verification:** All controllers use custom error classes
+- [ ] **Verification:** No direct error responses in controllers
+- [ ] **Verification:** All async functions wrapped with error handler
+
+---
+
+## PHASE 4: INPUT VALIDATION
+
+### 4.1 Validation Infrastructure
+- [ ] Install `joi` package
+- [ ] Create `validators/` directory
+- [ ] Create `middlewares/validate.js` validation middleware
+- [ ] Define standard validation patterns (email, phone, objectId)
+- [ ] **Verification:** Validation middleware properly handles errors
+- [ ] **Verification:** Invalid inputs return 400 status
+
+### 4.2 Schema Definitions
+- [ ] Create `validators/adminValidation.js`
+  - [ ] Registration schema
+  - [ ] Login schema
+  - [ ] Update profile schema
+- [ ] Create `validators/studentValidation.js`
+  - [ ] Registration schema
+  - [ ] Login schema
+  - [ ] Update profile schema
+- [ ] Create `validators/teacherValidation.js`
+  - [ ] Registration schema
+  - [ ] Login schema
+  - [ ] Update profile schema
+- [ ] Create `validators/academicYearValidation.js`
+- [ ] Create `validators/academicTermValidation.js`
+- [ ] Create `validators/classLevelValidation.js`
+- [ ] Create `validators/programValidation.js`
+- [ ] Create `validators/subjectValidation.js`
+- [ ] Create `validators/examValidation.js`
+- [ ] Create `validators/questionValidation.js`
+- [ ] **Verification:** All schemas validate required fields
+- [ ] **Verification:** All schemas validate data types
+- [ ] **Verification:** All schemas validate format (email, etc.)
+
+### 4.3 Route Integration
+- [ ] Add validation to `routes/academics/adminRouter.js`
+- [ ] Add validation to `routes/academics/students.js`
+- [ ] Add validation to `routes/academics/teachers.js`
+- [ ] Add validation to `routes/academics/academicYear.js`
+- [ ] Add validation to `routes/academics/academicTerm.js`
+- [ ] Add validation to `routes/academics/classLevel.js`
+- [ ] Add validation to `routes/academics/programs.js`
+- [ ] Add validation to `routes/academics/subjects.js`
+- [ ] Add validation to `routes/academics/yearGroups.js`
+- [ ] Add validation to `routes/academics/exams.js`
+- [ ] Add validation to `routes/academics/questions.js`
+- [ ] **Verification:** All POST/PUT/PATCH routes validate input
+- [ ] **Verification:** Invalid data returns validation errors
+- [ ] **Verification:** Validation errors are user-friendly
+
+---
+
+## PHASE 5: CODE QUALITY IMPROVEMENTS
+
+### 5.1 Code Duplication Removal
+- [ ] Create `utils/hashPassword.js` utility function
+- [ ] Create `utils/verifyPassword.js` utility function
+- [ ] Create `utils/generateStudentId.js` utility function
+- [ ] Create `utils/generateTeacherId.js` utility function
+- [ ] Update all controllers to use shared hash/verify functions
+- [ ] Remove duplicate password hashing from controllers
+- [ ] **Verification:** Password hashing only in one location
+- [ ] **Verification:** All controllers use shared utilities
+
+### 5.2 Response Standardization
+- [ ] Create `utils/response.js` with standard response formatters
+  - [ ] `successResponse(data, message, statusCode)`
+  - [ ] `errorResponse(message, statusCode)`
+  - [ ] `paginatedResponse(data, pagination)`
+- [ ] Update all controllers to use standard response format
+- [ ] Ensure consistent property names (`status`, `data`, `message`)
+- [ ] **Verification:** All successful responses use same structure
+- [ ] **Verification:** All error responses use same structure
+- [ ] **Verification:** Paginated responses include meta information
+
+### 5.3 Database Query Optimization
+- [ ] Add indexes to `model/Academic/Admin.js`
+  - [ ] Email (unique)
+  - [ ] Created at
+- [ ] Add indexes to `model/Academic/Student.js`
+  - [ ] Email (unique)
+  - [ ] Student ID (unique)
+  - [ ] Exam results lookup fields
+- [ ] Add indexes to `model/Academic/Teacher.js`
+  - [ ] Email (unique)
+  - [ ] Teacher ID (unique)
+  - [ ] Subject and class level
+- [ ] Add indexes to frequently queried fields in all models
+- [ ] Analyze slow queries with MongoDB profiler
+- [ ] **Verification:** Query performance improved
+- [ ] **Verification:** Indexes used in explain plans
+
+### 5.4 Code Documentation
+- [ ] Add JSDoc comments to all controller functions
+- [ ] Add JSDoc comments to all middleware functions
+- [ ] Add JSDoc comments to all utility functions
+- [ ] Document model schemas with field descriptions
+- [ ] **Verification:** All public functions have JSDoc
+- [ ] **Verification:** Complex logic has inline comments
+
+---
+
+## PHASE 6: SECURITY ENHANCEMENTS
+
+### 6.1 Rate Limiting
+- [ ] Install `express-rate-limit` package
+- [ ] Create `middlewares/rateLimiter.js`
+- [ ] Add rate limiting to login endpoints (5 attempts per 15 minutes)
+- [ ] Add rate limiting to registration endpoints (3 per hour)
+- [ ] Add rate limiting to password reset endpoints (3 per hour)
+- [ ] Add general API rate limiting (100 requests per 15 minutes)
+- [ ] Configure rate limit headers
+- [ ] **Verification:** Rate limits enforced on auth endpoints
+- [ ] **Verification:** Rate limit headers returned
+- [ ] **Verification:** Excessive requests return 429 status
+
+### 6.2 CORS Configuration
+- [ ] Install `cors` package
+- [ ] Create `config/cors.js` with whitelist configuration
+- [ ] Add allowed origins to environment variables
+- [ ] Configure credentials and headers
+- [ ] Add preflight request handling
+- [ ] Update `app/app.js` to use CORS middleware
+- [ ] **Verification:** Only whitelisted origins allowed
+- [ ] **Verification:** Credentials properly handled
+- [ ] **Verification:** Preflight requests work
+
+### 6.3 Security Headers
+- [ ] Install `helmet` package
+- [ ] Add helmet middleware to `app/app.js`
+- [ ] Configure Content Security Policy
+- [ ] Enable HSTS
+- [ ] Configure X-Frame-Options
+- [ ] **Verification:** Security headers present in responses
+- [ ] **Verification:** CSP violations logged
+
+### 6.4 Data Sanitization
+- [ ] Install `express-mongo-sanitize` package
+- [ ] Install `xss-clean` package
+- [ ] Add sanitization middleware to `app/app.js`
+- [ ] Sanitize user input before database operations
+- [ ] **Verification:** NoSQL injection attempts blocked
+- [ ] **Verification:** XSS attempts sanitized
+
+### 6.5 File Upload Security
+- [ ] Review file upload implementation
+- [ ] Add file type validation
+- [ ] Add file size limits
+- [ ] Scan uploaded files for malware (consider ClamAV)
+- [ ] Store files outside web root
+- [ ] Generate random filenames
+- [ ] **Verification:** Only allowed file types accepted
+- [ ] **Verification:** Oversized files rejected
+- [ ] **Verification:** Files stored securely
+
+---
+
+## PHASE 7: LOGGING & MONITORING
+
+### 7.1 Logging Infrastructure
+- [ ] Install `winston` package
+- [ ] Create `utils/logger.js` configuration
+- [ ] Configure log levels (error, warn, info, debug)
+- [ ] Set up file rotation with `winston-daily-rotate-file`
+- [ ] Configure separate error log file
+- [ ] Add timestamp and request ID to logs
+- [ ] **Verification:** Logs written to files
+- [ ] **Verification:** Log rotation working
+- [ ] **Verification:** Different log levels separate
+
+### 7.2 Application Logging
+- [ ] Replace all `console.log()` with logger
+- [ ] Log authentication attempts (success/failure)
+- [ ] Log authorization failures
+- [ ] Log all errors with stack traces
+- [ ] Log database connection events
+- [ ] Log API requests with request ID
+- [ ] Add structured logging (JSON format)
+- [ ] **Verification:** No console.log statements remain
+- [ ] **Verification:** Auth events logged
+- [ ] **Verification:** Errors logged with context
+
+### 7.3 Monitoring Integration
+- [ ] Create health check endpoint (`/health`)
+- [ ] Add database connectivity check
+- [ ] Add memory usage metrics
+- [ ] Add uptime tracking
+- [ ] Consider APM integration (New Relic/DataDog)
+- [ ] **Verification:** Health endpoint returns 200 when healthy
+- [ ] **Verification:** Health check includes database status
+
+---
+
+## PHASE 8: TESTING
+
+### 8.1 Test Infrastructure
+- [ ] Install `jest` package
+- [ ] Install `supertest` package
+- [ ] Install `mongodb-memory-server` for test database
+- [ ] Create `jest.config.js` configuration
+- [ ] Create `tests/setup.js` for test initialization
+- [ ] Create `tests/teardown.js` for cleanup
+- [ ] Create test database connection utilities
+- [ ] **Verification:** Test suite runs successfully
+- [ ] **Verification:** Tests use in-memory database
+
+### 8.2 Unit Tests
+- [ ] Test `utils/helpers.js` functions
+- [ ] Test `utils/generateToken.js`
+- [ ] Test `utils/verifyToken.js`
+- [ ] Test middleware functions
+- [ ] Test validation schemas
+- [ ] Test error classes
+- [ ] Achieve >80% code coverage on utilities
+- [ ] **Verification:** All utility functions have tests
+- [ ] **Verification:** Tests pass consistently
+
+### 8.3 Integration Tests
+- [ ] Test admin registration flow
+- [ ] Test admin login flow
+- [ ] Test teacher registration flow
+- [ ] Test student registration flow
+- [ ] Test academic year CRUD operations
+- [ ] Test exam creation and grading
+- [ ] Test role-based access restrictions
+- [ ] Test pagination and filtering
+- [ ] **Verification:** All major workflows covered
+- [ ] **Verification:** Tests use realistic data
+- [ ] **Verification:** >70% overall code coverage
+
+### 8.4 E2E Tests
+- [ ] Test complete student enrollment workflow
+- [ ] Test complete exam taking workflow
+- [ ] Test complete grading workflow
+- [ ] Test admin dashboard data retrieval
+- [ ] **Verification:** Critical user journeys tested
+- [ ] **Verification:** Tests run in CI/CD pipeline
+
+---
+
+## PHASE 9: API DOCUMENTATION
+
+### 9.1 Swagger/OpenAPI Setup
+- [ ] Install `swagger-jsdoc` package
+- [ ] Install `swagger-ui-express` package
+- [ ] Create `swagger.js` configuration
+- [ ] Add Swagger UI endpoint (`/api-docs`)
+- [ ] Define API metadata (title, version, description)
+- [ ] **Verification:** Swagger UI accessible
+- [ ] **Verification:** API info displayed correctly
+
+### 9.2 Endpoint Documentation
+- [ ] Document all admin endpoints
+- [ ] Document all student endpoints
+- [ ] Document all teacher endpoints
+- [ ] Document all academic year endpoints
+- [ ] Document all exam endpoints
+- [ ] Document authentication flow
+- [ ] Add request/response examples
+- [ ] Document error responses
+- [ ] Add authentication requirements
+- [ ] **Verification:** All endpoints documented
+- [ ] **Verification:** Examples work in Swagger UI
+- [ ] **Verification:** Authentication clearly explained
+
+### 9.3 Additional Documentation
+- [ ] Create comprehensive README.md
+  - [ ] Project description
+  - [ ] Features list
+  - [ ] Installation instructions
+  - [ ] Environment variables
+  - [ ] Running locally
+  - [ ] Running tests
+  - [ ] Deployment guide
+- [ ] Create CONTRIBUTING.md
+- [ ] Create API usage guide
+- [ ] Create troubleshooting guide
+- [ ] **Verification:** Documentation clear and complete
+- [ ] **Verification:** New developers can set up project
+
+---
+
+## PHASE 10: PERFORMANCE OPTIMIZATION
+
+### 10.1 Database Optimization
+- [ ] Review all database queries for N+1 problems
+- [ ] Add `.lean()` to queries that don't need Mongoose documents
+- [ ] Use `.select()` to limit returned fields
+- [ ] Implement database connection pooling
+- [ ] Add query result caching where appropriate
+- [ ] **Verification:** Query performance improved by >30%
+- [ ] **Verification:** No N+1 queries remain
+
+### 10.2 Response Optimization
+- [ ] Install `compression` middleware
+- [ ] Enable gzip compression
+- [ ] Implement response caching headers
+- [ ] Consider Redis for session storage
+- [ ] **Verification:** Response sizes reduced
+- [ ] **Verification:** Compression working
+
+### 10.3 Pagination Optimization
+- [ ] Review `advancedResults` middleware performance
+- [ ] Implement cursor-based pagination for large datasets
+- [ ] Add default and max page size limits
+- [ ] **Verification:** Pagination performant with large datasets
+- [ ] **Verification:** Page size limits enforced
+
+---
+
+## PHASE 11: DEPLOYMENT PREPARATION
+
+### 11.1 Environment Configuration
+- [ ] Create production environment configuration
+- [ ] Create staging environment configuration
+- [ ] Document all required environment variables
+- [ ] Set up environment-specific database connections
+- [ ] Configure production logging levels
+- [ ] **Verification:** All environments isolated
+- [ ] **Verification:** Production config secure
+
+### 11.2 Build & Deploy Scripts
+- [ ] Create `npm run build` script
+- [ ] Create `npm run start:prod` script
+- [ ] Create database migration scripts
+- [ ] Create database seeding scripts
+- [ ] Set up PM2 or similar process manager
+- [ ] **Verification:** Build process succeeds
+- [ ] **Verification:** Production start successful
+
+### 11.3 CI/CD Pipeline
+- [ ] Set up GitHub Actions or similar CI/CD
+- [ ] Add automated testing on PR
+- [ ] Add code linting step
+- [ ] Add security scanning (npm audit)
+- [ ] Add automated deployment to staging
+- [ ] **Verification:** Pipeline runs on every commit
+- [ ] **Verification:** Failed tests block deployment
+
+### 11.4 Backup & Recovery
+- [ ] Set up automated database backups
+- [ ] Document backup restoration process
+- [ ] Test backup restoration
+- [ ] Set up backup monitoring/alerts
+- [ ] **Verification:** Backups running daily
+- [ ] **Verification:** Restoration tested successfully
+
+---
+
+## PHASE 12: SECURITY AUDIT
+
+### 12.1 Dependency Audit
+- [ ] Run `npm audit` and fix all vulnerabilities
+- [ ] Update all dependencies to latest stable versions
+- [ ] Remove unused dependencies
+- [ ] Add `npm audit` to CI/CD pipeline
+- [ ] **Verification:** No high/critical vulnerabilities
+- [ ] **Verification:** Dependencies up to date
+
+### 12.2 Code Security Review
+- [ ] Review all authentication logic
+- [ ] Review all authorization logic
+- [ ] Check for SQL/NoSQL injection vulnerabilities
+- [ ] Check for XSS vulnerabilities
+- [ ] Review file upload security
+- [ ] Check for sensitive data exposure
+- [ ] Review session management
+- [ ] **Verification:** No security issues found
+- [ ] **Verification:** Code follows OWASP guidelines
+
+### 12.3 Penetration Testing
+- [ ] Test authentication bypass attempts
+- [ ] Test authorization bypass attempts
+- [ ] Test rate limiting effectiveness
+- [ ] Test input validation thoroughness
+- [ ] Test session hijacking prevention
+- [ ] **Verification:** All attack vectors blocked
+- [ ] **Verification:** Security measures effective
+
+---
+
+## FINAL VERIFICATION CHECKLIST
+
+### Pre-Production Launch
+- [ ] All Phase 1 (Critical Security) items complete
+- [ ] All Phase 2 (Auth) items complete
+- [ ] All Phase 3 (Error Handling) items complete
+- [ ] All Phase 4 (Validation) items complete
+- [ ] All Phase 6 (Security Enhancements) items complete
+- [ ] All Phase 12 (Security Audit) items complete
+- [ ] Test coverage >70%
+- [ ] API documentation complete
+- [ ] No critical/high security vulnerabilities
+- [ ] Performance benchmarks met
+- [ ] Backup system tested
+- [ ] Monitoring and alerting configured
+- [ ] Production environment configured
+- [ ] Deployment process documented
+- [ ] Rollback plan documented
+- [ ] Support team trained
+
+### Post-Launch Monitoring
+- [ ] Monitor error rates (should be <1%)
+- [ ] Monitor response times (p95 <500ms)
+- [ ] Monitor authentication failures
+- [ ] Monitor database performance
+- [ ] Review logs daily for first week
+- [ ] Collect user feedback
+- [ ] Plan iteration based on metrics
+
+---
+
+## AGENT COMPLETION SIGNATURES
+
+**Phase 1 Completed By:** _________________ **Date:** _________  
+**Phase 2 Completed By:** _________________ **Date:** _________  
+**Phase 3 Completed By:** _________________ **Date:** _________  
+**Phase 4 Completed By:** _________________ **Date:** _________  
+**Phase 5 Completed By:** _________________ **Date:** _________  
+**Phase 6 Completed By:** _________________ **Date:** _________  
+**Phase 7 Completed By:** _________________ **Date:** _________  
+**Phase 8 Completed By:** _________________ **Date:** _________  
+**Phase 9 Completed By:** _________________ **Date:** _________  
+**Phase 10 Completed By:** _________________ **Date:** _________  
+**Phase 11 Completed By:** _________________ **Date:** _________  
+**Phase 12 Completed By:** _________________ **Date:** _________  
+
+**Final Verification By:** _________________ **Date:** _________  
+**Production Launch Approved By:** _________________ **Date:** _________
+
+---
+
+## NOTES
+
+- Each checkbox represents a discrete, verifiable task
+- Agents should mark checkboxes only after verification steps pass
+- Phases can be worked on in parallel where dependencies allow
+- Critical path: Phase 1 → Phase 2 → Phase 6 → Phase 12 → Launch
+- Recommended to complete Phases 1-6 before adding new features
+- Document any deviations or issues in project wiki/issue tracker

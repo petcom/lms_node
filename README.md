@@ -67,17 +67,83 @@ Before installing, make sure you have Node.js and npm (Node Package Manager) ins
 
 1. Clone the repository to your local machine.
 
-1. Install the dependencies:
-`npm install`
+2. Install the dependencies:
+```bash
+npm install
+```
 
-2. Running the Application
+3. **Environment Configuration**
+
+Create a `.env` file in the root directory by copying the example file:
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file and configure the following **required** environment variables:
+
+```bash
+# Database Configuration (REQUIRED)
+MONGO_URL=your_mongodb_connection_string
+
+# JWT Configuration (REQUIRED)
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_EXPIRY=5d
+
+# Server Configuration (REQUIRED)
+PORT=8082
+NODE_ENV=development
+```
+
+**Important Security Notes:**
+- Never commit the `.env` file to version control
+- Generate a strong JWT secret using: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+- The JWT_SECRET must be at least 32 characters long
+- Keep your MongoDB credentials secure
+
+4. **Removing .env from Git History (if previously committed)**
+
+If you've accidentally committed the `.env` file to git history, remove it using:
+```bash
+# Remove from current commit
+git rm --cached .env
+
+# To remove from entire git history (CAUTION: This rewrites history)
+git filter-branch --force --index-filter \
+  "git rm --cached --ignore-unmatch .env" \
+  --prune-empty --tag-name-filter cat -- --all
+
+# Force push (coordinate with team first!)
+git push origin --force --all
+```
+
+**Alternative using BFG Repo-Cleaner (Recommended):**
+```bash
+# Install BFG
+brew install bfg  # macOS
+# or download from https://rtyley.github.io/bfg-repo-cleaner/
+
+# Remove .env from history
+bfg --delete-files .env
+
+# Clean up
+git reflog expire --expire=now --all && git gc --prune=now --aggressive
+
+# Force push
+git push origin --force --all
+```
+
+## Running the Application
 To start the application, you can use the following npm scripts defined in the package.json:
 
 - To start the server with node:
-`npm start`
+```bash
+npm start
+```
 
 - To start the server with nodemon for development (auto-restarts the server on file changes):
-`npm run server`
+```bash
+npm run server
+```
 
 ## Setting up Postman
 The API is built using Express.js and serves a RESTful JSON API. You can interact with it through a tool like Postman. I will provide the public API for my postman collection for this project if you would like to pull it.
@@ -97,11 +163,12 @@ To set up your MongoDB environment, you can either install MongoDB locally or us
 4. Connect your application to the cluster by copying the connection string provided by Atlas. Make sure to replace the <password> with your database user's password and <dbname> with the name of your database.
 
 ### Configuring the Application
-Create a .env file in the root of your project and add your MongoDB URI:
 
-`MONGO_URI=your_mongodb_connection_string`
+**Environment variables are now managed through the `.env` file created during installation.**
 
-Replace your_mongodb_connection_string with your actual connection string either from your local MongoDB installation or MongoDB Atlas.
+All required environment variables are validated on startup. If any required variable is missing, the application will fail to start with a clear error message indicating which variables need to be configured.
+
+Refer to the `.env.example` file for a complete list of available configuration options.
 
 ## Author
 Adam Lopez

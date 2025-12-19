@@ -21,17 +21,18 @@ const validate = require("../../middlewares/validate");
 const authValidation = require("../../validators/authValidation");
 const staffValidation = require("../../validators/staffValidation");
 const { idParam } = require("../../validators/academicValidation");
+const { registerLimiter, authLimiter } = require("../../middlewares/rateLimiter");
 const adminRouter = express.Router();
 
 /**
  * Register
  */
-adminRouter.post("/register", validate(authValidation.registerAdmin), registerAdminCtrl);
+adminRouter.post("/register", registerLimiter, validate(authValidation.registerAdmin), registerAdminCtrl);
 
 /**
  * Login
  */
-adminRouter.post("/login", validate(authValidation.login), loginAdminCtrl);
+adminRouter.post("/login", authLimiter, validate(authValidation.login), loginAdminCtrl);
 
 /**
  * Get All Admin

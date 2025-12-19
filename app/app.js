@@ -1,5 +1,9 @@
-const express     = require('express');
-const {globalErrHandler, notFoundErr} = require('../middlewares/globalErrHandler');
+const express = require('express');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const corsMiddleware = require('../config/cors');
+const { apiLimiter } = require('../middlewares/rateLimiter');
+const { globalErrHandler, notFoundErr } = require('../middlewares/globalErrHandler');
 
 const authRouter = require('../routes/auth/authRoutes');
 const passwordRouter = require('../routes/auth/passwordRoutes');
@@ -16,12 +20,41 @@ const studentRouter = require('../routes/students/studentRouter');
 const questionsRouter = require('../routes/academics/questionRoutes');
 const examResultRouter = require('../routes/academics/examResultsRoutes');
 
-const app  = express(); //  create application instance of express
+const app = express(); // create application instance of express
 
 /**
- * Middleware
+ * Security Middleware
  */
-app.use(express.json()); // pass incoming json data
+// Set security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// Enable CORS
+app.use(corsMiddleware);
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+/**
+ * Body Parser Middleware
+ */
+app.use(express.json({ limit: '10mb' })); // parse incoming json data with size limit
 
 /**
  * Routes

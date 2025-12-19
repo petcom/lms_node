@@ -8,13 +8,14 @@ const {
 const isAuthenticated = require("../../middlewares/isAuthenticated");
 const validate = require("../../middlewares/validate");
 const authValidation = require("../../validators/authValidation");
+const { passwordResetLimiter } = require("../../middlewares/rateLimiter");
 const Admin = require("../../model/Staff/Admin");
 
 const passwordRouter = express.Router();
 
 // Public routes
-passwordRouter.post("/forgot", validate(authValidation.forgotPassword), forgotPassword);
-passwordRouter.put("/reset/:token", validate(authValidation.resetPassword), resetPassword);
+passwordRouter.post("/forgot", passwordResetLimiter, validate(authValidation.forgotPassword), forgotPassword);
+passwordRouter.put("/reset/:token", passwordResetLimiter, validate(authValidation.resetPassword), resetPassword);
 passwordRouter.post("/validate", validate(authValidation.validatePasswordStrength), validatePasswordStrength);
 
 // Protected routes (require authentication)

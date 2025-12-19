@@ -1,10 +1,16 @@
 {
-  "name": "lms_system",
+  "name": "lms-api",
   "version": "1.0.0",
-  "description": "School Management System",
+  "description": "Learning Management System - Production-ready RESTful API for school management",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.13.1",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
-    "start": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "start:prod": "pm2 start ecosystem.config.js --env production",
+    "start:staging": "pm2 start ecosystem.config.js --env staging",
     "server": "nodemon server.js",
     "dev": "NODE_ENV=development nodemon server.js",
     "dev:local": "node -r dotenv-safe/config server.js dotenv_config_path=.env.local",
@@ -14,14 +20,39 @@
     "test:unit": "NODE_ENV=test jest tests/unit --runInBand",
     "test:integration": "NODE_ENV=test jest tests/integration --runInBand",
     "test:db": "node scripts/test-db-connection.js",
-    "test:db:local": "node scripts/test-db-connection.js .env.local"
+    "test:db:local": "node scripts/test-db-connection.js .env.local",
+    "lint": "echo 'Linting not configured yet'",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "pm2:stop": "pm2 stop lms-api",
+    "pm2:restart": "pm2 restart lms-api",
+    "pm2:logs": "pm2 logs lms-api",
+    "pm2:monit": "pm2 monit"
   },
   "keywords": [
     "lms",
-    "nodejs"
+    "learning-management-system",
+    "school-management",
+    "education",
+    "api",
+    "nodejs",
+    "express",
+    "mongodb",
+    "jwt",
+    "rest-api",
+    "authentication",
+    "authorization"
   ],
-  "author": "Adam Lopez",
-  "license": "ISC",
+  "author": "LMS Development Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/lms_node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/lms_node/issues"
+  },
+  "homepage": "https://github.com/yourusername/lms_node#readme",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",

@@ -7,6 +7,9 @@ declare global {
       // User authentication data
       userAuth?: IAdmin | ITeacher | IStudent;
       
+      // User type for multi-tenant auth
+      userType?: 'admin' | 'teacher' | 'student';
+      
       // JWT token from authorization header
       token?: string;
       

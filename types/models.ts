@@ -225,6 +225,16 @@ export interface ITokenBlacklist extends Document {
 // Token Blacklist Model with static methods
 export interface ITokenBlacklistModel extends Model<ITokenBlacklist> {
   isBlacklisted(token: string): Promise<boolean>;
+  blacklistToken(
+    token: string,
+    userId: string | Types.ObjectId,
+    userType: UserRole,
+    reason?: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation'
+  ): Promise<ITokenBlacklist | null>;
+  blacklistAllUserTokens(
+    userId: string | Types.ObjectId,
+    reason?: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation'
+  ): Promise<ITokenBlacklist>;
 }
 
 // Refresh Token Interface

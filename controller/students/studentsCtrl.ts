@@ -1,0 +1,475 @@
+import AsyncHandler from 'express-async-handler';
+import { Request, Response } from 'express';
+import Student from '../../model/Academic/Student';
+import { hashPassword, isPassMatched } from '../../utils/helpers';
+import generateToken from '../../utils/generateToken';
+import Exam from '../../model/Academic/Exam';
+import ExamResult from '../../model/Academic/ExamResults';
+import Admin from '../../model/Staff/Admin';
+import { IStudent } from '../../types/models';
+
+// Request body interfaces
+interface RegisterStudentBody {
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface LoginBody {
+  email: string;
+  password: string;
+}
+
+interface UpdateProfileBody {
+  email?: string;
+  password?: string;
+}
+
+interface AdminUpdateStudentBody {
+  classLevels?: string;
+  academicYear?: string;
+  program?: string;
+  name?: string;
+  email?: string;
+  prefectName?: string;
+  isSuspended?: boolean;
+  isWithdrawn?: boolean;
+}
+
+interface WriteExamBody {
+  answers: string[];
+}
+
+interface AnsweredQuestion {
+  question: string;
+  correctAnswers: string;
+  isCorrect?: boolean;
+}
+
+/**
+ * @description Admin Register Student
+ * @route       POST /api/students/admins/register
+ * @access      Private Admin Only
+ */
+export const adminRegisterStudent = AsyncHandler(async (req: Request<{}, {}, RegisterStudentBody>, res: Response): Promise<void> => {
+  const { name, email, password } = req.body;
+  // find the admin
+  const adminFound = await Admin.findById(req.userAuth?._id);
+  if (!adminFound) {
+      throw new Error("Admin not found");
+  }
+  // check if the student already exists
+  const student = await Student.findOne({ email: email }).lean();
+  if (student) {
+    throw new Error("Student already exists");
+  }
+  //hash password
+  const hashedPassword = await hashPassword(password);
+  // Student created
+  const studentRegistered = await Student.create({
+    name,
+    email,
+    password: hashedPassword,
+  });
+  // push teacher into admin
+  adminFound.students?.push(studentRegistered?._id);
+  await adminFound.save();
+  // send response
+  res.status(201).json({
+    status: "success",
+    message: "Student registered Successfuly",
+    data: studentRegistered,
+  });
+});
+
+/**
+ * @description Login a Student
+ * @route       POST /api/students/login
+ * @access      Public
+ */
+export const loginStudent = AsyncHandler(async (req: Request<{}, {}, LoginBody>, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+
+  //find the teacher user obj
+  const student = await Student.findOne({ email }).lean();
+  if (!student) {
+    res.json({ message: "Invalid login credentials" });
+    return;
+  }
+  // verify the password
+  const isMatched = await isPassMatched(password, student?.password);
+  if (!isMatched) {
+    res.json({ message: "Invalid login credentials" });
+    return;
+  } else {
+    res.status(200).json({
+      status: "success",
+      message: "Student logged in successfully",
+      data: generateToken(String(student?._id)),
+    });
+  }
+});
+
+/**
+ * @description Student Profile
+ * @route       Get /api/students/profile
+ * @access      Private Student only
+ */
+export const getStudentProfile = AsyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const student = await Student.findById(req.userAuth?._id).select(
+    "-password -createdAt -updatedAt"
+  ).populate("examResults");
+  
+
+  if (!student) {
+    throw new Error("Student not found");
+  }
+  // Get student profile
+  const studentProfile = {
+    name: student?.name,
+    email: student?.email,
+    currentClassLevel: student?.currentClassLevel,
+    program: student?.program,
+    dateAdmitted: student?.dateAdmitted,
+    isSuspended: student?.isSuspended,
+    isWithdrawn: student?.isWithdrawn,
+    studentId: student?.studentId,
+    prefectName: student?.prefectName,
+  };
+  // get student exam results
+  const studentExamResults = student?.examResults;
+  // current exam
+  const currentExamResult = studentExamResults?.[studentExamResults.length - 1];
+  // check if exam is published
+  const isPublished = (currentExamResult as any)?.isPublished;
+  // send response
+  res.status(200).json({
+    status: "success",
+    data: {
+      studentProfile,
+      currentExamResult: isPublished ? currentExamResult : [],
+    },
+    message: "Student profile fetched successfully",
+  });
+});
+
+/**
+ * @description Get All Students
+ * @route       GET /api/v1/students/admin
+ * @access      Private admin only
+ */
+export const getAllStudentsByAdmin = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
+  
+  res.status(200).json(res.results);
+});
+
+/**
+ * @description Get Single a Student
+ * @route       POST /api/v1/students/:studentID/admin
+ * @access      Private admin only
+ */
+export const getStudentByAdmin = AsyncHandler(async (req: Request<{ studentID: string }>, res: Response): Promise<void> => {
+  const studentID = req.params.studentID;
+
+  try {
+    // Try to find the student by ID
+    const student = await Student.findById(studentID);
+
+    // Check if the teacher was found
+    if (!student) {
+      res.status(404).json({
+        status: "error",
+        message: "Student not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "Student fetched successfully",
+      data: student,
+    });
+  } catch (error) {
+    // If an error occurs (e.g., CastError for invalid ObjectId)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(400).json({
+      status: "error",
+      message: "Invalid student ID format",
+      error: errorMessage, // Optional: provide error message for debugging
+    });
+  }
+});
+
+/**
+ * @description Student updating profile
+ * @route       UPDATE /api/v1/students/update
+ * @access      Private Student Only
+ */
+export const studentUpdateProfile = AsyncHandler(async (req: Request<{}, {}, UpdateProfileBody>, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+  // if email is taken
+  const emailExists = await Student.findOne({ email });
+  if (emailExists) {
+    throw new Error("This email already exists");
+  }
+
+  // check if user is updating password
+  if (password) {
+    // update user
+    const student = await Student.findByIdAndUpdate(
+      req.userAuth?._id,
+      {
+        email,
+        password: await hashPassword(password),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    res.status(200).json({
+      success: "success",
+      data: student,
+      message: "Student profile updated successfully",
+    });
+  } else {
+    // update user email and name
+    const student = await Student.findByIdAndUpdate(
+      req.userAuth?._id,
+      {
+        email,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    res.status(200).json({
+      success: "success",
+      data: student,
+      message: "Student profile updated successfully",
+    });
+  }
+});
+
+/**
+ * @description Admin Update Student eg: Assign Classes, name, etc.
+ * @route       UPDATE /api/v1/students/:studentID/update/admin
+ * @access      Private Admin Only
+ *
+ * Notes:  $set operator replaces the value of a field with the specified value - mongoose handles saving those field. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/set/
+ * Notes:  $addToSet operator adds a value to an array UNLESS the value is already present. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/
+ */
+export const adminUpdateStudent = AsyncHandler(async (req: Request<{ studentID: string }, {}, AdminUpdateStudentBody>, res: Response): Promise<void> => {
+  const { classLevels, academicYear, program, name, email, prefectName, isSuspended, isWithdrawn } =
+    req.body;
+
+  // find the student by id
+  const studentFound = await Student.findById(req.params.studentID);
+  if (!studentFound) {
+    throw new Error("Student not found");
+  }
+  // update
+  const studentUpdated = await Student.findByIdAndUpdate(
+    req.params.studentID,
+    {
+      $set: {
+        name,
+        email,
+        academicYear,
+        program,
+        prefectName,
+        isSuspended, 
+        isWithdrawn
+      },
+      $addToSet: {
+        classLevels,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  // send response
+  res.status(200).json({
+    status: "success",
+    data: studentUpdated,
+    message: "Student updated successfully",
+  });
+});
+
+/**
+ * @description Student taking exam
+ * @route       POST /api/v1/students/exams/:examID/write
+ * @access      Private Student Only
+ */
+export const writeExam = AsyncHandler(async (req: Request<{ examID: string }, {}, WriteExamBody>, res: Response): Promise<void> => {
+  // get student taking exam
+  const studentFound = await Student.findById(req.userAuth?.id) as IStudent | null;
+  if (!studentFound) {
+    throw new Error("Student not found");
+  }
+  // get exam
+  // to populate multiple fields at once use .populate() for each field necessary
+  const examFound = await Exam.findById(req.params.examID)
+    .populate("questions")
+    .populate("academicTerm") as any;
+
+  if (!examFound) {
+    throw new Error("Exam not found");
+  }
+  // get questions to be answered
+  const questions = examFound?.questions;
+  // get all answers the user submitted
+  const studentAnswers = req.body?.answers;
+  // check if student answered all questions
+  if (studentAnswers.length !== questions.length) {
+    throw new Error("You have not answered all of the questions");
+  }
+
+  /** Check if users name is already in students who took this exam using the id from student in the exam results as the query */
+  const studentFoundInResults = await ExamResult.findOne({ student: studentFound?._id});
+  if (studentFoundInResults) {
+      throw new Error("You have already taken this exam. Wait for your results.");
+  }
+
+  // Check if student is suspended
+  if(studentFound.isWithdrawn || studentFound.isSuspended) {
+    throw new Error("You are withdrawn/suspended and cannot take this exam.");
+  }
+
+  // build report object - this will tell the student how many answers they got right/wrong
+  let correctAnswers = 0;
+  let wrongAnswers = 0;
+  let status: 'passed' | 'failed' = 'failed'; // failed/passed
+  let grade = 0;
+  let score = 0;
+
+  // check for answers
+  // loop through questions to the possible answers
+  for (let i = 0; i < questions.length; i++) {
+    // find the single question
+    const question = questions[i];
+    // check if the answer is correct
+    if (question.correctAnswer === studentAnswers[i]) {
+      correctAnswers++;
+      score++;
+      question.isCorrect = true;
+    } else {
+      wrongAnswers++;
+    }
+  }
+
+  // calculate reports
+  grade = (correctAnswers / questions.length) * 100;
+  const answeredQuestionsArray: AnsweredQuestion[] = questions.map((question: any) => {
+    return {
+      question: question.question,
+      correctAnswers: question.correctAnswer,
+      isCorrect: question.isCorrect,
+    };
+  });
+
+  if (grade >= 50) {
+    status = 'passed';
+  } else {
+    status = 'failed';
+  }
+
+  // Remarks
+  let remarks = '';
+  if (grade >= 80) {
+    remarks = "Excellent!";
+  } else if (grade >= 70) {
+    remarks = "Very Good";
+  } else if (grade >= 60) {
+    remarks = "Good";
+  } else if (grade >= 50) {
+    remarks = "Fair";
+  } else {
+    remarks = "Needs Improvement";
+  }
+
+  // generate exam results
+   const examResults = await ExamResult.create({
+      studentID: studentFound?.studentId,
+      exam: examFound?._id,
+      grade,
+      score,
+      status,
+      remarks,
+      classLevel: examFound?.classLevel,
+      academicTerm: examFound?.academicTerm,
+      academicYear: examFound?.academicYear,
+      answeredQuestions: answeredQuestionsArray,
+   });
+  // push results into students
+   studentFound.examResults?.push(examResults?._id);
+   // save
+   await studentFound.save();
+
+  /**
+   * Promote Student to next Class Level or Term/Year if necessary
+   */
+  // Promote to level 200
+  if (
+    examFound.academicTerm.name === "3rd term" &&
+    status === 'passed' &&
+    studentFound?.currentClassLevel === "Level 100"
+  ) {
+    studentFound.classLevels.push("Level 200");
+    studentFound.currentClassLevel = "Level 200";
+    await studentFound.save();
+  }
+
+  // Promote to level 300
+  if (
+    examFound.academicTerm.name === "3rd term" &&
+    status === 'passed' &&
+    studentFound?.currentClassLevel === "Level 200"
+  ) {
+    studentFound.classLevels.push("Level 300");
+    studentFound.currentClassLevel = "Level 300";
+    await studentFound.save();
+  }
+
+  // Promote to level 400
+  if (
+    examFound.academicTerm.name === "3rd term" &&
+    status === 'passed' &&
+    studentFound?.currentClassLevel === "Level 300"
+  ) {
+    studentFound.classLevels.push("Level 400");
+    studentFound.currentClassLevel = "Level 400";
+    await studentFound.save();
+  }
+
+  // Promote to level 500
+  if (
+    examFound.academicTerm.name === "3rd term" &&
+    status === 'passed' &&
+    studentFound?.currentClassLevel === "Level 400"
+  ) {
+    studentFound.classLevels.push("Level 500");
+    studentFound.currentClassLevel = "Level 500";
+    await studentFound.save();
+  }
+
+  // Promote to Graduate
+  if (
+    examFound.academicTerm.name === "3rd term" &&
+    status === 'passed' &&
+    studentFound?.currentClassLevel === "Level 500"
+  ) {
+    studentFound.isGraduated = true;
+    studentFound.yearGraduated = new Date();
+    await studentFound.save();
+  }
+
+  // submit request
+  res.status(200).json({
+    status: "success",
+    data: "You have submitted your exam successfully. Check later for your results."
+  });
+});

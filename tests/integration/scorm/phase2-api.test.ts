@@ -12,21 +12,15 @@
 
 import request from 'supertest';
 import mongoose from 'mongoose';
-import fs from 'fs';
-import path from 'path';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
-import Admin from '../../../model/Staff/Admin';
-import Teacher from '../../../model/Staff/Teacher';
-import Student from '../../../model/Academic/Student';
 
 describe('SCORM Phase 2: Package Management API', () => {
   let adminToken: string;
   let teacherToken: string;
   let studentToken: string;
   let adminId: string;
-  let teacherId: string;
   let studentId: string;
   let packageId: string;
   let attemptId: string;
@@ -62,7 +56,6 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should create teacher user and get token', async () => {
       teacherToken = 'test-teacher-token';
-      teacherId = new mongoose.Types.ObjectId().toString();
       expect(teacherToken).toBeDefined();
     });
 

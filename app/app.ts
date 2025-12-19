@@ -28,6 +28,7 @@ import examResultRouter from '../routes/academics/examResultsRoutes';
 import scormPackageRouter from '../routes/scorm/scormPackageRoutes';
 import scormContentRouter from '../routes/scorm/scormContentRoutes';
 import scormAttemptRouter from '../routes/scorm/scormAttemptRoutes';
+import scormRuntimeRouter from '../routes/scorm/scormRuntimeRoutes';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -134,6 +135,7 @@ app.use('/api/v1/exam-results', examResultRouter); // Exam results routes
 app.use('/api/v1/scorm/packages', scormPackageRouter); // SCORM package management
 app.use('/api/v1/scorm/content', scormContentRouter); // SCORM content delivery
 app.use('/api/v1/scorm/attempts', scormAttemptRouter); // SCORM attempt tracking
+app.use('/api/v1/scorm/runtime', scormRuntimeRouter); // SCORM runtime API
 
 /**
  * Error Middlewares

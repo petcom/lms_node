@@ -18,7 +18,7 @@ const teachersRouter = express.Router();
 
 teachersRouter.post(
   "/admin/register",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   adminRegisterTeacher
 );
@@ -26,7 +26,7 @@ teachersRouter.post("/login", loginTeacher);
 
 teachersRouter.get(
   "/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   advancedResults(Teacher, {
     path: "examsCreated",
@@ -39,26 +39,26 @@ teachersRouter.get(
 
 teachersRouter.get(
   "/profile",
-  isAuthenticated(Teacher),
+  isAuthenticated(),
   roleRestriction("teacher"),
   getTeacherProfile
 );
 
 teachersRouter.get(
   "/:teacherID/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   getTeacherByAdmin
 );
 teachersRouter.put(
   "/:teacherID/update",
-  isAuthenticated(Teacher),
+  isAuthenticated(),
   roleRestriction("teacher"),
   teacherUpdateProfile
 );
 teachersRouter.put(
   "/:teacherID/update/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   adminUpdateTeacher
 );

@@ -4,20 +4,18 @@ const {
   getExamResults,
   adminToggleExamResult,
 } = require("../../controller/academics/examResults");
-const isStudent = require("../../middlewares/isStudent");
-const isStudentLogin = require("../../middlewares/isStudentLogin");
-const isAdmin = require("../../middlewares/isAdmin");
-const isLogin = require("../../middlewares/isLogin");
+const isAuthenticated = require("../../middlewares/isAuthenticated");
+const roleRestriction = require("../../middlewares/roleRestriction");
 
 const examResultRouter = express.Router();
 
-examResultRouter.get("/:id/check", isStudentLogin, isStudent, checkExamResults);
-examResultRouter.get("/", isStudentLogin, isStudent, getExamResults);
+examResultRouter.get("/:id/check", isAuthenticated(), roleRestriction("student"), checkExamResults);
+examResultRouter.get("/", isAuthenticated(), roleRestriction("student"), getExamResults);
 
 examResultRouter.put(
   "/:id/admin-toggle-publish",
-  isLogin,
-  isAdmin,
+  isAuthenticated(),
+  roleRestriction("admin"),
   adminToggleExamResult
 );
 

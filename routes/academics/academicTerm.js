@@ -19,13 +19,13 @@ const academicTermRouter = express.Router();
  */
 academicTermRouter
   .route("/")
-  .post(isAuthenticated(Admin), roleRestriction("admin"), createAcademicTerm)
-  .get(isAuthenticated(Admin), roleRestriction("admin"), advancedResults(AcademicTerm), getAcademicTerms);
+  .post(isAuthenticated(), roleRestriction("admin"), createAcademicTerm)
+  .get(isAuthenticated(), roleRestriction("admin"), advancedResults(AcademicTerm), getAcademicTerms);
 
 academicTermRouter
   .route("/:id")
-  .get(isAuthenticated(Admin), roleRestriction("admin"), getAcademicTerm)
-  .put(isAuthenticated(Admin), roleRestriction("admin"), updateAcademicTerms)
-  .delete(isAuthenticated(Admin), roleRestriction("admin"), deleteAcademicTerm);
+  .get(isAuthenticated(), roleRestriction("admin"), getAcademicTerm)
+  .put(isAuthenticated(), roleRestriction("admin"), updateAcademicTerms)
+  .delete(isAuthenticated(), roleRestriction("admin"), deleteAcademicTerm);
 
 module.exports = academicTermRouter;

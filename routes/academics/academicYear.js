@@ -17,9 +17,9 @@ const academicYearRouter = express.Router();
 
 academicYearRouter
   .route("/")
-  .post(isAuthenticated(Admin), roleRestriction("admin"), createAcademicYear)
+  .post(isAuthenticated(), roleRestriction("admin"), createAcademicYear)
   .get(
-    isAuthenticated(Admin),
+    isAuthenticated(),
     roleRestriction("admin"),
     advancedResults(AcademicYear),
     getAcademicYears
@@ -27,8 +27,8 @@ academicYearRouter
 
 academicYearRouter
   .route("/:id")
-  .get(isAuthenticated(Admin), roleRestriction("admin"), getAcademicYear)
-  .put(isAuthenticated(Admin), roleRestriction("admin"), updateAcademicYear)
-  .delete(isAuthenticated(Admin), roleRestriction("admin"), deleteAcademicYear);
+  .get(isAuthenticated(), roleRestriction("admin"), getAcademicYear)
+  .put(isAuthenticated(), roleRestriction("admin"), updateAcademicYear)
+  .delete(isAuthenticated(), roleRestriction("admin"), deleteAcademicYear);
 
 module.exports = academicYearRouter;

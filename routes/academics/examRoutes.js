@@ -1,16 +1,16 @@
 const express = require("express");
-const isTeacher = require("../../middlewares/isTeacher");
-const isTeacherLogin = require("../../middlewares/isTeacherLogin");
 const { createExam, getExams, getExam, updateExam, deleteExam } = require("../../controller/academics/examsCtrl");
 const Exam = require("../../model/Academic/Exam");
 const advancedResults = require("../../middlewares/advancedResults");
+const isAuthenticated = require("../../middlewares/isAuthenticated");
+const roleRestriction = require("../../middlewares/roleRestriction");
 
 const examRouter = express.Router();
 
 examRouter
     .route("/")
-    .post(isTeacherLogin, isTeacher, createExam)
-    .get(isTeacherLogin, isTeacher, advancedResults(Exam, {
+    .post(isAuthenticated(), roleRestriction("teacher"), createExam)
+    .get(isAuthenticated(), roleRestriction("teacher"), advancedResults(Exam, {
         path: "questions",
         populate: {
             path: "createdBy",
@@ -21,8 +21,8 @@ examRouter
     
 examRouter
     .route("/:id")
-    .get(isTeacherLogin, isTeacher, getExam)
-    .put(isTeacherLogin, isTeacher, updateExam)
-    .delete(isTeacherLogin, isTeacher, deleteExam);
+    .get(isAuthenticated(), roleRestriction("teacher"), getExam)
+    .put(isAuthenticated(), roleRestriction("teacher"), updateExam)
+    .delete(isAuthenticated(), roleRestriction("teacher"), deleteExam);
 
 module.exports=examRouter;

@@ -34,7 +34,8 @@ adminRouter.post("/login", loginAdminCtrl);
  */
 adminRouter.get(
   "/",
-  isAuthenticated(Admin),
+  isAuthenticated(),
+  roleRestriction("admin"),
   advancedResults(Admin),
   getAdminsCtrl
 );
@@ -44,7 +45,7 @@ adminRouter.get(
  */
 adminRouter.get(
   "/profile",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   getAdminProfileCtrl
 );
@@ -54,7 +55,7 @@ adminRouter.get(
  */
 adminRouter.put(
   "/",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   updateAdminCtrl
 );

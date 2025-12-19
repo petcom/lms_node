@@ -1,9 +1,9 @@
 const express = require("express");
 const { createProgram, getPrograms, getSingleProgram, updateProgram, deleteProgram } = require("../../controller/academics/programsCtrl");
-const isAdmin = require("../../middlewares/isAdmin");
-const isLogin = require("../../middlewares/isLogin");
 const advancedResults = require("../../middlewares/advancedResults");
 const Program = require("../../model/Academic/Program");
+const isAuthenticated = require("../../middlewares/isAuthenticated");
+const roleRestriction = require("../../middlewares/roleRestriction");
 
 const programRouter = express.Router();
 
@@ -12,13 +12,13 @@ const programRouter = express.Router();
  */
 programRouter
   .route("/")
-  .post(isLogin, isAdmin, createProgram)
-  .get(isLogin, isAdmin, advancedResults(Program),getPrograms);
+  .post(isAuthenticated(), roleRestriction("admin"), createProgram)
+  .get(isAuthenticated(), roleRestriction("admin"), advancedResults(Program), getPrograms);
 
 programRouter
   .route("/:id")
-  .get(isLogin, isAdmin, getSingleProgram)
-  .put(isLogin, isAdmin, updateProgram)
-  .delete(isLogin, isAdmin, deleteProgram);
+  .get(isAuthenticated(), roleRestriction("admin"), getSingleProgram)
+  .put(isAuthenticated(), roleRestriction("admin"), updateProgram)
+  .delete(isAuthenticated(), roleRestriction("admin"), deleteProgram);
 
 module.exports = programRouter;

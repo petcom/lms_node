@@ -1,9 +1,9 @@
 const express = require("express");
 const { createClassLevel, getClassLevel, getClassLevels, updateClassLevel, deleteClassLevel } = require("../../controller/academics/classLevelCtrl");
-const isAdmin = require("../../middlewares/isAdmin");
-const isLogin = require("../../middlewares/isLogin");
 const advancedResults = require("../../middlewares/advancedResults");
 const AcademicTerm = require("../../model/Academic/AcademicTerm");
+const isAuthenticated = require("../../middlewares/isAuthenticated");
+const roleRestriction = require("../../middlewares/roleRestriction");
 
 const classLevelRouter = express.Router();
 
@@ -12,13 +12,13 @@ const classLevelRouter = express.Router();
  */
 classLevelRouter
   .route("/")
-  .post(isLogin, isAdmin, createClassLevel)
-  .get(isLogin, isAdmin, advancedResults(AcademicTerm),getClassLevels);
+  .post(isAuthenticated(), roleRestriction("admin"), createClassLevel)
+  .get(isAuthenticated(), roleRestriction("admin"), advancedResults(AcademicTerm), getClassLevels);
 
 classLevelRouter
   .route("/:id")
-  .get(isLogin, isAdmin, getClassLevel)
-  .put(isLogin, isAdmin, updateClassLevel)
-  .delete(isLogin, isAdmin, deleteClassLevel);
+  .get(isAuthenticated(), roleRestriction("admin"), getClassLevel)
+  .put(isAuthenticated(), roleRestriction("admin"), updateClassLevel)
+  .delete(isAuthenticated(), roleRestriction("admin"), deleteClassLevel);
 
 module.exports = classLevelRouter;

@@ -19,47 +19,47 @@ const studentRouter = express.Router();
 
 studentRouter.post(
   "/admin/register",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   adminRegisterStudent
 );
 studentRouter.post("/login", loginStudent);
 studentRouter.get(
   "/profile",
-  isAuthenticated(Student),
+  isAuthenticated(),
   roleRestriction("student"),
   getStudentProfile
 );
 studentRouter.get(
   "/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   advancedResults(Student),
   getAllStudentsByAdmin
 );
 studentRouter.get(
   "/:studentID/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   getStudentByAdmin
 );
 /** Students taking exams can access following: */
 studentRouter.post(
   "/exams/:examID/write",
-  isAuthenticated(Student),
+  isAuthenticated(),
   roleRestriction("student"),
   writeExam
 ); // Student only writes exams
 /** */
 studentRouter.put(
   "/update",
-  isAuthenticated(Student),
+  isAuthenticated(),
   roleRestriction("student"),
   studentUpdateProfile
 ); // student only
 studentRouter.put(
   "/:studentID/update/admin",
-  isAuthenticated(Admin),
+  isAuthenticated(),
   roleRestriction("admin"),
   adminUpdateStudent
 ); // Admin only

@@ -27,6 +27,11 @@ module.exports = {
     'node_modules/(?!(buffer-equal-constant-time)/)'
   ],
 
+  // Module name mapper for ESM modules
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/tests/__mocks__/uuid.js'
+  },
+
   // Coverage configuration
   collectCoverageFrom: [
     '**/*.{ts,js}',

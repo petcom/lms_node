@@ -8,6 +8,11 @@
     "server": "nodemon server.js",
     "dev": "NODE_ENV=development nodemon server.js",
     "dev:local": "node -r dotenv-safe/config server.js dotenv_config_path=.env.local",
+    "test": "NODE_ENV=test jest --runInBand",
+    "test:watch": "NODE_ENV=test jest --watch --runInBand",
+    "test:coverage": "NODE_ENV=test jest --coverage --runInBand",
+    "test:unit": "NODE_ENV=test jest tests/unit --runInBand",
+    "test:integration": "NODE_ENV=test jest tests/integration --runInBand",
     "test:db": "node scripts/test-db-connection.js",
     "test:db:local": "node scripts/test-db-connection.js .env.local"
   },
@@ -36,7 +41,11 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "mongodb-memory-server": "^11.0.0",
     "morgan": "^1.10.0",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "supertest": "^7.1.4"
   }
 }

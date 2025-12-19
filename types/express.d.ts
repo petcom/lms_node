@@ -1,22 +1,61 @@
 // Express type augmentation for custom properties
-import { IAdmin } from './models';
-import { ITeacher } from './models';
-import { IStudent } from './models';
+import { IAdmin, ITeacher, IStudent } from './models';
 
 declare global {
   namespace Express {
     interface Request {
+      // User authentication data
       userAuth?: IAdmin | ITeacher | IStudent;
-      advancedResults?: {
-        data: any[];
+      
+      // JWT token from authorization header
+      token?: string;
+      
+      // Advanced results data from pagination middleware
+      results?: {
+        total: number;
         pagination: {
-          total: number;
-          page: number;
-          limit: number;
-          pages: number;
-          hasNext: boolean;
-          hasPrev: boolean;
+          next?: {
+            page: number;
+            limit: number;
+          };
+          prev?: {
+            page: number;
+            limit: number;
+          };
         };
+        results: number;
+        status: string;
+        message: string;
+        data: any[];
+      };
+
+      // Rate limit info from express-rate-limit
+      rateLimit?: {
+        limit: number;
+        current: number;
+        remaining: number;
+        resetTime: number;
+      };
+    }
+
+    interface Response {
+      // Advanced results data for response
+      results?: {
+        total: number;
+        pagination: {
+          next?: {
+            page: number;
+            limit: number;
+          };
+          prev?: {
+            page: number;
+            limit: number;
+          };
+        };
+        results: number;
+        status: string;
+        message: string;
+        data: any[];
       };
     }
   }

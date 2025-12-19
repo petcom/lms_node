@@ -312,31 +312,49 @@ lms_node/
 
 ## 💻 Development
 
+### TypeScript Migration
+
+This project is currently migrating from JavaScript to TypeScript for improved type safety and developer experience.
+
+**Current Status**: Phase 1 Complete - Foundation & Tooling Setup
+
+**TypeScript Features**:
+- ✅ Full TypeScript configuration with strict mode
+- ✅ ESLint with TypeScript support
+- ✅ Prettier code formatting
+- ✅ ts-jest for TypeScript testing
+- ✅ Type definitions for all dependencies
+
 ### Available Scripts
 
 ```bash
-# Development with hot reload
-npm run dev
+# TypeScript Development
+npm run dev:ts              # Run with ts-node-dev (hot reload)
+npm run build               # Compile TypeScript to JavaScript
+npm run build:watch         # Watch mode compilation
+npm run type-check          # Type check without compilation
+npm run type-check:watch    # Watch mode type checking
 
-# Production mode
-npm start
+# JavaScript Development (during migration)
+npm run dev                 # Development with nodemon
+npm start                   # Production mode
 
-# Run tests
-npm test
-npm run test:watch
-npm run test:coverage
+# Testing
+npm test                    # Run all tests
+npm run test:watch          # Watch mode
+npm run test:coverage       # Coverage report
+npm run test:unit           # Unit tests only
+npm run test:integration    # Integration tests only
 
-# Run unit tests only
-npm run test:unit
+# Code Quality
+npm run lint                # Run ESLint
+npm run lint:fix            # Fix linting issues
+npm run format              # Format code with Prettier
+npm run format:check        # Check formatting
 
-# Run integration tests only
-npm run test:integration
-
-# Lint code
-npm run lint
-
-# Security audit
-npm audit
+# Security
+npm audit                   # Security audit
+npm audit fix               # Fix vulnerabilities
 ```
 
 ### Development Workflow
@@ -348,15 +366,22 @@ npm audit
 
 2. Make your changes and test thoroughly
    ```bash
-   npm run test
+   npm run type-check      # Check TypeScript types
+   npm run lint            # Check code quality
+   npm test                # Run tests
    ```
 
-3. Commit with conventional commits
+3. Format your code
+   ```bash
+   npm run format
+   ```
+
+4. Commit with conventional commits
    ```bash
    git commit -m "feat: add new feature"
    ```
 
-4. Push and create a pull request
+5. Push and create a pull request
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -382,6 +407,32 @@ npm run test:unit
 
 # Integration tests only
 npm run test:integration
+```
+
+### TypeScript Type Checking
+
+```bash
+# Type check without compilation
+npm run type-check
+
+# Type check in watch mode
+npm run type-check:watch
+```
+
+### Code Quality
+
+```bash
+# Run linter
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code with Prettier
+npm run format
+
+# Check formatting
+npm run format:check
 ```
 
 ### Test Structure

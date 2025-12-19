@@ -1,12 +1,25 @@
 module.exports = {
+  // TypeScript preset
+  preset: 'ts-jest',
+  
   // Test environment
   testEnvironment: 'node',
 
-  // Globals
-  globals: {
-    'ts-jest': {
+  // Roots
+  roots: ['<rootDir>'],
+
+  // Test match patterns
+  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.js'],
+
+  // Module file extensions
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+
+  // Transform configuration
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
       isolatedModules: true
-    }
+    }]
   },
 
   // Transform ignore patterns for node_modules
@@ -16,14 +29,15 @@ module.exports = {
 
   // Coverage configuration
   collectCoverageFrom: [
-    'utils/**/*.js',
-    'middlewares/**/*.js',
-    'controller/**/*.js',
-    'routes/**/*.js',
-    'model/**/*.js',
+    '**/*.{ts,js}',
     '!**/node_modules/**',
+    '!**/dist/**',
+    '!**/coverage/**',
+    '!**/logs/**',
     '!**/tests/**',
-    '!**/scripts/**'
+    '!**/scripts/**',
+    '!jest.config.js',
+    '!ecosystem.config.js'
   ],
 
   // Coverage thresholds

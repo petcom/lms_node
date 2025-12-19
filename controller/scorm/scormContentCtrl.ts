@@ -1,0 +1,148 @@
+import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
+import ScormPackage from '../../model/Scorm/ScormPackage';
+import ScormAttempt from '../../model/Scorm/ScormAttempt';
+import { StorageFactory } from '../../utils/scorm/storage/StorageFactory';
+import path from 'path';
+
+/**
+ * @desc    Launch SCORM package
+ * @route   GET /api/scorm/content/:packageId/launch
+ * @access  Private (Student)
+ */
+export const launchPackage = asyncHandler(async (req: Request, res: Response) => {
+  const { packageId } = req.params;
+  const studentId = req.userAuth!._id;
+
+  // Get package
+  const scormPackage = await ScormPackage.findById(packageId);
+
+  if (!scormPackage) {
+    res.status(404);
+    throw new Error('SCORM package not found');
+  }
+
+  // Check if student has access
+  const hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+
+  if (!hasAccess) {
+    res.status(403);
+    throw new Error('You do not have access to this package');
+  }
+
+  // Get or create attempt
+  const attempt = await ScormAttempt.getOrCreateAttempt(
+    studentId,
+    scormPackage._id
+  );
+
+  // Check max attempts
+  if ((scormPackage as any).maxAttempts && (attempt as any).attemptNumber > (scormPackage as any).maxAttempts) {
+    res.status(403);
+    throw new Error(`Maximum attempts (${(scormPackage as any).maxAttempts}) exceeded`);
+  }
+
+  // Generate launch URL
+  const storageProvider = StorageFactory.getProvider();
+  const contentUrl = storageProvider.getFileUrl(`${packageId}/${(scormPackage as any).launchUrl}`);
+
+  // Update statistics
+  await ScormPackage.updateStats(scormPackage._id.toString());
+
+  res.status(200).json({
+    success: true,
+    data: {
+      packageId: scormPackage.packageId,
+      title: scormPackage.title,
+      version: scormPackage.version,
+      launchUrl: contentUrl,
+      attemptId: attempt._id,
+      attemptNumber: (attempt as any).attemptNumber,
+      maxAttempts: (scormPackage as any).maxAttempts,
+      passingScore: (scormPackage as any).passingScore,
+    },
+  });
+});
+
+/**
+ * @desc    Get SCORM content file
+ * @route   GET /api/scorm/content/:packageId/*
+ * @access  Private (Student)
+ */
+export const getContentFile = asyncHandler(async (req: Request, res: Response) => {
+  const { packageId } = req.params;
+  const filePath = req.params[0]; // Capture everything after packageId
+  const studentId = req.userAuth!._id;
+
+  // Find package
+  const scormPackage = await ScormPackage.findOne({ packageId });
+
+  if (!scormPackage) {
+    res.status(404);
+    throw new Error('SCORM package not found');
+  }
+
+  // Check if student has access
+  const hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+
+  if (!hasAccess) {
+    res.status(403);
+    throw new Error('You do not have access to this package');
+  }
+
+  try {
+    // Get file from storage
+    const storageProvider = StorageFactory.getProvider();
+    const fullPath = path.posix.join(packageId, filePath);
+    const fileBuffer = await storageProvider.readFile(fullPath);
+
+    // Determine content type
+    const ext = path.extname(filePath).toLowerCase();
+    const contentTypes: { [key: string]: string } = {
+      '.html': 'text/html',
+      '.htm': 'text/html',
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+      '.json': 'application/json',
+      '.xml': 'application/xml',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.mp4': 'video/mp4',
+      '.mp3': 'audio/mpeg',
+      '.pdf': 'application/pdf',
+    };
+
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.send(fileBuffer);
+  } catch (error: any) {
+    res.status(404);
+    throw new Error('File not found');
+  }
+});
+
+/**
+ * @desc    Get package manifest
+ * @route   GET /api/scorm/content/:packageId/manifest
+ * @access  Private (Teacher/Admin)
+ */
+export const getManifest = asyncHandler(async (req: Request, res: Response) => {
+  const { packageId } = req.params;
+
+  const scormPackage = await ScormPackage.findOne({ packageId });
+
+  if (!scormPackage) {
+    res.status(404);
+    throw new Error('SCORM package not found');
+  }
+
+  res.status(200).json({
+    success: true,
+    data: scormPackage.manifestData,
+  });
+});

@@ -50,4 +50,19 @@ const roleRestriction = (...roles: UserRole[]) => {
   };
 };
 
+/**
+ * Shorthand middleware for Teacher or Admin access
+ */
+export const isTeacherOrAdmin = roleRestriction('teacher', 'admin');
+
+/**
+ * Shorthand middleware for Admin only access
+ */
+export const isAdmin = roleRestriction('admin');
+
+/**
+ * Shorthand middleware for Student access
+ */
+export const isStudent = roleRestriction('student');
+
 export default roleRestriction;

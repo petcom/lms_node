@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js"
+    "server": "nodemon server.js",
+    "dev": "NODE_ENV=development nodemon server.js",
+    "dev:local": "node -r dotenv-safe/config server.js dotenv_config_path=.env.local",
+    "test:db": "node scripts/test-db-connection.js",
+    "test:db:local": "node scripts/test-db-connection.js .env.local"
   },
   "keywords": [
     "lms",

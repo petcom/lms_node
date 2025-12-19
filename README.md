@@ -149,18 +149,81 @@ npm run server
 The API is built using Express.js and serves a RESTful JSON API. You can interact with it through a tool like Postman. I will provide the public API for my postman collection for this project if you would like to pull it.
 
 ## Setting up MongoDB
-To set up your MongoDB environment, you can either install MongoDB locally or use a MongoDB cloud service like MongoDB Atlas.
+You can use either a local MongoDB installation or MongoDB Atlas cloud service.
 
-### Local MongoDB Installation
-1. Download MongoDB from the MongoDB official website.
-2. Follow the installation instructions for your operating system.
-3. Ensure MongoDB is running on your system. Typically, MongoDB runs at mongodb://localhost:27017. The instance on this code runs on port 2020
+### Local MongoDB Installation (Recommended for Development)
 
-### Using MongoDB Atlas
-1. Create an account or log in at MongoDB Atlas.
-2. Follow the instructions to create a new cluster.
-3. Once your cluster is set up, create a database user, and whitelist your IP address.
-4. Connect your application to the cluster by copying the connection string provided by Atlas. Make sure to replace the <password> with your database user's password and <dbname> with the name of your database.
+#### macOS (using Homebrew)
+```bash
+# Install MongoDB Community Edition
+brew install mongodb-community@8.0
+
+# Start MongoDB service
+brew services start mongodb/brew/mongodb-community@8.0
+
+# Verify MongoDB is running
+brew services list | grep mongodb
+
+# Test connection
+mongosh --eval "db.version()"
+```
+
+#### Linux (Ubuntu/Debian)
+```bash
+# Import MongoDB GPG key
+wget -qO - https://www.mongodb.org/static/pgp/server-8.0.asc | sudo apt-key add -
+
+# Add MongoDB repository
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+
+# Install MongoDB
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+# Start MongoDB service
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+#### Windows
+1. Download MongoDB Community Server from [MongoDB Download Center](https://www.mongodb.com/try/download/community)
+2. Run the installer and follow the setup wizard
+3. MongoDB will run as a Windows service automatically
+
+#### Configuration for Local Development
+Create a `.env.local` file for local development:
+```bash
+cp .env.example .env.local
+```
+
+Update `MONGO_URL` in `.env.local`:
+```env
+MONGO_URL=mongodb://localhost:27017/lms_db
+```
+
+#### Testing Local Connection
+```bash
+# Use the provided test script
+node scripts/test-db-connection.js .env.local
+```
+
+### Using MongoDB Atlas (Cloud)
+1. Create an account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a new cluster (free tier available)
+3. Create a database user with password
+4. Add your IP address to the IP Access List (or use 0.0.0.0/0 for development)
+5. Get your connection string from the "Connect" button
+6. Update `.env` with your Atlas connection string:
+```env
+MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/lms_db?retryWrites=true&w=majority
+```
+
+### Managing Multiple Environments
+- `.env` - Production/Atlas credentials (DO NOT commit)
+- `.env.local` - Local MongoDB for development (DO NOT commit)
+- `.env.example` - Template with all required variables (safe to commit)
+
+Switch between environments by using different env files or updating `MONGO_URL` in your active `.env` file.
 
 ### Configuring the Application
 

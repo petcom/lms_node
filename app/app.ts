@@ -29,6 +29,7 @@ import scormPackageRouter from '../routes/scorm/scormPackageRoutes';
 import scormContentRouter from '../routes/scorm/scormContentRoutes';
 import scormAttemptRouter from '../routes/scorm/scormAttemptRoutes';
 import scormRuntimeRouter from '../routes/scorm/scormRuntimeRoutes';
+import scormPlayerRouter from '../routes/scorm/scormPlayerRoutes';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -116,6 +117,19 @@ app.use('/api/', apiLimiter);
 app.use(express.json({ limit: '10mb' })); // parse incoming json data with size limit
 
 /**
+ * Static File Serving
+ */
+// Serve SCORM API JavaScript files
+app.use('/scorm', express.static('public/scorm', {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
+
+/**
  * Routes
  */
 app.use('/api/v1/auth', authRouter); // Auth routes (login, logout, refresh)
@@ -136,6 +150,7 @@ app.use('/api/v1/scorm/packages', scormPackageRouter); // SCORM package manageme
 app.use('/api/v1/scorm/content', scormContentRouter); // SCORM content delivery
 app.use('/api/v1/scorm/attempts', scormAttemptRouter); // SCORM attempt tracking
 app.use('/api/v1/scorm/runtime', scormRuntimeRouter); // SCORM runtime API
+app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 
 /**
  * Error Middlewares

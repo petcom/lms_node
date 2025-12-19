@@ -12,12 +12,19 @@ const advancedResults = require("../../middlewares/advancedResults");
 const isAuthenticated = require("../../middlewares/isAuthenticated");
 const Admin = require("../../model/Staff/Admin");
 const roleRestriction = require("../../middlewares/roleRestriction");
+const validate = require("../../middlewares/validate");
+const academicValidation = require("../../validators/academicValidation");
 
 const academicYearRouter = express.Router();
 
 academicYearRouter
   .route("/")
-  .post(isAuthenticated(), roleRestriction("admin"), createAcademicYear)
+  .post(
+    isAuthenticated(), 
+    roleRestriction("admin"), 
+    validate(academicValidation.createAcademicYear), 
+    createAcademicYear
+  )
   .get(
     isAuthenticated(),
     roleRestriction("admin"),
@@ -27,8 +34,23 @@ academicYearRouter
 
 academicYearRouter
   .route("/:id")
-  .get(isAuthenticated(), roleRestriction("admin"), getAcademicYear)
-  .put(isAuthenticated(), roleRestriction("admin"), updateAcademicYear)
-  .delete(isAuthenticated(), roleRestriction("admin"), deleteAcademicYear);
+  .get(
+    isAuthenticated(), 
+    roleRestriction("admin"), 
+    validate(academicValidation.idParam), 
+    getAcademicYear
+  )
+  .put(
+    isAuthenticated(), 
+    roleRestriction("admin"), 
+    validate(academicValidation.updateAcademicYear), 
+    updateAcademicYear
+  )
+  .delete(
+    isAuthenticated(), 
+    roleRestriction("admin"), 
+    validate(academicValidation.idParam), 
+    deleteAcademicYear
+  );
 
 module.exports = academicYearRouter;

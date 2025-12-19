@@ -6,12 +6,14 @@ const {
     getTokenInfo
 } = require("../../controller/auth/authCtrl");
 const isAuthenticated = require("../../middlewares/isAuthenticated");
+const validate = require("../../middlewares/validate");
+const authValidation = require("../../validators/authValidation");
 const Admin = require("../../model/Staff/Admin");
 
 const authRouter = express.Router();
 
 // Public routes
-authRouter.post("/refresh", refreshToken);
+authRouter.post("/refresh", validate(authValidation.refreshToken), refreshToken);
 
 // Protected routes (require authentication)
 authRouter.post("/logout", isAuthenticated(Admin), logout);

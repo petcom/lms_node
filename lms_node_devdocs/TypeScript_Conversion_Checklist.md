@@ -184,120 +184,133 @@
 
 ---
 
-## PHASE 2: CORE TYPES & UTILITIES (38 tasks)
+## PHASE 2: CORE TYPES & UTILITIES (38 tasks) ✅ COMPLETE
 
 **Duration:** 3-4 days  
 **Goal:** Create type foundation and migrate utility functions
+**Status:** ✅ COMPLETED - Commit: 7b1eb16
 
 ### 2.1 Shared Type Definitions
-- [ ] Create `types/express.d.ts` for Express augmentation
-  - [ ] Extend `Express.Request` interface
-  - [ ] Add `userAuth` property with User type
-  - [ ] Add proper typing for custom properties
-- [ ] Create `types/models.ts` for database model types
-  - [ ] Define `IAdmin` interface
-  - [ ] Define `ITeacher` interface
-  - [ ] Define `IStudent` interface
-  - [ ] Define `IAcademicYear` interface
-  - [ ] Define `IAcademicTerm` interface
-  - [ ] Define `IClassLevel` interface
-  - [ ] Define `IProgram` interface
-  - [ ] Define `ISubject` interface
-  - [ ] Define `IExam` interface
-  - [ ] Define `IExamResult` interface
-  - [ ] Define `IQuestion` interface
-  - [ ] Define `IYearGroup` interface
-- [ ] Create `types/auth.ts` for authentication types
-  - [ ] Define `JWTPayload` interface
-  - [ ] Define `RefreshTokenPayload` interface
-  - [ ] Define `TokenPair` interface
-  - [ ] Define `UserRole` type union
-  - [ ] Define `AuthenticatedUser` interface
-- [ ] Create `types/api.ts` for API response types
-  - [ ] Define `ApiResponse<T>` generic interface
-  - [ ] Define `ApiError` interface
-  - [ ] Define `PaginationMeta` interface
-  - [ ] Define `PaginatedResponse<T>` interface
-  - [ ] Define `SuccessResponse<T>` interface
-- [ ] Create `types/validation.ts` for validation types
-  - [ ] Define validation schema types
-  - [ ] Define error detail types
-- [ ] **Verification:** All shared types compile without errors
-- [ ] **Verification:** Types are properly exported
+- [x] Create `types/express.d.ts` for Express augmentation
+  - [x] Extend `Express.Request` interface
+  - [x] Add `userAuth` property with User type
+  - [x] Add proper typing for custom properties (advancedResults for pagination)
+- [x] Create `types/models.ts` for database model types
+  - [x] Define `IAdmin` interface
+  - [x] Define `ITeacher` interface
+  - [x] Define `IStudent` interface
+  - [x] Define `IAcademicYear` interface
+  - [x] Define `IAcademicTerm` interface
+  - [x] Define `IClassLevel` interface
+  - [x] Define `IProgram` interface
+  - [x] Define `ISubject` interface
+  - [x] Define `IExam` interface
+  - [x] Define `IExamResult` interface
+  - [x] Define `IQuestion` interface
+  - [x] Define `IYearGroup` interface
+  - [x] Define `ITokenBlacklist` interface with model statics
+  - [x] Define `IRefreshToken` interface with model methods
+- [x] Create `types/auth.ts` for authentication types
+  - [x] Define `JWTPayload` interface
+  - [x] Define `RefreshTokenPayload` interface
+  - [x] Define `TokenPair` interface (with expiresIn)
+  - [x] Define `UserRole` type union (re-exported from models)
+  - [x] Define `AuthenticatedUser` interface
+  - [x] Define `PasswordValidationResult` interface
+  - [x] Define `PasswordStrength` type
+- [x] Create `types/api.ts` for API response types
+  - [x] Define `ApiResponse<T>` generic interface
+  - [x] Define `ApiError` interface
+  - [x] Define `PaginationMeta` interface
+  - [x] Define `PaginatedResponse<T>` interface
+  - [x] Define `SuccessResponse<T>` interface
+  - [x] Define `ValidationErrorDetail` interface
+- [x] Create `types/validation.ts` for validation types
+  - [x] Define validation schema types
+  - [x] Define `ValidationTarget` type
+  - [x] Define `CustomValidationError` interface
+  - [x] Re-export Joi types
+- [x] Create `types/index.ts` for central exports
+- [x] **Verification:** All shared types compile without errors ✅
+- [x] **Verification:** Types are properly exported ✅
 
 ### 2.2 Error Classes Migration
-- [ ] Convert `utils/errors/AppError.js` to TypeScript
-  - [ ] Rename to `AppError.ts`
-  - [ ] Add proper type annotations
-  - [ ] Define constructor parameter types
-  - [ ] Export class with types
-- [ ] Convert `utils/errors/ValidationError.js` to TypeScript
-  - [ ] Rename to `ValidationError.ts`
-  - [ ] Extend `AppError` with proper typing
-- [ ] Convert `utils/errors/AuthenticationError.js` to TypeScript
-  - [ ] Rename to `AuthenticationError.ts`
-- [ ] Convert `utils/errors/AuthorizationError.js` to TypeScript
-  - [ ] Rename to `AuthorizationError.ts`
-- [ ] Convert `utils/errors/NotFoundError.js` to TypeScript
-  - [ ] Rename to `NotFoundError.ts`
-- [ ] Convert `utils/errors/DatabaseError.js` to TypeScript
-  - [ ] Rename to `DatabaseError.ts`
-- [ ] Convert `utils/errors/ConflictError.js` to TypeScript
-  - [ ] Rename to `ConflictError.ts`
-- [ ] Update `utils/errors/index.js` to TypeScript
-  - [ ] Rename to `index.ts`
-  - [ ] Export all error classes with types
-- [ ] **Verification:** All error classes compile correctly
-- [ ] **Verification:** Error classes maintain inheritance hierarchy
-- [ ] **Verification:** Type inference works for error instances
+- [x] Convert `utils/errors/AppError.js` to TypeScript
+  - [x] Rename to `AppError.ts`
+  - [x] Add proper type annotations (statusCode, status, isOperational)
+  - [x] Define constructor parameter types
+  - [x] Export class with types
+- [x] Convert `utils/errors/ValidationError.js` to TypeScript
+  - [x] Rename to `ValidationError.ts`
+  - [x] Extend `AppError` with proper typing
+  - [x] Use `ValidationErrorDetail[]` type
+- [x] Convert `utils/errors/AuthenticationError.js` to TypeScript
+  - [x] Rename to `AuthenticationError.ts` (401 errors)
+- [x] Convert `utils/errors/AuthorizationError.js` to TypeScript
+  - [x] Rename to `AuthorizationError.ts` (403 errors)
+- [x] Convert `utils/errors/NotFoundError.js` to TypeScript
+  - [x] Rename to `NotFoundError.ts` (404 errors)
+- [x] Convert `utils/errors/DatabaseError.js` to TypeScript
+  - [x] Rename to `DatabaseError.ts` (500 errors)
+- [x] Convert `utils/errors/ConflictError.js` to TypeScript
+  - [x] Rename to `ConflictError.ts` (409 errors)
+- [x] Update `utils/errors/index.js` to TypeScript
+  - [x] Rename to `index.ts`
+  - [x] Export all 7 error classes with types
+- [x] **Verification:** All error classes compile correctly ✅
+- [x] **Verification:** Error classes maintain inheritance hierarchy ✅
+- [x] **Verification:** Type inference works for error instances ✅
 
 ### 2.3 Core Utility Functions
-- [ ] Convert `utils/helpers.js` to TypeScript
-  - [ ] Rename to `helpers.ts`
-  - [ ] Add type for `hashPassword(password: string): Promise<string>`
-  - [ ] Add type for `isPassMatched(password: string, hash: string): Promise<boolean>`
-  - [ ] Export functions with proper types
-- [ ] Convert `utils/passwordValidator.js` to TypeScript
-  - [ ] Rename to `passwordValidator.ts`
-  - [ ] Define `PasswordValidationResult` interface
-  - [ ] Define `PasswordStrength` type
-  - [ ] Type all validation functions
-  - [ ] Export with proper types
-- [ ] Convert `utils/generateToken.js` to TypeScript
-  - [ ] Rename to `generateToken.ts`
-  - [ ] Import `JWTPayload` type
-  - [ ] Type function: `generateToken(payload: JWTPayload): string`
-  - [ ] Handle environment variable types
-- [ ] Convert `utils/verifyToken.js` to TypeScript
-  - [ ] Rename to `verifyToken.ts`
-  - [ ] Type function: `verifyToken(token: string): Promise<JWTPayload>`
-  - [ ] Type error handling
-  - [ ] Import JWT types from jsonwebtoken
-- [ ] Convert `utils/tokenManager.js` to TypeScript
-  - [ ] Rename to `tokenManager.ts`
-  - [ ] Import `TokenPair`, `JWTPayload` types
-  - [ ] Type `generateTokenPair(payload: JWTPayload): Promise<TokenPair>`
-  - [ ] Type `refreshAccessToken(refreshToken: string): Promise<TokenPair>`
-  - [ ] Type all token management functions
-- [ ] Convert `utils/response.js` to TypeScript
-  - [ ] Rename to `response.ts`
-  - [ ] Import Express Response type
-  - [ ] Type all response functions with generics
-  - [ ] Use `ApiResponse<T>`, `PaginatedResponse<T>` types
-- [ ] Convert `utils/roles.js` to TypeScript
-  - [ ] Rename to `roles.ts`
-  - [ ] Define `Role` type/enum
-  - [ ] Define `Permission` type/enum
-  - [ ] Type role hierarchy and permissions objects
-  - [ ] Type all utility functions
-- [ ] Convert `utils/logger.js` to TypeScript
-  - [ ] Rename to `logger.ts`
-  - [ ] Import Winston types
-  - [ ] Type logger configuration
-  - [ ] Export typed logger instance
-- [ ] **Verification:** All utility files compile without errors
-- [ ] **Verification:** Type inference works for utility functions
-- [ ] **Verification:** No implicit `any` types
+- [x] Convert `utils/helpers.js` to TypeScript
+  - [x] Rename to `helpers.ts`
+  - [x] Add type for `hashPassword(password: string): Promise<string>`
+  - [x] Add type for `isPassMatched(password: string, hash: string): Promise<boolean>`
+  - [x] Export functions with proper types
+- [x] Convert `utils/passwordValidator.js` to TypeScript
+  - [x] Rename to `passwordValidator.ts`
+  - [x] Define `PasswordValidationResult` interface (in types/auth.ts)
+  - [x] Define `PasswordStrength` type (in types/auth.ts)
+  - [x] Type all validation functions (validatePassword, validatePasswordConfirmation, getPasswordStrength, getPasswordStrengthLabel)
+  - [x] Export with proper types
+- [x] Convert `utils/generateToken.js` to TypeScript
+  - [x] Rename to `generateToken.ts`
+  - [x] Type function: `generateToken(id: string): string`
+  - [x] Handle environment variable types
+  - [x] Fix jwt.sign type assertion
+- [x] Convert `utils/verifyToken.js` to TypeScript
+  - [x] Rename to `verifyToken.ts`
+  - [x] Type function: `verifyToken(token: string): Promise<JWTPayload>`
+  - [x] Type error handling with proper Error checks
+  - [x] Import and type TokenBlacklist model with custom statics
+- [x] Convert `utils/tokenManager.js` to TypeScript
+  - [x] Rename to `tokenManager.ts`
+  - [x] Import `TokenPair`, `UserRole` types
+  - [x] Type `generateTokenPair(userId: string, userType: UserRole, deviceInfo?: DeviceInfo): Promise<TokenPair>`
+  - [x] Type `refreshAccessToken(refreshToken: string): Promise<TokenPair>`
+  - [x] Type all token management functions (revokeRefreshToken, revokeAllUserTokens)
+  - [x] Type RefreshToken model with custom methods
+- [x] Convert `utils/response.js` to TypeScript
+  - [x] Rename to `response.ts`
+  - [x] Import Express Response type
+  - [x] Type all response functions with generics
+  - [x] Use `SuccessResponse<T>`, `PaginatedResponse<T>` types
+  - [x] Implement successResponse, paginatedResponse, createdResponse, noContentResponse, errorResponse
+- [x] Convert `utils/roles.js` to TypeScript
+  - [x] Rename to `roles.ts`
+  - [x] Define `UserRole` type (imported from auth)
+  - [x] Define `Permission` type union (25 permissions)
+  - [x] Type ROLES constants, ROLE_HIERARCHY, ROLE_PERMISSIONS objects
+  - [x] Type all utility functions (hasPermission, hasHigherOrEqualRole, getAllRoles, isValidRole)
+- [x] Convert `utils/logger.js` to TypeScript
+  - [x] Rename to `logger.ts`
+  - [x] Import Winston types (winston, DailyRotateFile)
+  - [x] Type logger configuration (transports, formats)
+  - [x] Export typed logger instance and stream
+- [x] **Verification:** All utility files compile without errors ✅
+- [x] **Verification:** Type inference works for utility functions ✅
+- [x] **Verification:** No implicit `any` types ✅
+- [x] **Verification:** Build successful (npm run build) ✅
 
 ---
 

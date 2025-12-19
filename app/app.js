@@ -1,8 +1,11 @@
 const express = require('express');
+const compression = require('compression');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
 const corsMiddleware = require('../config/cors');
+const swaggerSpecs = require('../config/swagger');
 const { apiLimiter } = require('../middlewares/rateLimiter');
 const { globalErrHandler, notFoundErr } = require('../middlewares/globalErrHandler');
 const logger = require('../utils/logger');
@@ -30,6 +33,30 @@ const app = express(); // create application instance of express
  */
 app.get('/health', healthCheck);
 app.get('/ready', readyCheck);
+
+/**
+ * API Documentation (Swagger)
+ */
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  explorer: true,
+  customSiteTitle: 'LMS API Documentation',
+  customCss: '.swagger-ui .topbar { display: none }'
+}));
+
+/**
+ * Performance Optimization
+ */
+// Gzip compression for responses
+app.use(compression({
+  level: 6, // Compression level (0-9, 6 is default)
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 /**
  * Logging Middleware

@@ -25,9 +25,94 @@ const { registerLimiter, authLimiter } = require("../../middlewares/rateLimiter"
 const adminRouter = express.Router();
 
 /**
- * Register
+ * @swagger
+ * /api/v1/admins/register:
+ *   post:
+ *     summary: Register a new admin
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: Admin@123
+ *                 description: Must be at least 8 characters with uppercase, lowercase, number, and special character
+ *     responses:
+ *       201:
+ *         description: Admin registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         description: Too many registration attempts
  */
 adminRouter.post("/register", registerLimiter, validate(authValidation.registerAdmin), registerAdminCtrl);
+
+/**
+ * @swagger
+ * /api/v1/admins/login:
+ *   post:
+ *     summary: Admin login
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       description: JWT access token
+ *       400:
+ *         description: Invalid credentials
+ *       429:
+ *         description: Too many login attempts
+ */
 
 /**
  * Login

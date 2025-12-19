@@ -4,6 +4,7 @@ require('dotenv-safe').config({
 });
 
 const dbConnect = require("./config/dbConnect");
+const logger = require("./utils/logger");
 
 const http = require("http");
 const app  = require("./app/app");
@@ -14,4 +15,25 @@ dbConnect();
 
 // server
 const server = http.createServer(app);
-server.listen(PORT, console.log(`Server is running on port: ${PORT}`));
+server.listen(PORT, () => {
+    logger.info(`Server is running on port: ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`Health check: http://localhost:${PORT}/health`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    logger.info('SIGINT signal received: closing HTTP server');
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+    });
+});

@@ -1,9 +1,11 @@
 const express = require('express');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const morgan = require('morgan');
 const corsMiddleware = require('../config/cors');
 const { apiLimiter } = require('../middlewares/rateLimiter');
 const { globalErrHandler, notFoundErr } = require('../middlewares/globalErrHandler');
+const logger = require('../utils/logger');
 
 const authRouter = require('../routes/auth/authRoutes');
 const passwordRouter = require('../routes/auth/passwordRoutes');
@@ -19,8 +21,25 @@ const examRouter = require('../routes/academics/examRoutes');
 const studentRouter = require('../routes/students/studentRouter');
 const questionsRouter = require('../routes/academics/questionRoutes');
 const examResultRouter = require('../routes/academics/examResultsRoutes');
+const { healthCheck, readyCheck } = require('../controller/healthCtrl');
 
 const app = express(); // create application instance of express
+
+/**
+ * Health Check Routes (before other middleware for reliability)
+ */
+app.get('/health', healthCheck);
+app.get('/ready', readyCheck);
+
+/**
+ * Logging Middleware
+ */
+// HTTP request logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev')); // Colorful dev format in console
+} else {
+  app.use(morgan('combined', { stream: logger.stream })); // Standard Apache format to logger
+}
 
 /**
  * Security Middleware

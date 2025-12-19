@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const logger = require("../utils/logger");
 
 const dbConnect = async() => {
     try {
@@ -9,11 +10,29 @@ const dbConnect = async() => {
         }
 
         await mongoose.connect(mongoUrl);
-        console.log("DB connected successfully");
+        logger.info("Database connected successfully");
+        logger.info(`Database: ${mongoose.connection.name}`);
+        logger.info(`Host: ${mongoose.connection.host}:${mongoose.connection.port}`);
     } catch (error) {
-        console.error("DB connection failed:", error.message);
+        logger.error("Database connection failed", { 
+            error: error.message,
+            stack: error.stack 
+        });
         process.exit(1);
     }
+    
+    // Database connection event handlers
+    mongoose.connection.on('error', (err) => {
+        logger.error('Database error', { error: err.message });
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+        logger.warn('Database disconnected');
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+        logger.info('Database reconnected');
+    });
 };
 
 module.exports = dbConnect;

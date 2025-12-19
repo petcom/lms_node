@@ -1,4 +1,5 @@
 const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 /**
  * Handle Mongoose Cast Errors (invalid ObjectId)
@@ -45,6 +46,13 @@ const handleJWTExpiredError = () => {
  * Send error response in development mode
  */
 const sendErrorDev = (err, res) => {
+  // Log error in development
+  logger.error('Error in development mode', {
+    message: err.message,
+    stack: err.stack,
+    statusCode: err.statusCode,
+  });
+  
   res.status(err.statusCode).json({
     status: err.status,
     error: err,
@@ -59,6 +67,12 @@ const sendErrorDev = (err, res) => {
 const sendErrorProd = (err, res) => {
   // Operational, trusted error: send message to client
   if (err.isOperational) {
+    logger.warn('Operational error', {
+      message: err.message,
+      statusCode: err.statusCode,
+      status: err.status,
+    });
+    
     res.status(err.statusCode).json({
       status: err.status,
       message: err.message
@@ -67,7 +81,11 @@ const sendErrorProd = (err, res) => {
   // Programming or unknown error: don't leak error details
   else {
     // Log error for debugging
-    console.error('ERROR 💥', err);
+    logger.error('Programming error', {
+      message: err.message,
+      stack: err.stack,
+      error: err,
+    });
     
     // Send generic message
     res.status(500).json({

@@ -1,4 +1,5 @@
 const { isValidRole } = require("../utils/roles");
+const { AuthenticationError, AuthorizationError } = require("../utils/errors");
 
 /**
  * Role-based access control middleware
@@ -16,37 +17,28 @@ const roleRestriction = (...roles) => {
   // Validate that all provided roles are valid
   const invalidRoles = roles.filter(role => !isValidRole(role));
   if (invalidRoles.length > 0) {
-    throw new Error(`Invalid role(s) provided: ${invalidRoles.join(', ')}`);
+    throw new Error(`Invalid role(s) provided to roleRestriction: ${invalidRoles.join(', ')}`);
   }
 
   return (req, res, next) => {
     try {
       // Check if user is authenticated
       if (!req.userAuth) {
-        return res.status(401).json({
-          status: 'failed',
-          message: 'Authentication required. Please log in to access this resource.'
-        });
+        return next(new AuthenticationError('Authentication required to access this resource'));
       }
 
       // Check if user has required role
       if (!roles.includes(req.userAuth.role)) {
-        return res.status(403).json({
-          status: 'failed',
-          message: 'Access denied. You do not have permission to perform this action.',
-          requiredRoles: roles,
-          userRole: req.userAuth.role
-        });
+        return next(new AuthorizationError(
+          `Access denied. Required role(s): ${roles.join(', ')}`,
+          roles
+        ));
       }
 
       // User has required role, proceed
       next();
     } catch (error) {
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error checking user permissions',
-        error: error.message
-      });
+      return next(error);
     }
   };
 };

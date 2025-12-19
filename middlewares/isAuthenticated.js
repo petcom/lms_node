@@ -2,6 +2,7 @@ const verifyToken = require("../utils/verifyToken");
 const Admin = require("../model/Staff/Admin");
 const Teacher = require("../model/Staff/Teacher");
 const Student = require("../model/Academic/Student");
+const { AuthenticationError, NotFoundError } = require("../utils/errors");
 
 /**
  * Unified authentication middleware
@@ -18,10 +19,7 @@ const isAuthenticated = (options = {}) => {
       const token = headerObj?.authorization?.split(" ")[1];
 
       if (!token) {
-        return res.status(401).json({
-          status: 'failed',
-          message: 'No authorization token provided'
-        });
+        return next(new AuthenticationError('No authorization token provided'));
       }
 
       // Verify token (async, checks blacklist)
@@ -48,10 +46,7 @@ const isAuthenticated = (options = {}) => {
       }
 
       if (!user) {
-        return res.status(401).json({
-          status: 'failed',
-          message: 'User not found or has been deleted'
-        });
+        return next(new NotFoundError('User', verifiedToken.id));
       }
 
       // Save user and token info to request object
@@ -59,10 +54,7 @@ const isAuthenticated = (options = {}) => {
       req.token = token;
       next();
     } catch (error) {
-      return res.status(401).json({
-        status: 'failed',
-        message: error.message || 'Authentication failed'
-      });
+      return next(new AuthenticationError(error.message || 'Authentication failed'));
     }
   };
 };

@@ -52,15 +52,17 @@ module.exports = {
 
   // Test match patterns
   testMatch: [
+    '**/tests/**/*.test.ts',
     '**/tests/**/*.test.js',
+    '**/tests/**/*.spec.ts',
     '**/tests/**/*.spec.js'
   ],
 
   // Setup files
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 
   // Global teardown
-  globalTeardown: '<rootDir>/tests/teardown.js',
+  globalTeardown: '<rootDir>/tests/teardown.ts',
 
   // Test timeout
   testTimeout: 30000,

@@ -3,14 +3,14 @@
  * Provides utilities for connecting to and managing test database
  */
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 /**
  * Connect to test database
  */
-const connectTestDB = async () => {
+export const connectTestDB = async (): Promise<void> => {
   const mongoUri = process.env.MONGO_TEST_URI;
-  
+
   if (!mongoUri) {
     throw new Error('MONGO_TEST_URI not set. Make sure global setup ran.');
   }
@@ -23,7 +23,7 @@ const connectTestDB = async () => {
 /**
  * Disconnect from test database
  */
-const disconnectTestDB = async () => {
+export const disconnectTestDB = async (): Promise<void> => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
@@ -32,9 +32,9 @@ const disconnectTestDB = async () => {
 /**
  * Clear all collections in test database
  */
-const clearTestDB = async () => {
+export const clearTestDB = async (): Promise<void> => {
   const collections = mongoose.connection.collections;
-  
+
   for (const key in collections) {
     await collections[key].deleteMany({});
   }
@@ -43,15 +43,8 @@ const clearTestDB = async () => {
 /**
  * Drop test database
  */
-const dropTestDB = async () => {
+export const dropTestDB = async (): Promise<void> => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.dropDatabase();
   }
-};
-
-module.exports = {
-  connectTestDB,
-  disconnectTestDB,
-  clearTestDB,
-  dropTestDB
 };

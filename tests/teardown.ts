@@ -3,17 +3,17 @@
  * Cleans up test environment after all tests
  */
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-module.exports = async () => {
+export default async (): Promise<void> => {
   // Close mongoose connections
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
 
   // Stop MongoDB Memory Server
-  if (global.__MONGOSERVER__) {
-    await global.__MONGOSERVER__.stop();
+  if ((global as any).__MONGOSERVER__) {
+    await (global as any).__MONGOSERVER__.stop();
     console.log('✓ MongoDB Memory Server stopped');
   }
 };

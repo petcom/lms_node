@@ -57,12 +57,15 @@ export interface IStudent extends Document {
   isSuspended: boolean;
   isWithdrawn: boolean;
   isGraduated: boolean;
+  isPromotedToLevel200: boolean;
+  isPromotedToLevel300: boolean;
+  isPromotedToLevel400: boolean;
   academicYear?: Types.ObjectId;
   program?: Types.ObjectId;
-  classLevel?: Types.ObjectId;
-  currentClassLevel?: Types.ObjectId;
+  classLevels: string[];
+  currentClassLevel?: string;
   prefectName?: string;
-  yearGraduated?: string;
+  yearGraduated?: Date;
   examResults?: Types.ObjectId[];
   createdBy?: Types.ObjectId;
   createdAt: Date;
@@ -157,7 +160,7 @@ export interface IExam extends Document {
   passMark: number;
   totalMark: number;
   academicTerm: Types.ObjectId;
-  duration: number;
+  duration: string;
   examDate: Date;
   examTime: string;
   examType: string;
@@ -174,7 +177,7 @@ export interface IExam extends Document {
 // Exam Result Interface
 export interface IExamResult extends Document {
   _id: Types.ObjectId;
-  studentID: Types.ObjectId;
+  student: Types.ObjectId;
   exam: Types.ObjectId;
   grade: number;
   score: number;

@@ -1,11 +1,11 @@
 const AsyncHandler = require("express-async-handler");
-const TokenBlacklist = require("../model/Auth/TokenBlacklist");
+const TokenBlacklist = require("../../model/Auth/TokenBlacklist");
 const { 
     generateTokenPair, 
     refreshAccessToken, 
     revokeRefreshToken,
     revokeAllUserTokens 
-} = require("../utils/tokenManager");
+} = require("../../utils/tokenManager");
 
 /**
  * @desc    Logout user (blacklist current access token and revoke refresh token)

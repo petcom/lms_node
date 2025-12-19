@@ -16,12 +16,76 @@ const Admin = require("../../model/Staff/Admin");
 const roleRestriction = require("../../middlewares/roleRestriction");
 const teachersRouter = express.Router();
 
+/**
+ * @swagger
+ * /api/v1/teachers/admin/register:
+ *   post:
+ *     summary: Admin registers a new teacher
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       201:
+ *         description: Teacher registered successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
 teachersRouter.post(
   "/admin/register",
   isAuthenticated(),
   roleRestriction("admin"),
   adminRegisterTeacher
 );
+
+/**
+ * @swagger
+ * /api/v1/teachers/login:
+ *   post:
+ *     summary: Teacher login
+ *     tags: [Teachers]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Invalid credentials
+ */
 teachersRouter.post("/login", loginTeacher);
 
 teachersRouter.get(
@@ -37,6 +101,20 @@ teachersRouter.get(
   getAllTeachersAdmin
 );
 
+/**
+ * @swagger
+ * /api/v1/teachers/profile:
+ *   get:
+ *     summary: Get teacher profile
+ *     tags: [Teachers]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Teacher profile retrieved
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
 teachersRouter.get(
   "/profile",
   isAuthenticated(),

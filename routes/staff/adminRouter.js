@@ -114,13 +114,39 @@ adminRouter.post("/register", registerLimiter, validate(authValidation.registerA
  *         description: Too many login attempts
  */
 
-/**
- * Login
- */
 adminRouter.post("/login", authLimiter, validate(authValidation.login), loginAdminCtrl);
 
 /**
- * Get All Admin
+ * @swagger
+ * /api/v1/admins:
+ *   get:
+ *     summary: Get all admins
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           example: -createdAt
+ *     responses:
+ *       200:
+ *         description: List of admins retrieved successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
  */
 adminRouter.get(
   "/",
@@ -131,7 +157,22 @@ adminRouter.get(
 );
 
 /**
- * Single Admin
+ * @swagger
+ * /api/v1/admins/profile:
+ *   get:
+ *     summary: Get admin profile
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 adminRouter.get(
   "/profile",
@@ -141,7 +182,32 @@ adminRouter.get(
 );
 
 /**
- * Update Admin
+ * @swagger
+ * /api/v1/admins:
+ *   put:
+ *     summary: Update admin profile
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */
 adminRouter.put(
   "/",
@@ -151,8 +217,31 @@ adminRouter.put(
   updateAdminCtrl
 );
 
+
 /**
- * Suspend Teacher
+ * @swagger
+ * /api/v1/admins/suspend/teacher/{id}:
+ *   put:
+ *     summary: Suspend a teacher
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Teacher ID
+ *     responses:
+ *       200:
+ *         description: Teacher suspended successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/suspend/teacher/:id", 
   isAuthenticated(),
@@ -162,7 +251,29 @@ adminRouter.put("/suspend/teacher/:id",
 );
 
 /**
- * Unsuspend Teacher
+ * @swagger
+ * /api/v1/admins/unsuspend/teacher/{id}:
+ *   put:
+ *     summary: Unsuspend a teacher
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Teacher ID
+ *     responses:
+ *       200:
+ *         description: Teacher unsuspended successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/unsuspend/teacher/:id", 
   isAuthenticated(),
@@ -172,7 +283,29 @@ adminRouter.put("/unsuspend/teacher/:id",
 );
 
 /**
- * Withdrawl Teacher
+ * @swagger
+ * /api/v1/admins/withdraw/teacher/{id}:
+ *   put:
+ *     summary: Withdraw a teacher
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Teacher ID
+ *     responses:
+ *       200:
+ *         description: Teacher withdrawn successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/withdraw/teacher/:id", 
   isAuthenticated(),
@@ -182,7 +315,29 @@ adminRouter.put("/withdraw/teacher/:id",
 );
 
 /**
- * Unwithdrawl Teacher
+ * @swagger
+ * /api/v1/admins/unwithdraw/teacher/{id}:
+ *   put:
+ *     summary: Unwithdraw a teacher
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Teacher ID
+ *     responses:
+ *       200:
+ *         description: Teacher unwithdrawn successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/unwithdraw/teacher/:id", 
   isAuthenticated(),
@@ -192,7 +347,29 @@ adminRouter.put("/unwithdraw/teacher/:id",
 );
 
 /**
- * Publish Exam Results
+ * @swagger
+ * /api/v1/admins/publish/exam/{id}:
+ *   put:
+ *     summary: Publish exam results
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Exam ID
+ *     responses:
+ *       200:
+ *         description: Exam results published successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/publish/exam/:id", 
   isAuthenticated(),
@@ -202,7 +379,29 @@ adminRouter.put("/publish/exam/:id",
 );
 
 /**
- * Unpublish Exam Results
+ * @swagger
+ * /api/v1/admins/unpublish/exam/{id}:
+ *   put:
+ *     summary: Unpublish exam results
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Exam ID
+ *     responses:
+ *       200:
+ *         description: Exam results unpublished successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put("/unpublish/exam/:id", 
   isAuthenticated(),

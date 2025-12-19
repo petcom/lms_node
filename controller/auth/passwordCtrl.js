@@ -1,11 +1,11 @@
 const AsyncHandler = require("express-async-handler");
 const crypto = require("crypto");
-const Admin = require("../model/Staff/Admin");
-const Teacher = require("../model/Staff/Teacher");
-const Student = require("../model/Academic/Student");
-const { hashPassword, isPassMatched } = require("../utils/helpers");
-const { validatePasswordConfirmation } = require("../utils/passwordValidator");
-const TokenBlacklist = require("../model/Auth/TokenBlacklist");
+const Admin = require("../../model/Staff/Admin");
+const Teacher = require("../../model/Staff/Teacher");
+const Student = require("../../model/Academic/Student");
+const { hashPassword, isPassMatched } = require("../../utils/helpers");
+const { validatePasswordConfirmation } = require("../../utils/passwordValidator");
+const TokenBlacklist = require("../../model/Auth/TokenBlacklist");
 
 // Password reset token storage (in production, use Redis or database)
 const passwordResetTokens = new Map();

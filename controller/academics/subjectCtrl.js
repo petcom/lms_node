@@ -16,7 +16,7 @@ exports.createSubject = AsyncHandler(async (req, res) => {
         throw new Error("Program not found");
     }
     //check if exists
-    const subjectFound = await Subject.findOne({name});
+    const subjectFound = await Subject.findOne({name}).lean();
     if(subjectFound){
         throw new Error("Subject already exists");
     }

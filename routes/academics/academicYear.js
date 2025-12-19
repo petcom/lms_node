@@ -14,6 +14,7 @@ const Admin = require("../../model/Staff/Admin");
 const roleRestriction = require("../../middlewares/roleRestriction");
 const validate = require("../../middlewares/validate");
 const academicValidation = require("../../validators/academicValidation");
+const { cachePrivate, noCache } = require("../../middlewares/caching");
 
 const academicYearRouter = express.Router();
 
@@ -96,6 +97,7 @@ academicYearRouter
   .get(
     isAuthenticated(),
     roleRestriction("admin"),
+    cachePrivate(120),
     advancedResults(AcademicYear),
     getAcademicYears
   );
@@ -182,6 +184,7 @@ academicYearRouter
   .get(
     isAuthenticated(), 
     roleRestriction("admin"), 
+    cachePrivate(120),
     validate(academicValidation.idParam), 
     getAcademicYear
   )

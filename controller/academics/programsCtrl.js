@@ -11,9 +11,9 @@ const Program = require("../../model/Academic/Program");
 exports.createProgram = AsyncHandler(async (req, res) => {
     const { name, description } = req.body;
     // cehck if the program exists
-    const programFound = await Program.findOne({name});
+    const programFound = await Program.findOne({name}).lean();
     if(programFound){
-        throw new Error("Program already exists");
+        throw new Error("Program  already exists");;
     }
     // create
     const programCreated = await Program.create({

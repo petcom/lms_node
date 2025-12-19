@@ -17,7 +17,7 @@ exports.adminRegisterTeacher = expressAsyncHandler(async (req, res) => {
         throw new Error("Admin not found");
     }
     // check if the teacher already exists
-    const teacher = await Teacher.findOne( {email: email} );
+    const teacher = await Teacher.findOne( {email: email} ).lean();
     if (teacher) {
         throw new Error("Teacher already employed");
     }

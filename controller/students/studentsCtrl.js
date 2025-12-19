@@ -19,9 +19,9 @@ exports.adminRegisterStudent = AsyncHandler(async (req, res) => {
       throw new Error("Admin not found");
   }
   // check if the student already exists
-  const student = await Student.findOne({ email: email });
+  const student = await Student.findOne({ email: email }).lean();
   if (student) {
-    throw new Error("Student currently exists");
+    throw new Error("Student already exists");
   }
   //hash password
   const hashedPassword = await hashPassword(password);
@@ -51,7 +51,7 @@ exports.loginStudent = AsyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   //find the teacher user obj
-  const student = await Student.findOne({ email });
+  const student = await Student.findOne({ email }).lean();
   if (!student) {
     return res.json({ message: "Invalid login credentials" });
   }

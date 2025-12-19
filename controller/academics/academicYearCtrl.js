@@ -10,7 +10,7 @@ const Admin        = require("../../model/Staff/Admin");
 exports.createAcademicYear = AsyncHandler(async (req, res) => {
     const { name, fromYear, toYear } = req.body;
     // cehck if the year exists
-    const academicYear = await AcademicYear.findOne({name});
+    const academicYear = await AcademicYear.findOne({name}).lean();
     if(academicYear){
         throw new Error("Academic year already exists");
     }
@@ -52,7 +52,7 @@ exports.getAcademicYears = AsyncHandler(async (req, res) => {
  * @access Private
  */
 exports.getAcademicYear = AsyncHandler(async (req, res) => {
-    const academicYear = await AcademicYear.findById(req.params.id);
+    const academicYear = await AcademicYear.findById(req.params.id).lean();
 
     res.status(201).json({
         status: "success",
@@ -68,7 +68,7 @@ exports.getAcademicYear = AsyncHandler(async (req, res) => {
  */
 exports.updateAcademicYear = AsyncHandler(async (req, res) => {
     const { name, fromYear, toYear } = req.body;
-    const createAcademicYearFound    = await AcademicYear.findOne({name});
+    const createAcademicYearFound    = await AcademicYear.findOne({name}).lean();
 
     if(createAcademicYearFound){
         throw new Error("Academic year already exists");

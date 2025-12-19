@@ -10,7 +10,7 @@ const AcademicTerm = require("../../model/Academic/AcademicTerm");
 exports.createAcademicTerm = AsyncHandler(async (req, res) => {
     const { name, description, duration } = req.body;
     // cehck if the year exists
-    const academicTerm = await AcademicTerm.findOne({name});
+    const academicTerm = await AcademicTerm.findOne({name}).lean();
     if(academicTerm){
         throw new Error("Academic term already exists");
     }

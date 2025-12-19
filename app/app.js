@@ -7,6 +7,7 @@ const swaggerUi = require('swagger-ui-express');
 const corsMiddleware = require('../config/cors');
 const swaggerSpecs = require('../config/swagger');
 const { apiLimiter } = require('../middlewares/rateLimiter');
+const { cachePublic } = require('../middlewares/caching');
 const { globalErrHandler, notFoundErr } = require('../middlewares/globalErrHandler');
 const logger = require('../utils/logger');
 
@@ -31,8 +32,8 @@ const app = express(); // create application instance of express
 /**
  * Health Check Routes (before other middleware for reliability)
  */
-app.get('/health', healthCheck);
-app.get('/ready', readyCheck);
+app.get('/health', cachePublic(60), healthCheck);
+app.get('/ready', cachePublic(60), readyCheck);
 
 /**
  * API Documentation (Swagger)

@@ -85,6 +85,19 @@ const teacherSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for query performance
+teacherSchema.index({ email: 1 }, { unique: true });
+teacherSchema.index({ teacherId: 1 }, { unique: true });
+teacherSchema.index({ subject: 1 });
+teacherSchema.index({ classLevel: 1 });
+teacherSchema.index({ applicationStatus: 1 });
+teacherSchema.index({ isSuspended: 1 });
+teacherSchema.index({ isWithdrawn: 1 });
+teacherSchema.index({ createdAt: -1 });
+// Compound indexes for common queries
+teacherSchema.index({ subject: 1, classLevel: 1 });
+teacherSchema.index({ applicationStatus: 1, createdAt: -1 });
+
 // Model
 const Teacher = mongoose.model("Teacher", teacherSchema);
 

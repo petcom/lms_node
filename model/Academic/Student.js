@@ -117,6 +117,19 @@ const studentSchema = new mongoose.Schema(
     }
 );
 
+// Indexes for query performance
+studentSchema.index({ email: 1 }, { unique: true });
+studentSchema.index({ studentId: 1 }, { unique: true });
+studentSchema.index({ currentClassLevel: 1 });
+studentSchema.index({ academicYear: 1 });
+studentSchema.index({ program: 1 });
+studentSchema.index({ isGraduated: 1 });
+studentSchema.index({ isSuspended: 1 });
+studentSchema.index({ createdAt: -1 });
+// Compound index for common queries
+studentSchema.index({ academicYear: 1, currentClassLevel: 1 });
+studentSchema.index({ program: 1, currentClassLevel: 1 });
+
 // Model
 const Student = mongoose.model( "Student", studentSchema );
 

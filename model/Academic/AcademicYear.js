@@ -44,6 +44,15 @@ const academicYearSchema = new mongoose.Schema(
     }
 );
 
+// Indexes for query performance
+academicYearSchema.index({ name: 1 }, { unique: true });
+academicYearSchema.index({ isCurrent: 1 });
+academicYearSchema.index({ fromYear: 1 });
+academicYearSchema.index({ toYear: 1 });
+academicYearSchema.index({ createdAt: -1 });
+// Compound index for date range queries
+academicYearSchema.index({ fromYear: 1, toYear: 1 });
+
 // model
 const AcademicYear = mongoose.model("AcademicYear", academicYearSchema);
 

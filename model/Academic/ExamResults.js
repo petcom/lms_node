@@ -70,6 +70,22 @@ const  examResultSchema = new Schema(
   },
 );
 
+// Indexes for query performance
+examResultSchema.index({ studentID: 1 });
+examResultSchema.index({ exam: 1 });
+examResultSchema.index({ academicYear: 1 });
+examResultSchema.index({ academicTerm: 1 });
+examResultSchema.index({ classLevel: 1 });
+examResultSchema.index({ status: 1 });
+examResultSchema.index({ isPublished: 1 });
+examResultSchema.index({ createdAt: -1 });
+// Compound indexes for common queries
+examResultSchema.index({ studentID: 1, academicYear: 1 });
+examResultSchema.index({ studentID: 1, exam: 1 }, { unique: true });
+examResultSchema.index({ exam: 1, status: 1 });
+examResultSchema.index({ academicYear: 1, academicTerm: 1, classLevel: 1 });
+examResultSchema.index({ isPublished: 1, createdAt: -1 });
+
 const ExamResult = mongoose.model("ExamResult", examResultSchema);
 
 module.exports = ExamResult;

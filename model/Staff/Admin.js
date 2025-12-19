@@ -53,6 +53,11 @@ const adminSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for query performance
+adminSchema.index({ email: 1 }, { unique: true });
+adminSchema.index({ createdAt: -1 });
+adminSchema.index({ role: 1 });
+
 //model
 const Admin = mongoose.model("Admin", adminSchema);
 

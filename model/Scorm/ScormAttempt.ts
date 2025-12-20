@@ -398,6 +398,13 @@ interface IScormAttemptModel extends Model<IScormAttempt> {
   ): Promise<IScormAttempt>;
 }
 
+// Create compound indexes for common queries
+scormAttemptSchema.index({ student: 1, package: 1 }); // Find student's attempts for a package
+scormAttemptSchema.index({ package: 1, status: 1 }); // Find all attempts by status for analytics
+scormAttemptSchema.index({ student: 1, startedAt: -1 }); // Student's recent attempts
+scormAttemptSchema.index({ 'cmi.completion_status': 1, package: 1 }); // Completion tracking
+scormAttemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique: true }); // Prevent duplicate attempts
+
 const ScormAttempt = mongoose.model<IScormAttempt, IScormAttemptModel>(
   'ScormAttempt',
   scormAttemptSchema

@@ -314,6 +314,12 @@ interface IScormPackageModel extends Model<IScormPackage> {
   updateStats(packageId: string): Promise<void>;
 }
 
+// Create compound indexes for common queries
+scormPackageSchema.index({ status: 1, createdAt: -1 }); // List packages by status and date
+scormPackageSchema.index({ 'assignedTo.students': 1, status: 1 }); // Find packages for student
+scormPackageSchema.index({ subject: 1, status: 1 }); // Filter by subject
+scormPackageSchema.index({ createdBy: 1, status: 1 }); // Teacher's packages
+
 const ScormPackage = mongoose.model<IScormPackage, IScormPackageModel>(
   'ScormPackage',
   scormPackageSchema

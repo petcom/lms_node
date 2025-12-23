@@ -68,6 +68,16 @@ export interface IStudent extends Document {
   yearGraduated?: Date;
   examResults?: Types.ObjectId[];
   createdBy?: Types.ObjectId;
+  // SCORM Progress Tracking
+  scormProgress?: {
+    enrolledPackages: Types.ObjectId[]; // ScormPackage IDs
+    totalAttempts: number;
+    completedPackages: number;
+    averageScore?: number;
+    totalTimeSpent: number; // Total seconds across all packages
+    lastAccessedPackage?: Types.ObjectId;
+    lastAccessedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

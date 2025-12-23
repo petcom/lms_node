@@ -136,6 +136,151 @@ const options: Options = {
             },
           },
         },
+        // SCORM Schemas
+        ScormPackage: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            packageId: {
+              type: 'string',
+              example: 'PKG-ABC123',
+            },
+            title: {
+              type: 'string',
+              example: 'Introduction to JavaScript',
+            },
+            description: {
+              type: 'string',
+              example: 'Learn the fundamentals of JavaScript programming',
+            },
+            version: {
+              type: 'string',
+              enum: ['scorm_1.2', 'scorm_2004'],
+              example: 'scorm_1.2',
+            },
+            fileName: {
+              type: 'string',
+              example: 'javascript-intro.zip',
+            },
+            fileSize: {
+              type: 'number',
+              example: 5242880,
+            },
+            launchUrl: {
+              type: 'string',
+              example: 'index.html',
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'published', 'archived'],
+              example: 'published',
+            },
+            isActive: {
+              type: 'boolean',
+              example: true,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        ScormAttempt: {
+          type: 'object',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            attemptId: {
+              type: 'string',
+              example: 'ATT-XYZ789',
+            },
+            student: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            package: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439012',
+            },
+            attemptNumber: {
+              type: 'number',
+              example: 1,
+            },
+            status: {
+              type: 'string',
+              enum: ['not_started', 'in_progress', 'completed', 'passed', 'failed', 'suspended'],
+              example: 'completed',
+            },
+            startedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            completedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            score: {
+              type: 'number',
+              example: 85,
+            },
+            totalTimeSpent: {
+              type: 'number',
+              example: 3600,
+              description: 'Total time in seconds',
+            },
+          },
+        },
+        ScormReportAnalytics: {
+          type: 'object',
+          properties: {
+            summary: {
+              type: 'object',
+              properties: {
+                totalStudents: {
+                  type: 'number',
+                  example: 50,
+                },
+                completionRate: {
+                  type: 'number',
+                  example: 76.5,
+                },
+                averageScore: {
+                  type: 'number',
+                  example: 82.3,
+                },
+                passRate: {
+                  type: 'number',
+                  example: 88.0,
+                },
+              },
+            },
+            scoreDistribution: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  range: {
+                    type: 'string',
+                    example: '80-90',
+                  },
+                  count: {
+                    type: 'number',
+                    example: 15,
+                  },
+                  percentage: {
+                    type: 'number',
+                    example: 30.0,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       responses: {
         UnauthorizedError: {
@@ -216,12 +361,47 @@ const options: Options = {
         description: 'Academic year management',
       },
       {
+        name: 'SCORM - Packages',
+        description: 'SCORM package management (upload, publish, assign)',
+      },
+      {
+        name: 'SCORM - Content',
+        description: 'SCORM content delivery and download',
+      },
+      {
+        name: 'SCORM - Attempts',
+        description: 'SCORM attempt tracking and management',
+      },
+      {
+        name: 'SCORM - Runtime',
+        description: 'SCORM runtime API (Initialize, GetValue, SetValue, Commit, Terminate)',
+      },
+      {
+        name: 'SCORM - Player',
+        description: 'SCORM content player and launcher',
+      },
+      {
+        name: 'SCORM - Reports',
+        description: 'SCORM tracking, analytics, and reporting',
+      },
+      {
+        name: 'SCORM - Monitoring',
+        description: 'SCORM health checks, metrics, and system monitoring',
+      },
+      {
         name: 'Health',
         description: 'Health check and monitoring',
       },
     ],
   },
-  apis: ['./routes/**/*.js', './controller/**/*.js', './model/**/*.js'],
+  apis: [
+    './routes/**/*.js',
+    './routes/**/*.ts',
+    './controller/**/*.js',
+    './controller/**/*.ts',
+    './model/**/*.js',
+    './model/**/*.ts',
+  ],
 };
 
 const specs = swaggerJsdoc(options);

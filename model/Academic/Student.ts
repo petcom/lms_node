@@ -103,6 +103,40 @@ const studentSchema = new Schema<IStudent>(
     yearGraduated: {
       type: Date,
     },
+    // SCORM Progress Tracking
+    scormProgress: {
+      enrolledPackages: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'ScormPackage',
+        },
+      ],
+      totalAttempts: {
+        type: Number,
+        default: 0,
+      },
+      completedPackages: {
+        type: Number,
+        default: 0,
+      },
+      averageScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+      },
+      totalTimeSpent: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      lastAccessedPackage: {
+        type: Schema.Types.ObjectId,
+        ref: 'ScormPackage',
+      },
+      lastAccessedAt: {
+        type: Date,
+      },
+    },
   },
   {
     timestamps: true,
@@ -121,6 +155,9 @@ studentSchema.index({ createdAt: -1 });
 // Compound index for common queries
 studentSchema.index({ academicYear: 1, currentClassLevel: 1 });
 studentSchema.index({ program: 1, currentClassLevel: 1 });
+// SCORM-specific indexes
+studentSchema.index({ 'scormProgress.enrolledPackages': 1 });
+studentSchema.index({ 'scormProgress.lastAccessedAt': -1 });
 
 // Model
 const Student = mongoose.model<IStudent>('Student', studentSchema);

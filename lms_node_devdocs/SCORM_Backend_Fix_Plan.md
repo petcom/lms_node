@@ -48,3 +48,10 @@
 - Schema/controller/test changes that eliminate `StrictPopulateError` and return author info for packages.
 - Runtime endpoint and player wiring that support commit/suspend/resume with persisted attempt state and telemetry.
 - Validation notes (tests run, manual checks) captured when implemented.
+
+## Next Steps (immediate)
+1) Verify fixes: restart dev server, hit GET /api/v1/scorm/packages and /api/v1/scorm/packages/:id to ensure 200 responses with populated author fields and no strict populate warnings.
+2) Data hygiene: add a small migration/backfill to set `uploadedBy = createdBy` and `uploadedByModel` based on known roles for existing package documents.
+3) Tests: update SCORM integration tests/seeds to include `uploadedBy` + `uploadedByModel`, and add assertions that list/detail endpoints return author projection.
+4) Populate model resolution: consider removing the hard-coded `model: 'Teacher'` in populates once refPath data is backfilled; otherwise enforce a single author model in the contract and document it.
+5) Runtime wiring: proceed with Workstream B—stabilize launch data shape, implement commit/suspend/resume handlers, and hook telemetry to the player; add integration coverage for the runtime endpoints.

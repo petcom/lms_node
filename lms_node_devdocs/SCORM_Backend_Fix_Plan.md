@@ -9,22 +9,22 @@
 - Enable runtime wiring so the player can commit/suspend/resume attempts and report telemetry reliably.
 
 ## Workstream A: Fix packages API 500 (populate)
-1) Confirm current failure: hit GET /api/v1/scorm/packages and GET /api/v1/scorm/packages/:id to see `StrictPopulateError` on `uploadedBy`.
+1) Confirm current failure: hit GET /api/v1/scorm/packages and GET /api/v1/scorm/packages/:id to see `StrictPopulateError` on `uploadedBy`. **Status: pending re-check after fix**
 2) Source of mismatch:
-   - Controller populates `uploadedBy` in list/detail ([controller/scorm/scormPackageCtrl.ts#L162-L210](controller/scorm/scormPackageCtrl.ts#L162-L210), [controller/scorm/scormPackageCtrl.ts#L212-L250](controller/scorm/scormPackageCtrl.ts#L212-L250)).
-   - Upload handler writes `uploadedBy` ([controller/scorm/scormPackageCtrl.ts#L55-L110](controller/scorm/scormPackageCtrl.ts#L55-L110)).
-   - Schema has `createdBy` but no `uploadedBy` ([model/Scorm/ScormPackage.ts#L125-L155](model/Scorm/ScormPackage.ts#L125-L155)), hence strict populate error.
+   - Controller populates `uploadedBy` in list/detail ([controller/scorm/scormPackageCtrl.ts#L162-L210](controller/scorm/scormPackageCtrl.ts#L162-L210), [controller/scorm/scormPackageCtrl.ts#L212-L250](controller/scorm/scormPackageCtrl.ts#L212-L250)). **Status: analyzed**
+   - Upload handler writes `uploadedBy` ([controller/scorm/scormPackageCtrl.ts#L55-L110](controller/scorm/scormPackageCtrl.ts#L55-L110)). **Status: aligned**
+   - Schema has `createdBy` but no `uploadedBy` ([model/Scorm/ScormPackage.ts#L125-L155](model/Scorm/ScormPackage.ts#L125-L155)), hence strict populate error. **Status: fixed (schema updated)**
 3) Decision options (pick one and apply consistently):
-   - Preferred: add `uploadedBy` to schema as `ObjectId` ref to the actor model (likely `Staff` or `User`), mirror `createdBy` indexing; keep `createdBy` if it has meaning (assignment owner) or deprecate.
-   - Alternative: drop `uploadedBy` usage and reuse `createdBy` in controller/UI/tests.
+   - Preferred: add `uploadedBy` to schema as `ObjectId` ref to the actor model (likely `Staff` or `User`), mirror `createdBy` indexing; keep `createdBy` if it has meaning (assignment owner) or deprecate. **Status: implemented with refPath + model hint**
+   - Alternative: drop `uploadedBy` usage and reuse `createdBy` in controller/UI/tests. **Status: not chosen**
 4) Implementation steps:
-   - Update schema, TypeScript types, and indexes; ensure `strictPopulate` succeeds.
-   - Align controller populate fields to chosen path; add `select` projection (name/email/role) to avoid heavy loads.
-   - Backfill existing documents (set `uploadedBy = createdBy` where missing) via migration script or one-off update.
-   - Update tests that seed packages with `uploadedBy` ([tests/integration/scorm/phase2-api.test.ts](tests/integration/scorm/phase2-api.test.ts)).
+   - Update schema, TypeScript types, and indexes; ensure `strictPopulate` succeeds. **Status: done**
+   - Align controller populate fields to chosen path; add `select` projection (name/email/role) to avoid heavy loads. **Status: done (with model hint fallback)**
+   - Backfill existing documents (set `uploadedBy = createdBy` where missing) via migration script or one-off update. **Status: pending**
+   - Update tests that seed packages with `uploadedBy` ([tests/integration/scorm/phase2-api.test.ts](tests/integration/scorm/phase2-api.test.ts)). **Status: pending**
 5) Validation:
-   - Run targeted integration tests for SCORM packages and hit the endpoints to confirm 200 + populated author.
-   - Watch logs for removal of `StrictPopulateError` and duplicate index warnings (clean up double indexes if found while touching the schema).
+   - Run targeted integration tests for SCORM packages and hit the endpoints to confirm 200 + populated author. **Status: pending**
+   - Watch logs for removal of `StrictPopulateError` and duplicate index warnings (clean up double indexes if found while touching the schema). **Status: pending**
 
 ## Workstream B: Wire SCORM runtime/player
 1) Baseline audit:

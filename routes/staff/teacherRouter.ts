@@ -17,6 +17,7 @@ import {
   listTeacherClasses,
   teacherDashboard,
   listTeacherAttempts,
+  listTeacherAssignments,
 } from "../../controller/teachers/teacherPackageCtrl";
 import advancedResults from "../../middlewares/advancedResults";
 import Teacher from "../../model/Staff/Teacher";
@@ -73,6 +74,13 @@ teachersRouter.get(
   isAuthenticated(),
   roleRestriction("teacher", "admin"),
   listTeacherAttempts
+);
+
+teachersRouter.get(
+  "/assignments",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  listTeacherAssignments
 );
 
 /**

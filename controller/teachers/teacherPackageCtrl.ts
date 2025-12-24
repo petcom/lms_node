@@ -294,6 +294,69 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
   });
 });
 
+export const listTeacherAssignments = asyncHandler(async (req: Request, res: Response) => {
+  const teacherId = req.userAuth!._id.toString();
+  const role = req.userAuth!.role;
+
+  const classFilter: any = {};
+  if (role === 'teacher') {
+    classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
+  }
+
+  const classes = await ClassLevel.find(classFilter).select('name');
+  const allowedClassIds = classes.map((c) => c._id.toString());
+  const classNameMap = classes.reduce<Record<string, string>>((acc, c) => {
+    acc[c._id.toString()] = c.name;
+    return acc;
+  }, {});
+
+  const filterClassId = req.query.classId as string | undefined;
+  if (filterClassId && !allowedClassIds.includes(filterClassId) && role === 'teacher') {
+    throw new NotFoundError('Class not found');
+  }
+
+  const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
+
+  const pkgFilter: any = { 'assignedTo.classLevels': { $in: classIdsToUse } };
+  if (role === 'teacher') {
+    pkgFilter.uploadedBy = new mongoose.Types.ObjectId(teacherId);
+  }
+
+  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
+  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const skip = (page - 1) * limit;
+
+  const [packages, total] = await Promise.all([
+    ScormPackage.find(pkgFilter).sort({ updatedAt: -1 }).skip(skip).limit(limit),
+    ScormPackage.countDocuments(pkgFilter),
+  ]);
+
+  const items = packages.map((pkg) => {
+    const clsIds = (pkg.assignedTo?.classLevels || []).map(String).filter((id) =>
+      classIdsToUse.includes(id)
+    );
+    return {
+      id: pkg._id.toString(),
+      packageTitle: pkg.title,
+      classIds: clsIds,
+      classNames: clsIds.map((id) => classNameMap[id]).filter(Boolean),
+      dueDate: (pkg as any).dueDate,
+      status: pkg.status,
+      isPublished: (pkg as any).isPublished,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      items,
+      total,
+      page,
+      pageSize: limit,
+    },
+  });
+});
+
 export const listTeacherPackages = asyncHandler(async (req: Request, res: Response) => {
   const { search, status } = req.query as { search?: string; status?: string };
   const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;

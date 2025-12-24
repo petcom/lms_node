@@ -245,6 +245,85 @@ describe('SCORM Phase 2: Package Management API', () => {
     });
   });
 
+  describe('Publish / Unpublish', () => {
+    let publishPackageId: string;
+    let unpublishPackageId: string;
+
+    beforeEach(async () => {
+      const draftPkg = await ScormPackage.create({
+        ...makePackageData('test-pkg-003', 'Publishable Package', teacherId),
+        isPublished: false,
+        status: 'draft',
+      });
+      publishPackageId = draftPkg._id.toString();
+
+      const publishedPkg = await ScormPackage.create({
+        ...makePackageData('test-pkg-004', 'Unpublishable Package', teacherId),
+        isPublished: true,
+        status: 'published',
+      });
+      unpublishPackageId = publishedPkg._id.toString();
+    });
+
+    it('should publish a draft package (teacher/admin)', async () => {
+      const res = await request(app)
+        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isPublished).toBe(true);
+      expect(res.body.data.status).toBe('published');
+    });
+
+    it('should be idempotent when publishing an already published package', async () => {
+      const res = await request(app)
+        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      // publish once
+      expect(res.status).toBe(200);
+
+      // publish again
+      const second = await request(app)
+        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(second.status).toBe(200);
+      expect(second.body.data.isPublished).toBe(true);
+      expect(second.body.data.status).toBe('published');
+    });
+
+    it('should unpublish a published package (teacher/admin)', async () => {
+      const res = await request(app)
+        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isPublished).toBe(false);
+      expect(res.body.data.status).toBe('draft');
+    });
+
+    it('should be idempotent when unpublishing an already draft package', async () => {
+      const res = await request(app)
+        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      // unpublish once
+      expect(res.status).toBe(200);
+
+      // unpublish again
+      const second = await request(app)
+        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(second.status).toBe(200);
+      expect(second.body.data.isPublished).toBe(false);
+      expect(second.body.data.status).toBe('draft');
+    });
+  });
+
   describe('4. Content Delivery', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(

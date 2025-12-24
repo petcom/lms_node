@@ -9,12 +9,47 @@ import {
   teacherUpdateProfile,
   adminUpdateTeacher,
 } from "../../controller/staff/teachersCtrl";
+import {
+  publishTeacherPackage,
+  unpublishTeacherPackage,
+  listTeacherPackages,
+  assignTeacherPackage,
+} from "../../controller/teachers/teacherPackageCtrl";
 import advancedResults from "../../middlewares/advancedResults";
 import Teacher from "../../model/Staff/Teacher";
 import isAuthenticated from "../../middlewares/isAuthenticated";
 import roleRestriction from "../../middlewares/roleRestriction";
 
 const teachersRouter: Router = express.Router();
+
+// Teacher SCORM package controls (phase 1)
+teachersRouter.post(
+  "/packages/:id/publish",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  publishTeacherPackage
+);
+
+teachersRouter.post(
+  "/packages/:id/unpublish",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  unpublishTeacherPackage
+);
+
+teachersRouter.get(
+  "/packages",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  listTeacherPackages
+);
+
+teachersRouter.post(
+  "/assignments/assign",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  assignTeacherPackage
+);
 
 /**
  * @swagger

@@ -170,6 +170,13 @@ export interface IScormPackage {
 
   // Status
   status: PackageStatus;
+  isPublished: boolean;
+  publishedAt?: Date;
+  publishedBy?: Types.ObjectId;
+  publishedByModel?: 'Admin' | 'Teacher';
+  unpublishedAt?: Date;
+  unpublishedBy?: Types.ObjectId;
+  unpublishedByModel?: 'Admin' | 'Teacher';
   isActive: boolean;
 
   // Tracking Settings

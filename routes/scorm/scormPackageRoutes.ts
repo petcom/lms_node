@@ -11,6 +11,8 @@ import {
   assignPackage,
   unassignPackage,
   getMyAssignments,
+  publishPackage,
+  unpublishPackage,
 } from '../../controller/scorm/scormPackageCtrl';
 
 const scormPackageRouter = express.Router();
@@ -63,5 +65,9 @@ scormPackageRouter.post(
   isTeacherOrAdmin,
   unassignPackage
 );
+
+// Publish controls (Teacher/Admin)
+scormPackageRouter.post('/:id/publish', isAuthenticated(), isTeacherOrAdmin, publishPackage);
+scormPackageRouter.post('/:id/unpublish', isAuthenticated(), isTeacherOrAdmin, unpublishPackage);
 
 export default scormPackageRouter;

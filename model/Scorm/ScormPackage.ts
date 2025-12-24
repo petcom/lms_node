@@ -173,6 +173,36 @@ const scormPackageSchema = new Schema<IScormPackage>(
       default: 'draft',
       index: true,
     },
+    isPublished: {
+      type: Boolean,
+      required: true,
+      default: false,
+      index: true,
+    },
+    publishedAt: {
+      type: Date,
+    },
+    publishedBy: {
+      type: Schema.Types.ObjectId,
+      refPath: 'publishedByModel',
+    },
+    publishedByModel: {
+      type: String,
+      enum: ['Admin', 'Teacher'],
+      default: 'Teacher',
+    },
+    unpublishedAt: {
+      type: Date,
+    },
+    unpublishedBy: {
+      type: Schema.Types.ObjectId,
+      refPath: 'unpublishedByModel',
+    },
+    unpublishedByModel: {
+      type: String,
+      enum: ['Admin', 'Teacher'],
+      default: 'Teacher',
+    },
     isActive: {
       type: Boolean,
       required: true,
@@ -246,6 +276,7 @@ scormPackageSchema.index({ 'assignedTo.classLevels': 1 });
 scormPackageSchema.index({ 'assignedTo.programs': 1 });
 scormPackageSchema.index({ subject: 1, program: 1 });
 scormPackageSchema.index({ status: 1, isActive: 1 });
+scormPackageSchema.index({ isPublished: 1, status: 1 });
 
 // Virtual for completion rate
 scormPackageSchema.virtual('completionRate').get(function (this: IScormPackage) {

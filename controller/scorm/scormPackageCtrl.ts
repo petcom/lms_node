@@ -400,6 +400,78 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
 });
 
 /**
+ * @desc    Publish SCORM package
+ * @route   POST /api/scorm/packages/:id/publish
+ * @access  Private (Teacher/Admin)
+ */
+export const publishPackage = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userAuth!._id?.toString();
+  const role = req.userAuth!.role;
+
+  const scormPackage = await ScormPackage.findById(req.params.id);
+
+  if (!scormPackage) {
+    throw new NotFoundError('SCORM package not found');
+  }
+
+  // Visibility/ownership check for teachers
+  if (role === 'teacher' && scormPackage.uploadedBy?.toString() !== userId) {
+    throw new NotFoundError('SCORM package not found');
+  }
+
+  // Idempotent: already published
+  if (scormPackage.isPublished && scormPackage.status === 'published') {
+    return res.status(200).json({ success: true, data: scormPackage });
+  }
+
+  scormPackage.isPublished = true;
+  (scormPackage as any).status = 'published';
+  (scormPackage as any).publishedAt = new Date();
+  (scormPackage as any).publishedBy = req.userAuth!._id;
+  (scormPackage as any).publishedByModel = role === 'admin' ? 'Admin' : 'Teacher';
+
+  await scormPackage.save();
+
+  res.status(200).json({ success: true, data: scormPackage });
+});
+
+/**
+ * @desc    Unpublish SCORM package
+ * @route   POST /api/scorm/packages/:id/unpublish
+ * @access  Private (Teacher/Admin)
+ */
+export const unpublishPackage = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userAuth!._id?.toString();
+  const role = req.userAuth!.role;
+
+  const scormPackage = await ScormPackage.findById(req.params.id);
+
+  if (!scormPackage) {
+    throw new NotFoundError('SCORM package not found');
+  }
+
+  // Visibility/ownership check for teachers
+  if (role === 'teacher' && scormPackage.uploadedBy?.toString() !== userId) {
+    throw new NotFoundError('SCORM package not found');
+  }
+
+  // Idempotent: already unpublished/draft
+  if (!scormPackage.isPublished && scormPackage.status === 'draft') {
+    return res.status(200).json({ success: true, data: scormPackage });
+  }
+
+  scormPackage.isPublished = false;
+  (scormPackage as any).status = 'draft';
+  (scormPackage as any).unpublishedAt = new Date();
+  (scormPackage as any).unpublishedBy = req.userAuth!._id;
+  (scormPackage as any).unpublishedByModel = role === 'admin' ? 'Admin' : 'Teacher';
+
+  await scormPackage.save();
+
+  res.status(200).json({ success: true, data: scormPackage });
+});
+
+/**
  * @desc    Get packages assigned to current student
  * @route   GET /api/scorm/packages/my-assignments
  * @access  Private (Student)

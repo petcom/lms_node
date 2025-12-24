@@ -14,6 +14,9 @@ import {
   unpublishTeacherPackage,
   listTeacherPackages,
   assignTeacherPackage,
+  listTeacherClasses,
+  teacherDashboard,
+  listTeacherAttempts,
 } from "../../controller/teachers/teacherPackageCtrl";
 import advancedResults from "../../middlewares/advancedResults";
 import Teacher from "../../model/Staff/Teacher";
@@ -49,6 +52,27 @@ teachersRouter.post(
   isAuthenticated(),
   roleRestriction("teacher", "admin"),
   assignTeacherPackage
+);
+
+teachersRouter.get(
+  "/classes",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  listTeacherClasses
+);
+
+teachersRouter.get(
+  "/dashboard",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  teacherDashboard
+);
+
+teachersRouter.get(
+  "/attempts",
+  isAuthenticated(),
+  roleRestriction("teacher", "admin"),
+  listTeacherAttempts
 );
 
 /**

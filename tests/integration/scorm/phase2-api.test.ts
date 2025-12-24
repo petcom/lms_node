@@ -16,6 +16,28 @@ import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
 
+const makePackageData = (pkgId: string, title: string, adminId: string) => ({
+  packageId: pkgId,
+  title,
+  description: `${title} description`,
+  version: 'scorm_1.2',
+  fileName: `${pkgId}.zip`,
+  fileSize: 1234,
+  filePath: `${pkgId}.zip`,
+  entryPoint: 'index.html',
+  launchUrl: 'index.html',
+  manifestData: {
+    identifier: pkgId,
+    version: 'scorm_1.2',
+    organizations: [],
+    resources: [],
+  },
+  createdBy: new mongoose.Types.ObjectId(adminId),
+  uploadedBy: new mongoose.Types.ObjectId(adminId),
+  uploadedByModel: 'Admin' as const,
+  isPublished: true,
+});
+
 describe('SCORM Phase 2: Package Management API', () => {
   let adminToken: string;
   let teacherToken: string;
@@ -99,20 +121,9 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('2. Package CRUD Operations', () => {
     beforeEach(async () => {
       // Create a test package directly in database
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-001',
-        title: 'Test SCORM Package',
-        description: 'A test package for integration testing',
-        version: 'scorm_1.2',
-        fileName: 'test-package.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: {
-          identifier: 'test-001',
-          schemaVersion: '1.2',
-        },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-001', 'Test SCORM Package', adminId)
+      );
       packageId = pkg._id.toString();
     });
 
@@ -167,16 +178,9 @@ describe('SCORM Phase 2: Package Management API', () => {
 
   describe('3. Package Assignments', () => {
     beforeEach(async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-002',
-        title: 'Assignment Test Package',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: { identifier: 'test-002', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-002', 'Assignment Test Package', adminId)
+      );
       packageId = pkg._id.toString();
     });
 
@@ -228,17 +232,9 @@ describe('SCORM Phase 2: Package Management API', () => {
 
   describe('4. Content Delivery', () => {
     beforeEach(async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-003',
-        title: 'Content Delivery Test',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        launchUrl: 'index.html',
-        metadata: { identifier: 'test-003', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-003', 'Content Delivery Test', adminId)
+      );
       packageId = pkg.packageId;
     });
 
@@ -263,16 +259,9 @@ describe('SCORM Phase 2: Package Management API', () => {
 
   describe('5. Attempt Tracking', () => {
     beforeEach(async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-004',
-        title: 'Attempt Tracking Test',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: { identifier: 'test-004', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-004', 'Attempt Tracking Test', adminId)
+      );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-001',
@@ -323,16 +312,9 @@ describe('SCORM Phase 2: Package Management API', () => {
 
   describe('6. CMI Data Management', () => {
     beforeEach(async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-005',
-        title: 'CMI Data Test',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: { identifier: 'test-005', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-005', 'CMI Data Test', adminId)
+      );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-002',
@@ -399,16 +381,9 @@ describe('SCORM Phase 2: Package Management API', () => {
 
   describe('7. Authorization & Security', () => {
     beforeEach(async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-006',
-        title: 'Security Test',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: { identifier: 'test-006', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-006', 'Security Test', adminId)
+      );
       packageId = pkg._id.toString();
     });
 
@@ -457,16 +432,9 @@ describe('SCORM Phase 2: Package Management API', () => {
     });
 
     it('should validate CMI element paths', async () => {
-      const pkg = await ScormPackage.create({
-        packageId: 'test-pkg-007',
-        title: 'Validation Test',
-        version: 'scorm_1.2',
-        fileName: 'test.zip',
-        uploadedBy: new mongoose.Types.ObjectId(adminId),
-        uploadedByModel: 'Admin',
-        isPublished: true,
-        metadata: { identifier: 'test-007', schemaVersion: '1.2' },
-      });
+      const pkg = await ScormPackage.create(
+        makePackageData('test-pkg-007', 'Validation Test', adminId)
+      );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-003',

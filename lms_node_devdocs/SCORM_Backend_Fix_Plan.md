@@ -55,3 +55,6 @@
 3) Tests: update SCORM integration tests/seeds to include `uploadedBy` + `uploadedByModel`, and add assertions that list/detail endpoints return author projection.
 4) Populate model resolution: consider removing the hard-coded `model: 'Teacher'` in populates once refPath data is backfilled; otherwise enforce a single author model in the contract and document it.
 5) Runtime wiring: proceed with Workstream B—stabilize launch data shape, implement commit/suspend/resume handlers, and hook telemetry to the player; add integration coverage for the runtime endpoints.
+6) Test harness fixes: ensure `JWT_SECRET` is set in test setup and skip morgan in `NODE_ENV=test` to avoid `stream.write` errors during supertest runs.
+7) SCORM test fixtures: provide full required package fields (launchUrl, entryPoint, manifestData, filePath, fileSize, createdBy) in integration seeds to avoid validation failures.
+8) Index hygiene: remove duplicate index definitions for `expiresAt` (token models) and SCORM attempt indexes (`student/package/attemptNumber`, `package/status`) to silence warnings.

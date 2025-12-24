@@ -249,11 +249,6 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
   }
 );
 
-// Compound indexes
-scormAttemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique: true });
-scormAttemptSchema.index({ student: 1, status: 1 });
-scormAttemptSchema.index({ package: 1, status: 1 });
-scormAttemptSchema.index({ startedAt: -1 });
 
 // Instance method to set CMI value
 scormAttemptSchema.methods.setCMIValue = function (element: string, value: any) {

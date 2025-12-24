@@ -63,8 +63,10 @@ module.exports = {
     '**/tests/**/*.spec.js'
   ],
 
-  // Setup files
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+
+  // Global setup/teardown
+  globalSetup: '<rootDir>/tests/setup.ts',
+  setupFilesAfterEnv: [],
 
   // Global teardown
   globalTeardown: '<rootDir>/tests/teardown.ts',

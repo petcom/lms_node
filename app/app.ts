@@ -78,7 +78,8 @@ app.use(
 // HTTP request logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev')); // Colorful dev format in console
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
+  // In test mode skip morgan to avoid stream issues with supertest
   app.use(morgan('combined', { stream: logger.stream as any })); // Standard Apache format to logger
 }
 

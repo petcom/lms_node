@@ -33,7 +33,6 @@ const tokenBlacklistSchema = new Schema<ITokenBlacklist, ITokenBlacklistModel>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
   },
   {

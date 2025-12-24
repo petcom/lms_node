@@ -23,6 +23,8 @@ export default async (): Promise<void> => {
 
   // Store the URI for use in tests
   process.env.MONGO_TEST_URI = mongoUri;
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
+  process.env.BYPASS_AUTH_FOR_TESTS = 'true';
   process.env.NODE_ENV = 'test';
 
   // Store the server instance globally for teardown

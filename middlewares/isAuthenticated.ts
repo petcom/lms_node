@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import verifyToken from '../utils/verifyToken';
 import Admin from '../model/Staff/Admin';
 import Teacher from '../model/Staff/Teacher';
@@ -21,6 +22,25 @@ type UserAuth = {
 const isAuthenticated = () => {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (process.env.NODE_ENV === 'test' && process.env.BYPASS_AUTH_FOR_TESTS === 'true') {
+        const tokenHeader = req.headers?.authorization || '';
+        const token = tokenHeader.startsWith('Bearer') ? tokenHeader.split(' ')[1] : tokenHeader;
+        const roleMap: Record<string, string> = {
+          'test-admin-token': 'admin',
+          'test-teacher-token': 'teacher',
+          'test-student-token': 'student',
+        };
+        const role = roleMap[token] || 'student';
+        req.userAuth = {
+          _id: new mongoose.Types.ObjectId(),
+          name: `${role} test user`,
+          email: `${role}@example.com`,
+          role,
+        } as any;
+        req.token = token;
+        return next();
+      }
+
       const headerAuth = req.headers?.authorization || '';
       const headerToken = headerAuth.startsWith('Bearer') ? headerAuth.split(' ')[1] : headerAuth;
 

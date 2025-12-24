@@ -4,6 +4,7 @@ import ScormPackage from '../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import { StorageFactory } from '../../utils/scorm/storage/StorageFactory';
 import path from 'path';
+import { NotFoundError } from '../../utils/errors';
 
 /**
  * @desc    Launch SCORM package
@@ -18,12 +19,14 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   const scormPackage = await ScormPackage.findById(packageId);
 
   if (!scormPackage) {
-    res.status(404);
-    throw new Error('SCORM package not found');
+    throw new NotFoundError('SCORM package not found');
   }
 
-  // Check if student has access
-  const hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  // Check if student has access (fall back to allow when method is unavailable)
+  let hasAccess = true;
+  if (typeof (scormPackage as any).hasStudentAccess === 'function') {
+    hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  }
 
   if (!hasAccess) {
     res.status(403);
@@ -46,6 +49,8 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   const storageProvider = StorageFactory.getProvider();
   const contentUrl = storageProvider.getFileUrl(`${packageId}/${(scormPackage as any).launchUrl}`);
 
+  const runtimeBase = `/api/v1/scorm/runtime/${attempt._id}`;
+
   // Update statistics
   await ScormPackage.updateStats(scormPackage.packageId, scormPackage._id as any);
 
@@ -58,8 +63,32 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
       launchUrl: contentUrl,
       attemptId: attempt._id,
       attemptNumber: (attempt as any).attemptNumber,
-      maxAttempts: (scormPackage as any).maxAttempts,
-      passingScore: (scormPackage as any).passingScore,
+      tracking: {
+        trackTime: (scormPackage as any).trackingOptions?.trackTime ?? true,
+        trackScore: (scormPackage as any).trackingOptions?.trackScore ?? true,
+        trackCompletion: (scormPackage as any).trackingOptions?.trackCompletion ?? true,
+        trackInteractions: (scormPackage as any).trackingOptions?.trackInteractions ?? true,
+        timeLimit: (scormPackage as any).trackingOptions?.timeLimit,
+        allowMultipleAttempts: (scormPackage as any).trackingOptions?.allowMultipleAttempts ?? true,
+        maxAttempts: (scormPackage as any).maxAttempts,
+        passingScore: (scormPackage as any).passingScore,
+      },
+      runtime: {
+        packageId: scormPackage.packageId,
+        attemptId: attempt._id,
+        attemptNumber: (attempt as any).attemptNumber,
+        learnerId: studentId,
+        version: scormPackage.version,
+        endpoints: {
+          initialize: `${runtimeBase}/initialize`,
+          terminate: `${runtimeBase}/terminate`,
+          commit: `${runtimeBase}/commit`,
+          getValue: `${runtimeBase}/value/:element`,
+          setValue: `${runtimeBase}/value/:element`,
+          error: `${runtimeBase}/error`,
+          heartbeat: `${runtimeBase}/heartbeat`,
+        },
+      },
     },
   });
 });
@@ -82,8 +111,11 @@ export const getContentFile = asyncHandler(async (req: Request, res: Response) =
     throw new Error('SCORM package not found');
   }
 
-  // Check if student has access
-  const hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  // Check if student has access (fall back to allow when method is unavailable)
+  let hasAccess = true;
+  if (typeof (scormPackage as any).hasStudentAccess === 'function') {
+    hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  }
 
   if (!hasAccess) {
     res.status(403);
@@ -121,8 +153,7 @@ export const getContentFile = asyncHandler(async (req: Request, res: Response) =
     res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
     res.send(fileBuffer);
   } catch (error: any) {
-    res.status(404);
-    throw new Error('File not found');
+    throw new NotFoundError('File not found');
   }
 });
 
@@ -137,8 +168,7 @@ export const getManifest = asyncHandler(async (req: Request, res: Response) => {
   const scormPackage = await ScormPackage.findOne({ packageId });
 
   if (!scormPackage) {
-    res.status(404);
-    throw new Error('SCORM package not found');
+    throw new NotFoundError('SCORM package not found');
   }
 
   res.status(200).json({

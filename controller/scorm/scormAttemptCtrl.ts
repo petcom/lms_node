@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
+import { NotFoundError } from '../../utils/errors';
 
 /**
  * @desc    Get student's attempts for a package
@@ -13,11 +14,12 @@ export const getAttemptsByPackage = asyncHandler(async (req: Request, res: Respo
   const studentId = req.userAuth!._id;
 
   // Find package
-  const scormPackage = await ScormPackage.findOne({ packageId });
+  const scormPackage = await ScormPackage.findOne({
+    $or: [{ packageId }, { _id: packageId }],
+  });
 
   if (!scormPackage) {
-    res.status(404);
-    throw new Error('SCORM package not found');
+    throw new NotFoundError('SCORM package not found');
   }
 
   // Get all attempts
@@ -43,20 +45,21 @@ export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
 
   const attempt = await ScormAttempt.findById(attemptId)
-    .populate('package', 'title version packageId')
-    .populate('student', 'name email');
+    .populate('package', 'title version packageId');
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    throw new NotFoundError('Attempt not found');
   }
 
   // Check authorization
   const userId = req.userAuth!._id;
   const userRole = req.userAuth!.role;
 
+  const studentRef = (attempt.student as any)?._id || attempt.student;
+
   if (
-    attempt.student._id.toString() !== userId.toString() &&
+    studentRef &&
+    studentRef.toString() !== userId.toString() &&
     userRole !== 'teacher' &&
     userRole !== 'admin'
   ) {
@@ -87,8 +90,7 @@ export const updateCMI = asyncHandler(async (req: Request, res: Response) => {
   const attempt = await ScormAttempt.findById(attemptId);
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    throw new NotFoundError('Attempt not found');
   }
 
   // Verify student owns this attempt
@@ -101,10 +103,12 @@ export const updateCMI = asyncHandler(async (req: Request, res: Response) => {
   (attempt as any).setCMIValue(element, value);
 
   // Log the interaction
-  (attempt as any).sessionLog.push({
+  (attempt as any).interactionLog = (attempt as any).interactionLog || [];
+  (attempt as any).interactionLog.push({
     timestamp: new Date(),
-    event: 'cmi_update',
-    data: { element, value },
+    action: 'SetValue',
+    element,
+    value,
   });
 
   await attempt.save();
@@ -196,10 +200,12 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
   (attempt as any).completionPercentage = (attempt as any).calculateCompletion();
 
   // Log completion
-  (attempt as any).sessionLog.push({
+  (attempt as any).interactionLog = (attempt as any).interactionLog || [];
+  (attempt as any).interactionLog.push({
     timestamp: new Date(),
-    event: 'attempt_completed',
-    data: {
+    action: 'Terminate',
+    element: 'attempt_completed',
+    value: {
       score: (attempt as any).score,
       status: (attempt as any).completionStatus,
       duration: (attempt as any).totalTime,

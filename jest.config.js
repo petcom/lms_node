@@ -66,13 +66,10 @@ module.exports = {
 
   // Global setup/teardown
   globalSetup: '<rootDir>/tests/setup.ts',
-  setupFilesAfterEnv: [],
-
-  // Global teardown
   globalTeardown: '<rootDir>/tests/teardown.ts',
 
   // Test timeout
-  testTimeout: 30000,
+  testTimeout: 10000,
 
   // Verbose output
   verbose: true,

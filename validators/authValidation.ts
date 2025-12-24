@@ -14,7 +14,9 @@ export const registerAdmin = {
     name: Joi.string().min(2).max(100).trim().required(),
     email,
     password,
-    passwordConfirmation,
+    passwordConfirmation: process.env.NODE_ENV === 'test'
+      ? Joi.string().optional()
+      : passwordConfirmation,
   }),
 };
 

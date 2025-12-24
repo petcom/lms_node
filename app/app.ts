@@ -111,8 +111,10 @@ app.use(corsMiddleware);
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
 
-// Apply rate limiting to all API routes
-app.use('/api/', apiLimiter);
+// Apply rate limiting to all API routes (skip in tests)
+if (process.env.NODE_ENV !== 'test') {
+  app.use('/api/', apiLimiter);
+}
 
 /**
  * Body Parser Middleware
@@ -167,3 +169,4 @@ app.use(notFoundErr);
 app.use(globalErrHandler);
 
 export default app;
+(module as any).exports = app;

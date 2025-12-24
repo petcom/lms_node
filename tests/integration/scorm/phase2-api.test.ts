@@ -15,8 +15,9 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
+import Teacher from '../../../model/Staff/Teacher';
 
-const makePackageData = (pkgId: string, title: string, adminId: string) => ({
+const makePackageData = (pkgId: string, title: string, uploaderId: string) => ({
   packageId: pkgId,
   title,
   description: `${title} description`,
@@ -32,9 +33,9 @@ const makePackageData = (pkgId: string, title: string, adminId: string) => ({
     organizations: [],
     resources: [],
   },
-  createdBy: new mongoose.Types.ObjectId(adminId),
-  uploadedBy: new mongoose.Types.ObjectId(adminId),
-  uploadedByModel: 'Admin' as const,
+  createdBy: new mongoose.Types.ObjectId(uploaderId),
+  uploadedBy: new mongoose.Types.ObjectId(uploaderId),
+  uploadedByModel: 'Teacher' as const,
   isPublished: true,
 });
 
@@ -42,22 +43,34 @@ describe('SCORM Phase 2: Package Management API', () => {
   let adminToken: string;
   let teacherToken: string;
   let studentToken: string;
-  let adminId: string;
-  let studentId: string;
+  const adminId = '0000000000000000000000a1';
+  const teacherId = '0000000000000000000000b1';
+  const studentId = '0000000000000000000000c1';
   let packageId: string;
   let attemptId: string;
 
   beforeAll(async () => {
-    // Ensure database connection
+    // Ensure database connection (prefer in-memory URI from global setup)
     if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/lms-test');
+      const uri = process.env.MONGO_TEST_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/lms-test';
+      await mongoose.connect(uri);
     }
+    // Seed a teacher user so uploadedBy populate returns data
+    await Teacher.deleteMany({ email: 'teacher@example.com' });
+    const teacher = await Teacher.create({
+      _id: new mongoose.Types.ObjectId(teacherId),
+      name: 'Test Teacher',
+      email: 'teacher@example.com',
+      password: 'password123',
+      role: 'teacher',
+    });
   });
 
   afterAll(async () => {
     // Cleanup
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
+    await Teacher.deleteMany({});
     await mongoose.connection.close();
   });
 
@@ -72,7 +85,6 @@ describe('SCORM Phase 2: Package Management API', () => {
       // This is a placeholder - adapt to your auth system
       // In real tests, you'd create a user and login
       adminToken = 'test-admin-token';
-      adminId = new mongoose.Types.ObjectId().toString();
       expect(adminToken).toBeDefined();
     });
 
@@ -83,7 +95,6 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should create student user and get token', async () => {
       studentToken = 'test-student-token';
-      studentId = new mongoose.Types.ObjectId().toString();
       expect(studentToken).toBeDefined();
     });
   });
@@ -122,7 +133,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     beforeEach(async () => {
       // Create a test package directly in database
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-001', 'Test SCORM Package', adminId)
+        makePackageData('test-pkg-001', 'Test SCORM Package', teacherId)
       );
       packageId = pkg._id.toString();
     });
@@ -136,6 +147,8 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data).toBeInstanceOf(Array);
       expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0].uploadedBy._id).toBe(teacherId);
+      expect(res.body.data[0].uploadedByModel).toBe('Teacher');
     });
 
     it('should get single package by ID', async () => {
@@ -146,6 +159,8 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Test SCORM Package');
+      expect(res.body.data.uploadedBy._id).toBe(teacherId);
+      expect(res.body.data.uploadedByModel).toBe('Teacher');
     });
 
     it('should update package (teacher/admin)', async () => {
@@ -179,7 +194,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('3. Package Assignments', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-002', 'Assignment Test Package', adminId)
+        makePackageData('test-pkg-002', 'Assignment Test Package', teacherId)
       );
       packageId = pkg._id.toString();
     });
@@ -233,9 +248,9 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('4. Content Delivery', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-003', 'Content Delivery Test', adminId)
+        makePackageData('test-pkg-003', 'Content Delivery Test', teacherId)
       );
-      packageId = pkg.packageId;
+      packageId = pkg._id.toString();
     });
 
     it('should launch package for student', async () => {
@@ -260,7 +275,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('5. Attempt Tracking', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-004', 'Attempt Tracking Test', adminId)
+        makePackageData('test-pkg-004', 'Attempt Tracking Test', teacherId)
       );
 
       const attempt = await ScormAttempt.create({
@@ -313,7 +328,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('6. CMI Data Management', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-005', 'CMI Data Test', adminId)
+        makePackageData('test-pkg-005', 'CMI Data Test', teacherId)
       );
 
       const attempt = await ScormAttempt.create({
@@ -382,7 +397,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('7. Authorization & Security', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-006', 'Security Test', adminId)
+        makePackageData('test-pkg-006', 'Security Test', teacherId)
       );
       packageId = pkg._id.toString();
     });
@@ -433,7 +448,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should validate CMI element paths', async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-007', 'Validation Test', adminId)
+        makePackageData('test-pkg-007', 'Validation Test', teacherId)
       );
 
       const attempt = await ScormAttempt.create({

@@ -11,7 +11,7 @@ if (typeof global.Uint8Array === 'undefined') {
   (global as any).Uint8Array = Uint8Array;
 }
 
-export default async (): Promise<void> => {
+const globalSetup = async (): Promise<void> => {
   // Close any existing connections
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
@@ -23,7 +23,8 @@ export default async (): Promise<void> => {
 
   // Store the URI for use in tests
   process.env.MONGO_TEST_URI = mongoUri;
-  process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
+  // Use a deterministic, long secret to satisfy generateToken length checks during tests
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-integration-suite-32chars';
   process.env.BYPASS_AUTH_FOR_TESTS = 'true';
   process.env.NODE_ENV = 'test';
 
@@ -33,3 +34,6 @@ export default async (): Promise<void> => {
   console.log('✓ MongoDB Memory Server started');
   console.log(`  URI: ${mongoUri}`);
 };
+
+export default globalSetup;
+(module as any).exports = globalSetup;

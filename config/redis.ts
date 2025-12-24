@@ -5,6 +5,8 @@
 
 import Redis from 'ioredis';
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 /**
  * Redis connection configuration
  */
@@ -14,7 +16,8 @@ const redisConfig = {
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || '0'),
   maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
+  enableReadyCheck: !isTestEnv,
+  lazyConnect: isTestEnv,
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     console.log(`Redis connection retry attempt ${times}, waiting ${delay}ms`);
@@ -30,25 +33,27 @@ export const redisClient = new Redis(redisConfig);
 /**
  * Redis event handlers
  */
-redisClient.on('connect', () => {
-  console.log('✓ Redis client connected');
-});
+if (!isTestEnv) {
+  redisClient.on('connect', () => {
+    console.log('✓ Redis client connected');
+  });
 
-redisClient.on('ready', () => {
-  console.log('✓ Redis client ready');
-});
+  redisClient.on('ready', () => {
+    console.log('✓ Redis client ready');
+  });
 
-redisClient.on('error', (error) => {
-  console.error('✗ Redis client error:', error.message);
-});
+  redisClient.on('error', (error) => {
+    console.error('✗ Redis client error:', error.message);
+  });
 
-redisClient.on('close', () => {
-  console.log('✗ Redis client connection closed');
-});
+  redisClient.on('close', () => {
+    console.log('✗ Redis client connection closed');
+  });
 
-redisClient.on('reconnecting', () => {
-  console.log('↻ Redis client reconnecting...');
-});
+  redisClient.on('reconnecting', () => {
+    console.log('↻ Redis client reconnecting...');
+  });
+}
 
 /**
  * Graceful shutdown

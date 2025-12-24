@@ -45,9 +45,16 @@ export const registerAdminCtrl = expressAsyncHandler(async (req: Request<{}, {},
     password: await hashPassword(password),
   });
 
+  const sanitizedUser = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
   res.status(201).json({
     status: "success",
-    data: user,
+    data: sanitizedUser,
     message: "Admin registered successfully. Glad you are here.",
   });
 });
@@ -62,7 +69,8 @@ export const loginAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, Lo
   const user = await Admin.findOne({ email });
 
   if (!user) {
-    res.json({
+    res.status(401).json({
+      status: "error",
       message: "Invalid login credentials. Please try again.",
     });
     return;
@@ -72,15 +80,18 @@ export const loginAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, Lo
   const isMatched = await isPassMatched(password, user.password);
 
   if (!isMatched) {
-    res.json({
+    res.status(401).json({
+      status: "error",
       message: "Invalid login credentials. Please try again.",
     });
   } else {
     const role = user.role || 'admin';
     const accessToken = generateToken(user._id.toString(), role);
 
-    res.json({
+    res.status(200).json({
+      status: "success",
       data: {
+        token: accessToken,
         accessToken,
         role,
       },
@@ -104,25 +115,26 @@ export const getAdminsCtrl = expressAsyncHandler(async (_req: Request, res: Resp
  * @access      Private
  */
 export const getAdminProfileCtrl = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const admin = await Admin.findById(req.userAuth?._id)
-    .select("-password -createdAt -updatedAt")
-    .populate("academicYear")
-    .populate("academicTerms")
-    .populate("programs")
-    .populate("yearGroups")
-    .populate("classLevels")
-    .populate("teachers")
-    .populate("students");
+  const adminId = req.userAuth?._id;
+  const admin = adminId
+    ? await Admin.findById(adminId).select("-password -createdAt -updatedAt").lean()
+    : null;
 
-  if (!admin) {
-    throw new Error("Admin not found");
-  } else {
-    res.status(200).json({
-      status: "success",
-      data: admin,
-      message: "Admin Profile fetched successfully",
+  const profile = admin || req.userAuth;
+
+  if (!profile) {
+    res.status(404).json({
+      status: "error",
+      message: "Admin not found",
     });
+    return;
   }
+
+  res.status(200).json({
+    status: "success",
+    data: profile,
+    message: "Admin Profile fetched successfully",
+  });
 });
 
 /**

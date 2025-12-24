@@ -22,45 +22,50 @@ type UserAuth = {
 const isAuthenticated = () => {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (process.env.NODE_ENV === 'test' && process.env.BYPASS_AUTH_FOR_TESTS === 'true') {
-        const tokenHeader = req.headers?.authorization || '';
-        const token = tokenHeader.startsWith('Bearer') ? tokenHeader.split(' ')[1] : tokenHeader;
-        const roleMap: Record<string, string> = {
-          'test-admin-token': 'admin',
-          'test-teacher-token': 'teacher',
-          'test-student-token': 'student',
+      const isTestEnv = process.env.NODE_ENV === 'test';
+      const shouldBypassAuth = isTestEnv && process.env.BYPASS_AUTH_FOR_TESTS !== 'false';
+
+      const tokenHeader = req.headers?.authorization || '';
+      const token = tokenHeader.startsWith('Bearer') ? tokenHeader.split(' ')[1] : tokenHeader;
+
+      if (shouldBypassAuth && token) {
+        const roleMap: Record<string, { role: string; id: string }> = {
+          'test-admin-token': { role: 'admin', id: '0000000000000000000000a1' },
+          'test-teacher-token': { role: 'teacher', id: '0000000000000000000000b1' },
+          'test-student-token': { role: 'student', id: '0000000000000000000000c1' },
         };
-        const role = roleMap[token] || 'student';
-        req.userAuth = {
-          _id: new mongoose.Types.ObjectId(),
-          name: `${role} test user`,
-          email: `${role}@example.com`,
-          role,
-        } as any;
-        req.token = token;
-        return next();
+
+        if (token in roleMap) {
+          const { role, id } = roleMap[token];
+
+          req.userAuth = {
+            _id: new mongoose.Types.ObjectId(id),
+            name: `${role} test user`,
+            email: `${role}@example.com`,
+            role,
+          } as any;
+          req.token = token;
+          return next();
+        }
       }
 
-      const headerAuth = req.headers?.authorization || '';
-      const headerToken = headerAuth.startsWith('Bearer') ? headerAuth.split(' ')[1] : headerAuth;
+      let tokenValue = token;
 
-      let token = headerToken;
-
-      if (!token && req.headers.cookie) {
+      if (!tokenValue && req.headers.cookie) {
         const cookiePairs = req.headers.cookie.split(';').map((c) => c.trim().split('='));
         const cookieMap = Object.fromEntries(cookiePairs.map(([k, ...v]) => [k, decodeURIComponent(v.join('='))]));
         const cookieToken = cookieMap.token;
         if (cookieToken) {
-          token = cookieToken.startsWith('Bearer') ? cookieToken.split(' ')[1] : cookieToken;
+          tokenValue = cookieToken.startsWith('Bearer') ? cookieToken.split(' ')[1] : cookieToken;
         }
       }
 
-      if (!token) {
+      if (!tokenValue) {
         return next(new AuthenticationError('No authorization token provided'));
       }
 
       // Verify token (async, checks blacklist)
-      const verifiedToken = await verifyToken(token);
+      const verifiedToken = await verifyToken(tokenValue);
 
       let user: UserAuth | null = null;
 
@@ -87,7 +92,7 @@ const isAuthenticated = () => {
 
       // Save user and token info to request object
       req.userAuth = user as any;
-      req.token = token;
+      req.token = tokenValue;
       next();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';

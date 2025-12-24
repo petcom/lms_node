@@ -4,7 +4,10 @@
  */
 
 import rateLimit, { Options } from 'express-rate-limit';
-import { Request, Response } from 'express';
+import { Request, Response, RequestHandler } from 'express';
+
+const isTestEnv = process.env.NODE_ENV === 'test';
+const passthrough: RequestHandler = (_req, _res, next) => next();
 
 /**
  * General API rate limiter
@@ -16,7 +19,7 @@ const SCORM_RATE_LIMIT_EXEMPT_PREFIXES = [
   '/api/v1/scorm/content',
 ];
 
-const apiLimiter = rateLimit({
+const apiLimiter = isTestEnv ? passthrough : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later',
@@ -40,7 +43,7 @@ const apiLimiter = rateLimit({
  * Auth rate limiter (stricter)
  * Applies to login and registration endpoints
  */
-const authLimiter = rateLimit({
+const authLimiter = isTestEnv ? passthrough : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 login attempts per windowMs
   message: 'Too many login attempts, please try again later',
@@ -60,7 +63,7 @@ const authLimiter = rateLimit({
  * Registration rate limiter (very strict)
  * Prevents spam account creation
  */
-const registerLimiter = rateLimit({
+const registerLimiter = isTestEnv ? passthrough : rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // Limit each IP to 3 registration attempts per hour
   message: 'Too many accounts created, please try again later',
@@ -79,7 +82,7 @@ const registerLimiter = rateLimit({
  * Password reset rate limiter
  * Prevents password reset spam
  */
-const passwordResetLimiter = rateLimit({
+const passwordResetLimiter = isTestEnv ? passthrough : rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // Limit each IP to 3 password reset requests per hour
   message: 'Too many password reset requests, please try again later',

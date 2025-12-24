@@ -208,9 +208,8 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
 
     // Raw CMI Data (for full spec compliance)
     rawCmiData: {
-      type: Map,
-      of: Schema.Types.Mixed,
-      default: new Map(),
+      type: Schema.Types.Mixed,
+      default: {},
     },
 
     // Session Logs
@@ -252,8 +251,9 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
 
 // Instance method to set CMI value
 scormAttemptSchema.methods.setCMIValue = function (element: string, value: any) {
-  // Update raw CMI data
-  this.rawCmiData.set(element, value);
+  // Update raw CMI data using plain object to permit dotted keys
+  this.rawCmiData = this.rawCmiData || {};
+  this.rawCmiData[element] = value;
 
   // Handle common CMI elements
   if (element.startsWith('cmi.core.score')) {
@@ -296,8 +296,8 @@ scormAttemptSchema.methods.setCMIValue = function (element: string, value: any) 
 // Instance method to get CMI value
 scormAttemptSchema.methods.getCMIValue = function (element: string): any {
   // Try to get from raw CMI data first
-  if (this.rawCmiData.has(element)) {
-    return this.rawCmiData.get(element);
+  if (this.rawCmiData && Object.prototype.hasOwnProperty.call(this.rawCmiData, element)) {
+    return this.rawCmiData[element];
   }
 
   // Fall back to structured data

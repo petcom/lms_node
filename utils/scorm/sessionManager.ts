@@ -34,18 +34,29 @@ export interface ScormSession {
 const SESSION_TIMEOUT = parseInt(process.env.SCORM_SESSION_TIMEOUT || '1800', 10);
 
 /**
+ * Allow in-memory session store for tests or when explicitly requested.
+ * This keeps runtime flows working even if Redis is not available in CI.
+ */
+const useMemoryStore =
+  process.env.SCORM_SESSION_DRIVER === 'memory' || process.env.NODE_ENV === 'test';
+
+const memorySessions: Map<string, ScormSession> = new Map();
+
+/**
  * Redis key prefixes
  */
 const SESSION_KEY_PREFIX = 'scorm:session:';
 
 /**
- * Ensure Redis is ready before attempting commands.
+ * Ensure Redis is ready before attempting commands when using Redis.
  * If Redis is down or still connecting, fail fast to avoid hung requests.
  */
-function ensureRedisReady() {
+function ensureStoreReady(): boolean {
+  if (useMemoryStore) return false;
   if (redisClient.status !== 'ready') {
     throw new Error('Redis not ready');
   }
+  return true;
 }
 
 /**
@@ -84,13 +95,7 @@ export async function createSession(
   attemptId: string,
   userId: mongoose.Types.ObjectId
 ): Promise<ScormSession> {
-  ensureRedisReady();
-
-  // Check if session already exists
-  const exists = await redisClient.exists(`${SESSION_KEY_PREFIX}${attemptId}`);
-  if (exists) {
-    throw new Error('Session already initialized');
-  }
+  const storeIsRedis = ensureStoreReady();
 
   const session: Omit<ScormSession, 'attemptId'> = {
     userId,
@@ -100,6 +105,14 @@ export async function createSession(
     pendingCMI: {},
     errorCode: '0',
   };
+
+  if (!storeIsRedis) {
+    if (memorySessions.has(attemptId)) {
+      throw new Error('Session already initialized');
+    }
+    memorySessions.set(attemptId, { attemptId, ...session });
+    return { attemptId, ...session };
+  }
 
   // Store in Redis with TTL
   await redisClient.setex(
@@ -115,7 +128,20 @@ export async function createSession(
  * Get active session
  */
 export async function getSession(attemptId: string): Promise<ScormSession | null> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId) || null;
+    if (!session) return null;
+
+    const now = Date.now();
+    const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+    if (now - lastActivity > SESSION_TIMEOUT * 1000) {
+      await terminateSession(attemptId, 'timeout');
+      return null;
+    }
+    return session;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -139,7 +165,15 @@ export async function getSession(attemptId: string): Promise<ScormSession | null
  * Update session heartbeat
  */
 export async function updateHeartbeat(attemptId: string): Promise<boolean> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (!session || session.status !== 'active') return false;
+    session.lastActivity = new Date();
+    memorySessions.set(attemptId, session);
+    return true;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -168,7 +202,14 @@ export async function updateHeartbeat(attemptId: string): Promise<boolean> {
  * Check if session has timed out
  */
 export async function checkTimeout(attemptId: string): Promise<boolean> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (!session) return true;
+    const now = Date.now();
+    const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+    return now - lastActivity > SESSION_TIMEOUT * 1000;
+  }
 
   const ttl = await redisClient.ttl(`${SESSION_KEY_PREFIX}${attemptId}`);
   return ttl <= 0;
@@ -182,7 +223,16 @@ export async function addPendingCMI(
   element: string,
   value: any
 ): Promise<void> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (!session) throw new Error('Session not initialized');
+    session.pendingCMI[element] = value;
+    session.lastActivity = new Date();
+    memorySessions.set(attemptId, session);
+    return;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -206,7 +256,12 @@ export async function addPendingCMI(
  * Get pending CMI data
  */
 export async function getPendingCMI(attemptId: string): Promise<Record<string, any>> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    return session ? { ...session.pendingCMI } : {};
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -222,7 +277,16 @@ export async function getPendingCMI(attemptId: string): Promise<Record<string, a
  * Clear pending CMI data (after commit)
  */
 export async function clearPendingCMI(attemptId: string): Promise<void> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (session) {
+      session.pendingCMI = {};
+      memorySessions.set(attemptId, session);
+    }
+    return;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -246,7 +310,17 @@ export async function setSessionError(
   errorCode: string,
   errorMessage?: string
 ): Promise<void> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (session) {
+      session.errorCode = errorCode;
+      session.errorMessage = errorMessage;
+      memorySessions.set(attemptId, session);
+    }
+    return;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -267,7 +341,12 @@ export async function setSessionError(
  * Get session error
  */
 export async function getSessionError(attemptId: string): Promise<{ code: string; message?: string }> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    return session ? { code: session.errorCode, message: session.errorMessage } : { code: '0' };
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -289,7 +368,16 @@ export async function terminateSession(
   attemptId: string,
   reason: 'normal' | 'timeout' = 'normal'
 ): Promise<void> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    const session = memorySessions.get(attemptId);
+    if (session) {
+      session.status = reason === 'timeout' ? 'timeout' : 'terminated';
+      memorySessions.set(attemptId, session);
+    }
+    return;
+  }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
   
@@ -311,10 +399,24 @@ export async function terminateSession(
  * This should be called periodically (e.g., every 5 minutes)
  */
 export async function autoCommitStale(): Promise<string[]> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
 
   const staleAttempts: string[] = [];
-  
+
+  if (!storeIsRedis) {
+    const now = Date.now();
+    for (const [attemptId, session] of memorySessions.entries()) {
+      const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+      const ttlMs = SESSION_TIMEOUT * 1000 - (now - lastActivity);
+      if (session.status === 'active' && ttlMs > 0 && ttlMs < 300000) {
+        staleAttempts.push(attemptId);
+        session.status = 'timeout';
+        memorySessions.set(attemptId, session);
+      }
+    }
+    return staleAttempts;
+  }
+
   // Scan for all session keys
   const keys = await redisClient.keys(`${SESSION_KEY_PREFIX}*`);
   
@@ -348,7 +450,7 @@ export async function getSessionStats(): Promise<{
   terminated: number;
   timeout: number;
 }> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
 
   const stats = {
     total: 0,
@@ -356,7 +458,25 @@ export async function getSessionStats(): Promise<{
     terminated: 0,
     timeout: 0,
   };
-  
+
+  if (!storeIsRedis) {
+    stats.total = memorySessions.size;
+    for (const session of memorySessions.values()) {
+      switch (session.status) {
+        case 'active':
+          stats.active++;
+          break;
+        case 'terminated':
+          stats.terminated++;
+          break;
+        case 'timeout':
+          stats.timeout++;
+          break;
+      }
+    }
+    return stats;
+  }
+
   // Scan for all session keys
   const keys = await redisClient.keys(`${SESSION_KEY_PREFIX}*`);
   stats.total = keys.length;
@@ -388,7 +508,12 @@ export async function getSessionStats(): Promise<{
  * Clear all sessions (for testing/maintenance)
  */
 export async function clearAllSessions(): Promise<void> {
-  ensureRedisReady();
+  const storeIsRedis = ensureStoreReady();
+
+  if (!storeIsRedis) {
+    memorySessions.clear();
+    return;
+  }
 
   const keys = await redisClient.keys(`${SESSION_KEY_PREFIX}*`);
   if (keys.length > 0) {

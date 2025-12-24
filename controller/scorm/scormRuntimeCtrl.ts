@@ -32,6 +32,30 @@ import {
   terminateSession,
 } from '../../utils/scorm/sessionManager';
 
+const ensureAttemptCMIShape = (attempt: any) => {
+  attempt.cmi = attempt.cmi || {};
+  attempt.cmi.score = attempt.cmi.score || {};
+  attempt.cmi.session_time = attempt.cmi.session_time || 'PT0H0M0S';
+  attempt.cmi.total_time = attempt.cmi.total_time || 'PT0H0M0S';
+};
+
+const logInteraction = (
+  attempt: any,
+  action: 'Initialize' | 'GetValue' | 'SetValue' | 'Commit' | 'Terminate',
+  element?: string,
+  value?: any,
+  errorCode?: string
+) => {
+  attempt.interactionLog = attempt.interactionLog || [];
+  attempt.interactionLog.push({
+    timestamp: new Date(),
+    action,
+    element,
+    value,
+    errorCode,
+  });
+};
+
 /**
  * @desc    Initialize SCORM session
  * @route   POST /api/v1/scorm/runtime/:attemptId/initialize
@@ -42,19 +66,24 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
   const user = (req as any).userAuth;
   const userId = user?._id;
   const userRole = user?.role;
+
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+    res.status(404);
+    throw new Error('Attempt not found');
+  }
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId);
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
   }
 
   // Get package to determine version
   const scormPackage = await ScormPackage.findById(attempt.package);
   if (!scormPackage) {
-    res.status(404);
-    throw new Error('Package not found');
+    res.status(404).json({ success: false, message: 'Package not found' });
+    return;
   }
 
   // Allow unauthenticated/admin/teacher to bypass ownership while testing
@@ -73,17 +102,21 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
 
     // Create session (ignore if already initialized)
     await createSession(attemptId, sessionUserId as any);
-
-    // Update attempt status
-    (attempt as any).status = 'running';
-    (attempt as any).startedAt = new Date();
-    await attempt.save();
   } catch (error: any) {
     if (!error.message.includes('already initialized')) {
-      // If Redis/session creation fails, log and continue to return success for the adapter
+      // If session creation fails, log and continue to return success for the adapter
       console.error('SCORM initialize session creation failed, continuing without persistence:', error?.message || error);
     }
   }
+
+  ensureAttemptCMIShape(attempt as any);
+  (attempt as any).status = ['passed', 'failed', 'completed'].includes((attempt as any).status)
+    ? (attempt as any).status
+    : 'incomplete';
+  (attempt as any).startedAt = (attempt as any).startedAt || new Date();
+  (attempt as any).lastAccessedAt = new Date();
+  logInteraction(attempt as any, 'Initialize');
+  await attempt.save();
 
   res.status(200).json({
     success: true,
@@ -108,12 +141,17 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
   const user = (req as any).userAuth;
   const userId = user?._id;
 
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+    res.status(404);
+    throw new Error('Attempt not found');
+  }
+
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId);
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
   }
 
   // Verify student owns this attempt
@@ -121,6 +159,9 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
+
+  (attempt as any).lastAccessedAt = new Date();
+  await attempt.save();
 
   // Get session
   const session = await getSession(attemptId);
@@ -138,9 +179,15 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
 
   // Commit any pending data
   const pendingCMI = await getPendingCMI(attemptId);
+  ensureAttemptCMIShape(attempt as any);
   if (Object.keys(pendingCMI).length > 0) {
     let cmiData = (attempt as any).cmi || {};
     const scormPackage = await ScormPackage.findById(attempt.package);
+
+    if (!scormPackage) {
+      res.status(404).json({ success: false, message: 'Package not found' });
+      return;
+    }
     
     for (const [element, value] of Object.entries(pendingCMI)) {
       cmiData = setCMIValue(cmiData, element, value, scormPackage?.version || 'scorm_1.2');
@@ -151,10 +198,15 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
   }
 
   // Update attempt status
-  if ((attempt as any).status === 'running') {
+  (attempt as any).lastAccessedAt = new Date();
+  if (!['completed', 'passed', 'failed'].includes((attempt as any).status)) {
     (attempt as any).status = 'suspended';
   }
-
+  (attempt as any).calculateCompletion?.();
+  if (['completed', 'passed', 'failed'].includes((attempt as any).status) && !(attempt as any).completedAt) {
+    (attempt as any).completedAt = new Date();
+  }
+  logInteraction(attempt as any, 'Terminate');
   await attempt.save();
 
   // Terminate session
@@ -179,14 +231,19 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
   const user = (req as any).userAuth;
   const userId = user?._id;
 
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+    res.status(404);
+    throw new Error('Attempt not found');
+  }
+
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId)
     .populate('student', 'name email')
     .populate('package', 'version');
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
   }
 
   // Verify student owns this attempt
@@ -197,6 +254,8 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   const scormPackage = attempt.package as any;
   const version = scormPackage.version;
+  const pendingCMI = await getPendingCMI(attemptId);
+  ensureAttemptCMIShape(attempt as any);
 
   // Validate element
   if (!validateCMIElement(element, version)) {
@@ -235,9 +294,23 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     return;
   }
 
-  // Get value from CMI data
+  // Get value from pending session data first, then persisted CMI
+  if (Object.prototype.hasOwnProperty.call(pendingCMI, element)) {
+    res.status(200).json({
+      success: true,
+      data: {
+        value: pendingCMI[element] || '',
+        errorCode: '0',
+      },
+    });
+    return;
+  }
+
   const cmiData = (attempt as any).cmi || {};
   const value = getCMIValue(cmiData, element, version);
+  logInteraction(attempt as any, 'GetValue', element, value);
+  (attempt as any).lastAccessedAt = new Date();
+  await attempt.save();
 
   res.status(200).json({
     success: true,
@@ -259,13 +332,18 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
   const user = (req as any).userAuth;
   const userId = user?._id;
 
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+    res.status(404);
+    throw new Error('Attempt not found');
+  }
+
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId)
     .populate('package', 'version');
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
   }
 
   // Verify student owns this attempt
@@ -276,6 +354,7 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   const scormPackage = attempt.package as any;
   const version = scormPackage.version;
+  ensureAttemptCMIShape(attempt as any);
 
   // Validate element
   if (!validateCMIElement(element, version)) {
@@ -309,6 +388,9 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
   try {
     await addPendingCMI(attemptId, element, value);
     await setSessionError(attemptId, '0');
+    (attempt as any).lastAccessedAt = new Date();
+    logInteraction(attempt as any, 'SetValue', element, value, '0');
+    await attempt.save();
 
     res.status(200).json({
       success: true,
@@ -326,6 +408,9 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
         await createSession(attemptId, sessionUserId as any);
         await addPendingCMI(attemptId, element, value);
         await setSessionError(attemptId, '0');
+        (attempt as any).lastAccessedAt = new Date();
+        logInteraction(attempt as any, 'SetValue', element, value, '0');
+        await attempt.save();
 
         res.status(200).json({
           success: true,
@@ -364,13 +449,18 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).userAuth;
   const userId = user?._id;
 
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+    res.status(404);
+    throw new Error('Attempt not found');
+  }
+
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId)
     .populate('package', 'version');
 
   if (!attempt) {
-    res.status(404);
-    throw new Error('Attempt not found');
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
   }
 
   // Verify student owns this attempt
@@ -381,6 +471,7 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
 
   const scormPackage = attempt.package as any;
   const version = scormPackage.version;
+  ensureAttemptCMIShape(attempt as any);
 
   try {
     // Get pending data (may throw if Redis not ready)
@@ -406,7 +497,15 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
 
     // Save to database
     (attempt as any).cmi = cmiData;
-    
+    (attempt as any).lastAccessedAt = new Date();
+    (attempt as any).calculateCompletion?.();
+    if (!['completed', 'passed', 'failed', 'suspended'].includes((attempt as any).status)) {
+      (attempt as any).status = 'incomplete';
+    }
+    if (['completed', 'passed', 'failed'].includes((attempt as any).status) && !(attempt as any).completedAt) {
+      (attempt as any).completedAt = new Date();
+    }
+
     // Log commit
     (attempt as any).sessionLog = (attempt as any).sessionLog || [];
     (attempt as any).sessionLog.push({
@@ -414,6 +513,7 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
       event: 'data_committed',
       data: { elements: Object.keys(pendingCMI) },
     });
+    logInteraction(attempt as any, 'Commit');
 
     await attempt.save();
 
@@ -452,13 +552,18 @@ export const getLastError = asyncHandler(async (req: Request, res: Response) => 
   const user = (req as any).userAuth;
   const userId = user?._id;
 
-  // Find attempt
-  const attempt = await ScormAttempt.findById(attemptId);
-
-  if (!attempt) {
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
     res.status(404);
     throw new Error('Attempt not found');
   }
+
+  // Find attempt
+    const attempt = await ScormAttempt.findById(attemptId);
+
+    if (!attempt) {
+      res.status(404).json({ success: false, message: 'Attempt not found' });
+      return;
+    }
 
   // Verify student owns this attempt
   if (userId && attempt.student.toString() !== userId.toString()) {
@@ -487,13 +592,18 @@ export const heartbeat = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).userAuth;
   const userId = user?._id;
 
-  // Find attempt
-  const attempt = await ScormAttempt.findById(attemptId);
-
-  if (!attempt) {
+  if (!mongoose.Types.ObjectId.isValid(attemptId)) {
     res.status(404);
     throw new Error('Attempt not found');
   }
+
+  // Find attempt
+    const attempt = await ScormAttempt.findById(attemptId);
+
+    if (!attempt) {
+      res.status(404).json({ success: false, message: 'Attempt not found' });
+      return;
+    }
 
   // Verify student owns this attempt
   if (userId && attempt.student.toString() !== userId.toString()) {

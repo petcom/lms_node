@@ -5,6 +5,7 @@ import { PackageValidator } from '../../utils/scorm/packageValidator';
 import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
 import { v4 as uuidv4 } from 'uuid';
+import { NotFoundError } from '../../utils/errors';
 
 /**
  * @desc    Upload a new SCORM package
@@ -175,10 +176,13 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   const skip = (Number(page) - 1) * Number(limit);
 
   const packages = await ScormPackage.find(query)
-    .populate({ path: 'uploadedBy', select: 'name email role', model: 'Teacher' })
+    .populate({ path: 'uploadedBy', select: 'name email role' })
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')
+    .populate('assignedTo.students', 'name email')
+    .populate('assignedTo.classLevels', 'name')
+    .populate('assignedTo.programs', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(Number(limit));
@@ -204,17 +208,16 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
  */
 export const getPackage = asyncHandler(async (req: Request, res: Response) => {
   const scormPackage = await ScormPackage.findById(req.params.id)
-    .populate({ path: 'uploadedBy', select: 'name email role', model: 'Teacher' })
+    .populate({ path: 'uploadedBy', select: 'name email role' })
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')
-    .populate('assignedStudents', 'name email')
-    .populate('assignedClasses', 'name')
-    .populate('assignedPrograms', 'name');
+    .populate('assignedTo.students', 'name email')
+    .populate('assignedTo.classLevels', 'name')
+    .populate('assignedTo.programs', 'name');
 
   if (!scormPackage) {
-    res.status(404);
-    throw new Error('SCORM package not found');
+    throw new NotFoundError('SCORM package not found');
   }
 
   res.status(200).json({
@@ -313,26 +316,30 @@ export const assignPackage = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('SCORM package not found');
   }
 
+  const assignedTo = scormPackage.assignedTo || { students: [], classLevels: [], programs: [] };
+
   // Add students
   if (studentIds && Array.isArray(studentIds)) {
-    (scormPackage as any).assignedStudents = [
-      ...new Set([...(scormPackage as any).assignedStudents, ...studentIds]),
-    ];
+    const current = assignedTo.students?.map(String) || [];
+    const merged = Array.from(new Set([...current, ...studentIds.map(String)]));
+    assignedTo.students = merged as any;
   }
 
-  // Add classes
+  // Add class levels
   if (classIds && Array.isArray(classIds)) {
-    (scormPackage as any).assignedClasses = [
-      ...new Set([...(scormPackage as any).assignedClasses, ...classIds]),
-    ];
+    const current = assignedTo.classLevels?.map(String) || [];
+    const merged = Array.from(new Set([...current, ...classIds.map(String)]));
+    assignedTo.classLevels = merged as any;
   }
 
   // Add programs
   if (programIds && Array.isArray(programIds)) {
-    (scormPackage as any).assignedPrograms = [
-      ...new Set([...(scormPackage as any).assignedPrograms, ...programIds]),
-    ];
+    const current = assignedTo.programs?.map(String) || [];
+    const merged = Array.from(new Set([...current, ...programIds.map(String)]));
+    assignedTo.programs = merged as any;
   }
+
+  scormPackage.assignedTo = assignedTo;
 
   await scormPackage.save();
 
@@ -358,26 +365,30 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
     throw new Error('SCORM package not found');
   }
 
+  const assignedTo = scormPackage.assignedTo || { students: [], classLevels: [], programs: [] };
+
   // Remove students
   if (studentIds && Array.isArray(studentIds)) {
-    (scormPackage as any).assignedStudents = (scormPackage as any).assignedStudents.filter(
-      (id: any) => !studentIds.includes(id.toString())
+    assignedTo.students = (assignedTo.students || []).filter(
+      (id: any) => !studentIds.map(String).includes(id.toString())
     );
   }
 
-  // Remove classes
+  // Remove class levels
   if (classIds && Array.isArray(classIds)) {
-    (scormPackage as any).assignedClasses = (scormPackage as any).assignedClasses.filter(
-      (id: any) => !classIds.includes(id.toString())
+    assignedTo.classLevels = (assignedTo.classLevels || []).filter(
+      (id: any) => !classIds.map(String).includes(id.toString())
     );
   }
 
   // Remove programs
   if (programIds && Array.isArray(programIds)) {
-    (scormPackage as any).assignedPrograms = (scormPackage as any).assignedPrograms.filter(
-      (id: any) => !programIds.includes(id.toString())
+    assignedTo.programs = (assignedTo.programs || []).filter(
+      (id: any) => !programIds.map(String).includes(id.toString())
     );
   }
+
+  scormPackage.assignedTo = assignedTo;
 
   await scormPackage.save();
 

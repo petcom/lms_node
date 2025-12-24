@@ -6,9 +6,8 @@
  */
 
 import express from 'express';
-// TEMP: disable auth/role checks for runtime while debugging hangs
-// import isAuthenticated from '../../middlewares/isAuthenticated';
-// import roleRestriction from '../../middlewares/roleRestriction';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
 import {
   initializeSession,
   terminateSessionAPI,
@@ -21,8 +20,8 @@ import {
 
 const scormRuntimeRouter = express.Router();
 
-// scormRuntimeRouter.use(isAuthenticated);
-// scormRuntimeRouter.use(roleRestriction('admin', 'teacher', 'student'));
+scormRuntimeRouter.use(isAuthenticated());
+scormRuntimeRouter.use(roleRestriction('admin', 'teacher', 'student'));
 
 // Initialize session
 scormRuntimeRouter.post('/:attemptId/initialize', initializeSession);

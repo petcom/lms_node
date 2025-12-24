@@ -106,9 +106,12 @@ adminRouter.post("/register", registerLimiter, validate(registerAdmin), register
  *                 data:
  *                   type: object
  *                   properties:
- *                     token:
+ *                     accessToken:
  *                       type: string
  *                       description: JWT access token
+ *                     role:
+ *                       type: string
+ *                       enum: [admin]
  *       400:
  *         description: Invalid credentials
  *       429:

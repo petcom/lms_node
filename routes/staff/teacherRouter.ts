@@ -83,6 +83,23 @@ teachersRouter.post(
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [teacher]
  *       400:
  *         description: Invalid credentials
  */

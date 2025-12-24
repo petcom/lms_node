@@ -62,16 +62,8 @@ const scormPackageSchema = new Schema<IScormPackage>(
           items: [Schema.Types.Mixed],
         },
       ],
-      resources: [
-        {
-          identifier: String,
-          type: String,
-          href: String,
-          scormType: String,
-          dependencies: [String],
-          files: [String],
-        },
-      ],
+      // Allow flexible resource shapes parsed from manifests
+      resources: [Schema.Types.Mixed],
       metadata: {
         schemaVersion: String,
         title: String,
@@ -269,10 +261,13 @@ scormPackageSchema.statics.findAssignedToStudent = function (
 };
 
 // Static method to update statistics
-scormPackageSchema.statics.updateStats = async function (packageId: string) {
+scormPackageSchema.statics.updateStats = async function (
+  packageId: string,
+  packageObjectId: mongoose.Types.ObjectId
+) {
   const ScormAttempt = mongoose.model('ScormAttempt');
   
-  const attempts = await ScormAttempt.find({ package: packageId });
+  const attempts = await ScormAttempt.find({ package: packageObjectId });
   
   const totalAttempts = attempts.length;
   const completedAttempts = attempts.filter(
@@ -311,7 +306,7 @@ scormPackageSchema.statics.updateStats = async function (packageId: string) {
 // Model type with statics
 interface IScormPackageModel extends Model<IScormPackage> {
   findAssignedToStudent(studentId: mongoose.Types.ObjectId): Promise<IScormPackage[]>;
-  updateStats(packageId: string): Promise<void>;
+  updateStats(packageId: string, packageObjectId: mongoose.Types.ObjectId): Promise<void>;
 }
 
 // Create compound indexes for common queries

@@ -149,7 +149,6 @@ const SCORM_12_READONLY = [
   'cmi.core.score._children',
   'cmi.core.total_time',
   'cmi.core.lesson_mode',
-  'cmi.suspend_data',
   'cmi.launch_data',
   'cmi.comments_from_lms',
   'cmi.objectives._children',

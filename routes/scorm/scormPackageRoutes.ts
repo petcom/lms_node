@@ -31,31 +31,31 @@ const upload = multer({
 });
 
 // Student routes
-scormPackageRouter.get('/my-assignments', isAuthenticated, getMyAssignments);
+scormPackageRouter.get('/my-assignments', isAuthenticated(), getMyAssignments);
 
 // Package management routes (Teacher/Admin)
 scormPackageRouter.post(
   '/',
-  isAuthenticated,
+  isAuthenticated(),
   isTeacherOrAdmin,
   upload.single('package'),
   uploadPackage
 );
 
-scormPackageRouter.get('/', isAuthenticated, isTeacherOrAdmin, getAllPackages);
+scormPackageRouter.get('/', isAuthenticated(), isTeacherOrAdmin, getAllPackages);
 
-scormPackageRouter.get('/:id', isAuthenticated, getPackage);
+scormPackageRouter.get('/:id', isAuthenticated(), getPackage);
 
-scormPackageRouter.put('/:id', isAuthenticated, isTeacherOrAdmin, updatePackage);
+scormPackageRouter.put('/:id', isAuthenticated(), isTeacherOrAdmin, updatePackage);
 
-scormPackageRouter.delete('/:id', isAuthenticated, isTeacherOrAdmin, deletePackage);
+scormPackageRouter.delete('/:id', isAuthenticated(), isTeacherOrAdmin, deletePackage);
 
 // Assignment routes (Teacher/Admin)
-scormPackageRouter.post('/:id/assign', isAuthenticated, isTeacherOrAdmin, assignPackage);
+scormPackageRouter.post('/:id/assign', isAuthenticated(), isTeacherOrAdmin, assignPackage);
 
 scormPackageRouter.post(
   '/:id/unassign',
-  isAuthenticated,
+  isAuthenticated(),
   isTeacherOrAdmin,
   unassignPackage
 );

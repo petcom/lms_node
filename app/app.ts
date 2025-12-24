@@ -156,6 +156,9 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 app.use('/api/v1/scorm/reports', scormReportRouter); // SCORM tracking and reporting
 app.use('/api/v1/scorm', scormHealthRouter); // SCORM health and monitoring
 
+// Legacy front-end path fallback to avoid 404s when SCORM player redirects
+app.get('/student/dashboard', (_req, res) => res.redirect('/'));
+
 /**
  * Error Middlewares
  */

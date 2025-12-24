@@ -46,6 +46,20 @@
     '405': 'Incorrect data type'
   };
 
+  // Retrieve auth token from window or storage
+  function getAuthToken() {
+    const token = (window.SCORM_AUTH_TOKEN || localStorage.getItem('token') || sessionStorage.getItem('token') || '').trim();
+    if (!token) return null;
+    return token.startsWith('Bearer') ? token : `Bearer ${token}`;
+  }
+
+  function setAuthHeader(xhr) {
+    const token = getAuthToken();
+    if (token) {
+      xhr.setRequestHeader('Authorization', token);
+    }
+  }
+
   /**
    * SCORM 1.2 API Implementation
    */
@@ -86,13 +100,19 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/initialize`, false); // Synchronous
       xhr.setRequestHeader('Content-Type', 'application/json');
-      
+      setAuthHeader(xhr);
+      let response = null;
+
       try {
         xhr.send(JSON.stringify({}));
         
         if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.result === 'true') {
+          response = JSON.parse(xhr.responseText);
+          // Support both { result: 'true' } and { success: true, data: { result: 'true' } }
+          const apiResult = response?.result || response?.data?.result;
+          const apiErrorCode = response?.errorCode || response?.data?.errorCode;
+
+          if (apiResult === 'true') {
             this.initialized = true;
             this.lastError = ERROR_CODES.NO_ERROR;
             
@@ -101,6 +121,11 @@
             
             console.log('[SCORM 1.2 API] Initialized successfully');
             return 'true';
+          }
+
+          // Normalize error code if provided
+          if (apiErrorCode) {
+            this.lastError = apiErrorCode;
           }
         }
         
@@ -146,13 +171,16 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/terminate`, false); // Synchronous
       xhr.setRequestHeader('Content-Type', 'application/json');
+      setAuthHeader(xhr);
+      let response = null;
       
       try {
         xhr.send(JSON.stringify({}));
         
         if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.result === 'true') {
+          response = JSON.parse(xhr.responseText);
+          const payload = response?.data || response;
+          if (payload?.result === 'true') {
             this.terminated = true;
             this.initialized = false;
             this.lastError = ERROR_CODES.NO_ERROR;
@@ -161,7 +189,7 @@
           }
         }
         
-        this.lastError = response?.errorCode || ERROR_CODES.GENERAL_EXCEPTION;
+        this.lastError = response?.data?.errorCode || response?.errorCode || ERROR_CODES.GENERAL_EXCEPTION;
         console.error('[SCORM 1.2 API] Terminate failed:', response);
         return 'false';
       } catch (err) {
@@ -194,20 +222,23 @@
       // Fetch from server
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/${this.attemptId}/value/${encodeURIComponent(element)}`, false); // Synchronous
+      setAuthHeader(xhr);
+      let response = null;
       
       try {
         xhr.send();
         
         if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.errorCode === '0') {
+          response = JSON.parse(xhr.responseText);
+          const payload = response?.data || response;
+          if (payload?.errorCode === '0') {
             this.lastError = ERROR_CODES.NO_ERROR;
-            return String(response.value || '');
+            return String(payload?.value || '');
           }
         }
         
-        this.lastError = response?.errorCode || ERROR_CODES.INVALID_ARGUMENT;
-        console.error('[SCORM 1.2 API] GetValue failed:', element);
+        this.lastError = response?.data?.errorCode || response?.errorCode || ERROR_CODES.INVALID_ARGUMENT;
+        console.error('[SCORM 1.2 API] GetValue failed:', element, response);
         return '';
       } catch (err) {
         this.lastError = ERROR_CODES.GENERAL_EXCEPTION;
@@ -271,6 +302,8 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/commit`, false); // Synchronous
       xhr.setRequestHeader('Content-Type', 'application/json');
+      setAuthHeader(xhr);
+      let response = null;
       
       try {
         // Send each pending element as a SetValue call
@@ -279,6 +312,7 @@
           const setXhr = new XMLHttpRequest();
           setXhr.open('PUT', `${API_BASE_URL}/${this.attemptId}/value/${encodeURIComponent(element)}`, false);
           setXhr.setRequestHeader('Content-Type', 'application/json');
+          setAuthHeader(setXhr);
           setXhr.send(JSON.stringify({ value }));
           
           if (setXhr.status !== 200) {
@@ -290,8 +324,9 @@
         xhr.send(JSON.stringify({}));
         
         if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.result === 'true') {
+          response = JSON.parse(xhr.responseText);
+          const payload = response?.data || response;
+          if (payload?.result === 'true') {
             // Clear pending data
             this.pendingData = {};
             this.lastError = ERROR_CODES.NO_ERROR;
@@ -300,8 +335,8 @@
           }
         }
         
-        this.lastError = response?.errorCode || ERROR_CODES.GENERAL_EXCEPTION;
-        console.error('[SCORM 1.2 API] Commit failed');
+        this.lastError = response?.data?.errorCode || response?.errorCode || ERROR_CODES.GENERAL_EXCEPTION;
+        console.error('[SCORM 1.2 API] Commit failed', response);
         return 'false';
       } catch (err) {
         this.lastError = ERROR_CODES.GENERAL_EXCEPTION;
@@ -362,6 +397,7 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/heartbeat`, true); // Async
         xhr.setRequestHeader('Content-Type', 'application/json');
+        setAuthHeader(xhr);
         xhr.send(JSON.stringify({}));
       }, 5 * 60 * 1000); // 5 minutes
     }

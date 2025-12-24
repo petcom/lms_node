@@ -4,7 +4,8 @@
 
 import express from 'express';
 import { getHealthStatus, getMetrics, resetMetrics } from '../../controller/scorm/scormHealthCtrl';
-import { protect, authorize } from '../../middlewares/auth';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const router = express.Router();
 router.get('/health', getHealthStatus);
 
 // Protected metrics endpoints
-router.get('/metrics', protect, authorize('admin', 'teacher'), getMetrics);
-router.post('/metrics/reset', protect, authorize('admin'), resetMetrics);
+router.get('/metrics', isAuthenticated(), roleRestriction('admin', 'teacher'), getMetrics);
+router.post('/metrics/reset', isAuthenticated(), roleRestriction('admin'), resetMetrics);
 
 export default router;

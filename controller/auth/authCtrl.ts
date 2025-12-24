@@ -19,7 +19,8 @@ interface RefreshTokenRequestBody {
 
 interface JWTPayload {
     id: string;
-    type: string;
+    type?: string;
+    role?: string;
     iat: number;
     exp: number;
 }
@@ -156,14 +157,16 @@ export const getTokenInfo = AsyncHandler(async (req: Request, res: Response): Pr
         return;
     }
 
+    const role = req.userAuth?.role || decoded.role;
+
     res.status(200).json({
         status: "success",
         data: {
             userId: decoded.id,
-            userType: decoded.type,
-            issuedAt: new Date(decoded.iat * 1000),
-            expiresAt: new Date(decoded.exp * 1000),
-            timeRemaining: Math.max(0, decoded.exp - Math.floor(Date.now() / 1000))
+            role,
+            issuedAt: decoded.iat ? new Date(decoded.iat * 1000) : null,
+            expiresAt: decoded.exp ? new Date(decoded.exp * 1000) : null,
+            timeRemaining: decoded.exp ? Math.max(0, decoded.exp - Math.floor(Date.now() / 1000)) : null
         }
     });
 });

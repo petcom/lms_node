@@ -16,13 +16,23 @@ import path from 'path';
 export const launchPlayer = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
-    const userId = (req as any).user?._id;
-    const userRole = (req as any).user?.role;
+    const userId = (req as any).userAuth?._id;
+    const userRole = (req as any).userAuth?.role;
+    const authHeader = req.headers.authorization || '';
 
     if (!userId) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized - user not authenticated'
+      });
+    }
+
+    // Persist token for subsequent asset/runtime requests (sent as cookie)
+    if (authHeader) {
+      const rawToken = authHeader.startsWith('Bearer') ? authHeader.split(' ')[1] : authHeader;
+      res.cookie('token', rawToken, {
+        httpOnly: true,
+        sameSite: 'lax'
       });
     }
 
@@ -85,6 +95,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
       }) + 1;
 
       attempt = await ScormAttempt.create({
+        attemptId: `${scormPackage.packageId}-${attemptNumber}`,
         student: userId,
         package: scormPackage._id,
         attemptNumber,
@@ -92,7 +103,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
         cmi: {
           core: {
             student_id: String(userId),
-            student_name: (req as any).user?.name || 'Student',
+            student_name: (req as any).userAuth?.name || 'Student',
             lesson_status: 'not attempted',
             entry: 'ab-initio',
             score: {},
@@ -104,7 +115,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
     }
 
     // Update package stats
-    await (scormPackage as any).updateStats();
+    await ScormPackage.updateStats(scormPackage.packageId, scormPackage._id as any);
 
     // Render player HTML
     const playerHTML = generatePlayerHTML({
@@ -115,10 +126,23 @@ export const launchPlayer = async (req: Request, res: Response) => {
       launchUrl: scormPackage.launchUrl,
       timeLimit: scormPackage.trackingOptions.timeLimit,
       trackTime: scormPackage.trackingOptions.trackTime,
-      trackScore: scormPackage.trackingOptions.trackScore
+      trackScore: scormPackage.trackingOptions.trackScore,
+      authToken: authHeader
     });
 
     res.setHeader('Content-Type', 'text/html');
+    // Allow inline scripts/styles for the player shell so the embedded JS runs
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self' data: blob: filesystem:; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: filesystem:; " +
+        "style-src 'self' 'unsafe-inline' data: blob: filesystem:; " +
+        "img-src 'self' data: blob: filesystem: https:; " +
+        "connect-src 'self' https: data: blob: filesystem:; " +
+        "media-src 'self' https: data: blob: filesystem:; " +
+        "frame-src 'self' https: data: blob: filesystem:; " +
+        "frame-ancestors 'self';"
+    );
     return res.send(playerHTML);
 
   } catch (error: any) {
@@ -151,8 +175,8 @@ export const serveContent = async (req: Request, res: Response) => {
     }
 
     // Verify user has access (students must be assigned)
-    const userId = (req as any).user?._id;
-    const userRole = (req as any).user?.role;
+    const userId = (req as any).userAuth?._id;
+    const userRole = (req as any).userAuth?.role;
 
     if (userRole === 'student') {
       const hasAccess = await (scormPackage as any).hasStudentAccess(userId);
@@ -188,6 +212,19 @@ export const serveContent = async (req: Request, res: Response) => {
     const contentType = getContentType(filePath);
     res.setHeader('Content-Type', contentType);
 
+    // Relax CSP for SCORM content (packages often rely on inline scripts/styles)
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self' data: blob: filesystem:; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: filesystem:; " +
+        "style-src 'self' 'unsafe-inline' data: blob: filesystem:; " +
+        "img-src 'self' data: blob: filesystem: https:; " +
+        "connect-src 'self' https: data: blob: filesystem:; " +
+        "media-src 'self' https: data: blob: filesystem:; " +
+        "frame-src 'self' https: data: blob: filesystem:; " +
+        "frame-ancestors 'self';"
+    );
+
     // Set cache headers for static content
     res.setHeader('Cache-Control', 'public, max-age=3600');
 
@@ -211,7 +248,7 @@ export const serveContent = async (req: Request, res: Response) => {
 export const exitPlayer = async (req: Request, res: Response) => {
   try {
     const { attemptId } = req.params;
-    const userId = (req as any).user?._id;
+    const userId = (req as any).userAuth?._id;
 
     const attempt = await ScormAttempt.findById(attemptId);
 
@@ -265,8 +302,9 @@ function generatePlayerHTML(options: {
   timeLimit?: number;
   trackTime: boolean;
   trackScore: boolean;
+  authToken: string;
 }): string {
-  const { packageId, attemptId, title, version, launchUrl, timeLimit, trackTime, trackScore } = options;
+  const { packageId, attemptId, title, version, launchUrl, timeLimit, trackTime, trackScore, authToken } = options;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -519,8 +557,12 @@ function generatePlayerHTML(options: {
       launchUrl: '${launchUrl}',
       timeLimit: ${timeLimit || 'null'},
       trackTime: ${trackTime},
-      trackScore: ${trackScore}
+      trackScore: ${trackScore},
+      authToken: '${authToken || ''}'
     };
+
+    // Make token available to runtime adapters
+    window.SCORM_AUTH_TOKEN = CONFIG.authToken;
     
     // State
     let sessionStart = Date.now();
@@ -536,11 +578,23 @@ function generatePlayerHTML(options: {
           if (window.initializeSCORM_12_API) {
             window.initializeSCORM_12_API(CONFIG.attemptId);
             console.log('[Player] SCORM 1.2 API initialized');
+
+            // Alias for content that only searches for 2004 API
+            if (window.API && !window.API_1484_11) {
+              window.API_1484_11 = window.API;
+              console.log('[Player] Aliased window.API to window.API_1484_11');
+            }
           }
         } else {
           if (window.initializeSCORM_2004_API) {
             window.initializeSCORM_2004_API(CONFIG.attemptId);
             console.log('[Player] SCORM 2004 API initialized');
+
+            // Alias for content that only searches for 1.2 API
+            if (window.API_1484_11 && !window.API) {
+              window.API = window.API_1484_11;
+              console.log('[Player] Aliased window.API_1484_11 to window.API');
+            }
           }
         }
       } catch (err) {
@@ -551,7 +605,8 @@ function generatePlayerHTML(options: {
     // Load SCORM content
     function loadContent() {
       const iframe = document.getElementById('scorm-frame');
-      const contentUrl = \`/api/v1/scorm/player/\${CONFIG.packageId}/content/\${CONFIG.launchUrl}\`;
+      const tokenQuery = CONFIG.authToken ? \`?token=\${encodeURIComponent(CONFIG.authToken)}\` : '';
+      const contentUrl = \`/api/v1/scorm/player/\${CONFIG.packageId}/content/\${CONFIG.launchUrl}\${tokenQuery}\`;
       
       console.log('[Player] Loading content:', contentUrl);
       iframe.src = contentUrl;
@@ -677,16 +732,25 @@ function generatePlayerHTML(options: {
           console.error('[Player] Error terminating:', err);
         }
       }
+
+      // Notify backend of exit for final stats (best-effort)
+      fetch(`/api/v1/scorm/player/${CONFIG.attemptId}/exit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(CONFIG.authToken ? { Authorization: CONFIG.authToken } : {}),
+        },
+      }).catch((err) => console.warn('[Player] Exit notify failed:', err));
       
       // Clean up
       if (timerInterval) clearInterval(timerInterval);
       if (scoreCheckInterval) clearInterval(scoreCheckInterval);
       
-      // Navigate back or close
+      // Inform user and close if possible; avoid redirecting to API root
+      updateStatus('Exited');
+      alert('Session closed. You may now close this window.');
       if (window.opener) {
         window.close();
-      } else {
-        window.location.href = '/student/dashboard';
       }
     }
     
@@ -717,6 +781,14 @@ function generatePlayerHTML(options: {
       
       // Initialize SCORM API
       initializeSCORMAPI();
+
+      // Extra safety: expose API on the player window globally after init
+      if (window.API && !window.API_1484_11) {
+        window.API_1484_11 = window.API;
+      }
+      if (window.API_1484_11 && !window.API) {
+        window.API = window.API_1484_11;
+      }
       
       // Load content
       loadContent();

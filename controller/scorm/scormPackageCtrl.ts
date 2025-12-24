@@ -19,6 +19,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const { title, description, subjectId, programId, classLevelId } = req.body;
+  const { originalname, size } = req.file;
 
   // Validate the package
   const validator = new PackageValidator();
@@ -40,7 +41,33 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
     // Parse manifest
     const manifestContent = await extractor.getManifestContent(packageId);
     const parser = new ManifestParser();
-    const manifestData = await parser.parse(manifestContent);
+    const rawManifest = await parser.parse(manifestContent);
+
+    // Normalize manifest resources to match schema expectations (objects with string arrays only)
+    const rawResources = Array.isArray(rawManifest.resources) ? rawManifest.resources : [];
+    const normalizedResources = rawResources
+      .filter((r) => r && typeof r === 'object')
+      .map((r: any) => ({
+        identifier: r.identifier || '',
+        type: r.type || '',
+        href: r.href || '',
+        scormType: r.scormType || '',
+        dependencies: Array.isArray(r.dependencies)
+          ? r.dependencies.filter(Boolean).map(String)
+          : [],
+        files: Array.isArray(r.files) ? r.files.filter(Boolean).map(String) : [],
+      }));
+
+    // Deep-clone resources to plain JSON so Mongoose does not attempt to cast strings
+    const manifestData = {
+      identifier: rawManifest.identifier,
+      version: rawManifest.version || validationResult.version,
+      organizations: rawManifest.organizations || [],
+      resources: normalizedResources,
+      metadata: rawManifest.metadata,
+    };
+
+    const version = validationResult.version || manifestData.version || 'scorm_1.2';
 
     // Get launch URL
     const launchUrl = parser.getLaunchUrl(manifestData);
@@ -49,15 +76,20 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
     // const storageProvider = StorageFactory.getProvider();
     // const packagePath = `${packageId}/${launchUrl}`;
 
-    // Create database record
+    // Create database record with required fields from schema
     const scormPackage = await ScormPackage.create({
       packageId,
       title: title || manifestData.metadata?.title || 'Untitled SCORM Package',
       description: description || manifestData.metadata?.description,
-      version: validationResult.version,
+      version,
       identifier: manifestData.identifier,
       manifestData,
       launchUrl,
+      entryPoint: launchUrl,
+      fileName: originalname,
+      fileSize: size,
+      filePath: packageId,
+      createdBy: req.userAuth!._id,
       packageSize: validationResult.packageSize,
       uploadedBy: req.userAuth!._id,
       subject: subjectId || null,

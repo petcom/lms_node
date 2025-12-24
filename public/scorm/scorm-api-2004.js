@@ -75,6 +75,20 @@
     '407': 'Data model element value out of range',
     '408': 'Data model dependency not established'
   };
+  
+    // Retrieve auth token from window or storage
+    function getAuthToken() {
+      const token = (window.SCORM_AUTH_TOKEN || localStorage.getItem('token') || sessionStorage.getItem('token') || '').trim();
+      if (!token) return null;
+      return token.startsWith('Bearer') ? token : `Bearer ${token}`;
+    }
+  
+    function setAuthHeader(xhr) {
+      const token = getAuthToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', token);
+      }
+    }
 
   /**
    * SCORM 2004 API Implementation
@@ -116,6 +130,7 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/initialize`, false); // Synchronous
       xhr.setRequestHeader('Content-Type', 'application/json');
+      setAuthHeader(xhr);
       
       try {
         xhr.send(JSON.stringify({}));
@@ -176,6 +191,7 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/terminate`, false); // Synchronous
       xhr.setRequestHeader('Content-Type', 'application/json');
+      setAuthHeader(xhr);
       
       try {
         xhr.send(JSON.stringify({}));
@@ -230,6 +246,7 @@
       // Fetch from server
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/${this.attemptId}/value/${encodeURIComponent(element)}`, false); // Synchronous
+      setAuthHeader(xhr);
       
       try {
         xhr.send();
@@ -322,6 +339,7 @@
           const setXhr = new XMLHttpRequest();
           setXhr.open('PUT', `${API_BASE_URL}/${this.attemptId}/value/${encodeURIComponent(element)}`, false);
           setXhr.setRequestHeader('Content-Type', 'application/json');
+          setAuthHeader(setXhr);
           setXhr.send(JSON.stringify({ value }));
           
           if (setXhr.status !== 200) {
@@ -333,6 +351,7 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/commit`, false); // Synchronous
         xhr.setRequestHeader('Content-Type', 'application/json');
+        setAuthHeader(xhr);
         xhr.send(JSON.stringify({}));
         
         if (xhr.status === 200) {
@@ -408,6 +427,7 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${API_BASE_URL}/${this.attemptId}/heartbeat`, true); // Async
         xhr.setRequestHeader('Content-Type', 'application/json');
+        setAuthHeader(xhr);
         xhr.send(JSON.stringify({}));
       }, 5 * 60 * 1000); // 5 minutes
     }

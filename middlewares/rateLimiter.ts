@@ -10,12 +10,23 @@ import { Request, Response } from 'express';
  * General API rate limiter
  * Applies to all API requests
  */
+const SCORM_RATE_LIMIT_EXEMPT_PREFIXES = [
+  '/api/v1/scorm/runtime',
+  '/api/v1/scorm/player',
+  '/api/v1/scorm/content',
+];
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // SCORM runtime/player/content endpoints emit frequent polls; skip rate limiting there.
+  skip: (req: Request) => {
+    const url = req.originalUrl || req.url || '';
+    return SCORM_RATE_LIMIT_EXEMPT_PREFIXES.some((prefix) => url.startsWith(prefix));
+  },
   handler: (req: Request, res: Response) => {
     res.status(429).json({
       status: 'error',

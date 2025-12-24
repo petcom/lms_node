@@ -93,10 +93,16 @@ export const loginTeacher = expressAsyncHandler(async (req: Request<{}, {}, Logi
   if (!isMatched) {
     res.json({ message: "Invalid login credentials" });
   } else {
+    const role = teacher.role || 'teacher';
+    const accessToken = generateToken(teacher._id.toString(), role);
+
     res.status(200).json({
       status: "success",
       message: "Teacher logged in successfully",
-      data: generateToken(teacher._id.toString()),
+      data: {
+        accessToken,
+        role,
+      },
     });
   }
 });

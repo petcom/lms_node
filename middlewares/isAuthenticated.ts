@@ -21,9 +21,19 @@ type UserAuth = {
 const isAuthenticated = () => {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Get token from authorization header
-      const headerObj = req.headers;
-      const token = headerObj?.authorization?.split(' ')[1];
+      const headerAuth = req.headers?.authorization || '';
+      const headerToken = headerAuth.startsWith('Bearer') ? headerAuth.split(' ')[1] : headerAuth;
+
+      let token = headerToken;
+
+      if (!token && req.headers.cookie) {
+        const cookiePairs = req.headers.cookie.split(';').map((c) => c.trim().split('='));
+        const cookieMap = Object.fromEntries(cookiePairs.map(([k, ...v]) => [k, decodeURIComponent(v.join('='))]));
+        const cookieToken = cookieMap.token;
+        if (cookieToken) {
+          token = cookieToken.startsWith('Bearer') ? cookieToken.split(' ')[1] : cookieToken;
+        }
+      }
 
       if (!token) {
         return next(new AuthenticationError('No authorization token provided'));

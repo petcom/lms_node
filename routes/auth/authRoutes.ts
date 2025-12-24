@@ -106,6 +106,31 @@ authRouter.post("/logout-all", isAuthenticated(), logoutAll);
  *     responses:
  *       200:
  *         description: Token information retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [admin, teacher, student]
+ *                     issuedAt:
+ *                       type: string
+ *                       format: date-time
+ *                     expiresAt:
+ *                       type: string
+ *                       format: date-time
+ *                     timeRemaining:
+ *                       type: number
+ *                       description: Seconds until expiry
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */

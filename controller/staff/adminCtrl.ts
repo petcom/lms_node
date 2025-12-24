@@ -76,8 +76,14 @@ export const loginAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, Lo
       message: "Invalid login credentials. Please try again.",
     });
   } else {
+    const role = user.role || 'admin';
+    const accessToken = generateToken(user._id.toString(), role);
+
     res.json({
-      data: generateToken(user._id.toString()),
+      data: {
+        accessToken,
+        role,
+      },
       message: "Admin logged in successfully. Welcome back!",
     });
   }

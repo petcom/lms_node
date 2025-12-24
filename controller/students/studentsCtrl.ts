@@ -102,10 +102,16 @@ export const loginStudent = AsyncHandler(async (req: Request<{}, {}, LoginBody>,
     res.json({ message: "Invalid login credentials" });
     return;
   } else {
+    const role = student.role || 'student';
+    const accessToken = generateToken(String(student?._id), role);
+
     res.status(200).json({
       status: "success",
       message: "Student logged in successfully",
-      data: generateToken(String(student?._id)),
+      data: {
+        accessToken,
+        role,
+      },
     });
   }
 });

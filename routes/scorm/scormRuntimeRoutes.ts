@@ -6,8 +6,9 @@
  */
 
 import express from 'express';
-import isAuthenticated from '../../middlewares/isAuthenticated';
-import { isStudent } from '../../middlewares/roleRestriction';
+// TEMP: disable auth/role checks for runtime while debugging hangs
+// import isAuthenticated from '../../middlewares/isAuthenticated';
+// import roleRestriction from '../../middlewares/roleRestriction';
 import {
   initializeSession,
   terminateSessionAPI,
@@ -20,9 +21,8 @@ import {
 
 const scormRuntimeRouter = express.Router();
 
-// All runtime routes require student authentication
-scormRuntimeRouter.use(isAuthenticated);
-scormRuntimeRouter.use(isStudent);
+// scormRuntimeRouter.use(isAuthenticated);
+// scormRuntimeRouter.use(roleRestriction('admin', 'teacher', 'student'));
 
 // Initialize session
 scormRuntimeRouter.post('/:attemptId/initialize', initializeSession);

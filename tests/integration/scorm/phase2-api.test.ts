@@ -106,6 +106,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test-package.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: {
           identifier: 'test-001',
@@ -172,6 +173,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: { identifier: 'test-002', schemaVersion: '1.2' },
       });
@@ -232,6 +234,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         launchUrl: 'index.html',
         metadata: { identifier: 'test-003', schemaVersion: '1.2' },
@@ -266,6 +269,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: { identifier: 'test-004', schemaVersion: '1.2' },
       });
@@ -325,6 +329,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: { identifier: 'test-005', schemaVersion: '1.2' },
       });
@@ -400,6 +405,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: { identifier: 'test-006', schemaVersion: '1.2' },
       });
@@ -457,6 +463,7 @@ describe('SCORM Phase 2: Package Management API', () => {
         version: 'scorm_1.2',
         fileName: 'test.zip',
         uploadedBy: new mongoose.Types.ObjectId(adminId),
+        uploadedByModel: 'Admin',
         isPublished: true,
         metadata: { identifier: 'test-007', schemaVersion: '1.2' },
       });

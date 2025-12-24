@@ -134,6 +134,16 @@ const scormPackageSchema = new Schema<IScormPackage>(
       required: true,
       index: true,
     },
+    uploadedBy: {
+      type: Schema.Types.ObjectId,
+      refPath: 'uploadedByModel',
+      index: true,
+    },
+    uploadedByModel: {
+      type: String,
+      enum: ['Admin', 'Teacher', 'Student'],
+      default: 'Teacher',
+    },
     assignedTo: {
       students: [
         {

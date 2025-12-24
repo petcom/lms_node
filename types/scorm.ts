@@ -160,6 +160,8 @@ export interface IScormPackage {
 
   // Access Control
   createdBy: Types.ObjectId;
+  uploadedBy?: Types.ObjectId;
+  uploadedByModel?: 'Admin' | 'Teacher' | 'Student';
   assignedTo: {
     students?: Types.ObjectId[];
     classLevels?: Types.ObjectId[];

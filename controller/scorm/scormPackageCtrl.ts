@@ -33,6 +33,13 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   // Generate unique package ID
   const packageId = uuidv4();
 
+  const roleModelMap: Record<string, 'Admin' | 'Teacher' | 'Student'> = {
+    admin: 'Admin',
+    teacher: 'Teacher',
+    student: 'Student',
+  };
+  const uploadedByModel = roleModelMap[req.userAuth?.role || 'teacher'] || 'Teacher';
+
   try {
     // Extract package
     const extractor = new ScormZipExtractor();
@@ -92,6 +99,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       createdBy: req.userAuth!._id,
       packageSize: validationResult.packageSize,
       uploadedBy: req.userAuth!._id,
+      uploadedByModel,
       subject: subjectId || null,
       program: programId || null,
       classLevel: classLevelId || null,
@@ -167,7 +175,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   const skip = (Number(page) - 1) * Number(limit);
 
   const packages = await ScormPackage.find(query)
-    .populate('uploadedBy', 'name email')
+    .populate({ path: 'uploadedBy', select: 'name email role', model: 'Teacher' })
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')
@@ -196,7 +204,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
  */
 export const getPackage = asyncHandler(async (req: Request, res: Response) => {
   const scormPackage = await ScormPackage.findById(req.params.id)
-    .populate('uploadedBy', 'name email')
+    .populate({ path: 'uploadedBy', select: 'name email role', model: 'Teacher' })
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')

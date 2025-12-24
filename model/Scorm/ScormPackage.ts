@@ -241,7 +241,6 @@ const scormPackageSchema = new Schema<IScormPackage>(
 );
 
 // Indexes for performance
-scormPackageSchema.index({ createdBy: 1, status: 1 });
 scormPackageSchema.index({ 'assignedTo.students': 1 });
 scormPackageSchema.index({ 'assignedTo.classLevels': 1 });
 scormPackageSchema.index({ 'assignedTo.programs': 1 });

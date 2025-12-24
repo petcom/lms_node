@@ -222,19 +222,13 @@ export function isReadOnly(element: string, version: ScormVersion): boolean {
  * Get CMI value from nested object
  */
 export function getCMIValue(cmiData: any, element: string, version: ScormVersion): any {
-  // const path = element.replace(/^cmi\./, '').replace(/\./g, '_');
-  
-  // Handle special cases for SCORM 1.2 core elements
-  if (version === 'scorm_1.2' && element.startsWith('cmi.core.')) {
-    const corePath = element.replace(/^cmi\.core\./, '');
-    return cmiData[corePath] !== undefined ? cmiData[corePath] : '';
-  }
-  
-  // Handle nested paths
-  const parts = element.split('.');
+  const parts =
+    version === 'scorm_1.2' && element.startsWith('cmi.core.')
+      ? element.replace(/^cmi\.core\./, '').split('.')
+      : element.split('.').slice(1);
   let value = cmiData;
-  
-  for (let i = 1; i < parts.length; i++) { // Skip 'cmi' prefix
+
+  for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (value && typeof value === 'object') {
       value = value[part];
@@ -242,7 +236,7 @@ export function getCMIValue(cmiData: any, element: string, version: ScormVersion
       return '';
     }
   }
-  
+
   return value !== undefined && value !== null ? value : '';
 }
 
@@ -251,18 +245,13 @@ export function getCMIValue(cmiData: any, element: string, version: ScormVersion
  */
 export function setCMIValue(cmiData: any, element: string, value: any, version: ScormVersion): any {
   const updatedData = { ...cmiData };
-  
-  // Handle special cases for SCORM 1.2 core elements
-  if (version === 'scorm_1.2' && element.startsWith('cmi.core.')) {
-    const corePath = element.replace(/^cmi\.core\./, '');
-    updatedData[corePath] = value;
-    return updatedData;
-  }
-  
-  // Handle nested paths
-  const parts = element.split('.').slice(1); // Remove 'cmi' prefix
+
+  const parts =
+    version === 'scorm_1.2' && element.startsWith('cmi.core.')
+      ? element.replace(/^cmi\.core\./, '').split('.')
+      : element.split('.').slice(1); // Remove 'cmi' prefix for other elements
   let current = updatedData;
-  
+
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i];
     if (!(part in current) || typeof current[part] !== 'object') {
@@ -270,7 +259,7 @@ export function setCMIValue(cmiData: any, element: string, value: any, version: 
     }
     current = current[part];
   }
-  
+
   current[parts[parts.length - 1]] = value;
   return updatedData;
 }

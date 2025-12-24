@@ -181,7 +181,6 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
   const pendingCMI = await getPendingCMI(attemptId);
   ensureAttemptCMIShape(attempt as any);
   if (Object.keys(pendingCMI).length > 0) {
-    let cmiData = (attempt as any).cmi || {};
     const scormPackage = await ScormPackage.findById(attempt.package);
 
     if (!scormPackage) {
@@ -190,10 +189,14 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
     }
     
     for (const [element, value] of Object.entries(pendingCMI)) {
-      cmiData = setCMIValue(cmiData, element, value, scormPackage?.version || 'scorm_1.2');
+      if (typeof (attempt as any).setCMIValue === 'function') {
+        (attempt as any).setCMIValue(element, value);
+      } else {
+        const nextCmi = setCMIValue((attempt as any).cmi || {}, element, value, scormPackage?.version || 'scorm_1.2');
+        (attempt as any).cmi = nextCmi;
+        attempt.markModified('cmi');
+      }
     }
-    
-    (attempt as any).cmi = cmiData;
     await clearPendingCMI(attemptId);
   }
 
@@ -296,10 +299,13 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   // Get value from pending session data first, then persisted CMI
   if (Object.prototype.hasOwnProperty.call(pendingCMI, element)) {
+    const normalizedValue = pendingCMI[element] === undefined || pendingCMI[element] === null
+      ? ''
+      : String(pendingCMI[element]);
     res.status(200).json({
       success: true,
       data: {
-        value: pendingCMI[element] || '',
+        value: normalizedValue,
         errorCode: '0',
       },
     });
@@ -308,6 +314,7 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   const cmiData = (attempt as any).cmi || {};
   const value = getCMIValue(cmiData, element, version);
+  const normalizedValue = value === undefined || value === null ? '' : String(value);
   logInteraction(attempt as any, 'GetValue', element, value);
   (attempt as any).lastAccessedAt = new Date();
   await attempt.save();
@@ -315,7 +322,7 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({
     success: true,
     data: {
-      value: value || '',
+      value: normalizedValue,
       errorCode: '0',
     },
   });
@@ -488,15 +495,16 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
       return;
     }
 
-    // Apply pending changes to CMI data
-    let cmiData = (attempt as any).cmi || {};
-    
+    // Apply pending changes to CMI data using the model helper when available
     for (const [element, value] of Object.entries(pendingCMI)) {
-      cmiData = setCMIValue(cmiData, element, value, version);
+      if (typeof (attempt as any).setCMIValue === 'function') {
+        (attempt as any).setCMIValue(element, value);
+      } else {
+        const nextCmi = setCMIValue((attempt as any).cmi || {}, element, value, version);
+        (attempt as any).cmi = nextCmi;
+        attempt.markModified('cmi');
+      }
     }
-
-    // Save to database
-    (attempt as any).cmi = cmiData;
     (attempt as any).lastAccessedAt = new Date();
     (attempt as any).calculateCompletion?.();
     if (!['completed', 'passed', 'failed', 'suspended'].includes((attempt as any).status)) {

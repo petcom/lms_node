@@ -125,6 +125,10 @@ describe('SCORM Phase 3: Runtime API', () => {
     expect(commitRes.status).toBe(200);
     expect(commitRes.body.data.result).toBe('true');
 
+    const attemptAfterCommit = await ScormAttempt.findById(attemptId).lean();
+    expect((attemptAfterCommit as any)?.cmi?.score?.raw).toBe(92);
+    expect((attemptAfterCommit as any)?.cmi?.lesson_status).toBe('completed');
+
     const getRes = await request(app)
       .get(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
       .set('Authorization', `Bearer ${studentToken}`);

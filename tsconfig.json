@@ -39,15 +39,14 @@
     "noUncheckedIndexedAccess": false,
     
     /* Incremental Migration Support */
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
     
     /* Completeness */
     "skipLibCheck": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules",

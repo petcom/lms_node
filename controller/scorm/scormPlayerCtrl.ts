@@ -734,7 +734,7 @@ function generatePlayerHTML(options: {
       }
 
       // Notify backend of exit for final stats (best-effort)
-      fetch(`/api/v1/scorm/player/${CONFIG.attemptId}/exit`, {
+      fetch(\`/api/v1/scorm/player/\${CONFIG.attemptId}/exit\`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

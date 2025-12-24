@@ -210,7 +210,7 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
 
   // Update package statistics
   const scormPackage = attempt.package as any;
-  await ScormPackage.updateStats(scormPackage._id.toString());
+  await ScormPackage.updateStats(scormPackage.packageId, scormPackage._id as any);
 
   res.status(200).json({
     success: true,

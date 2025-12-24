@@ -47,7 +47,7 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   const contentUrl = storageProvider.getFileUrl(`${packageId}/${(scormPackage as any).launchUrl}`);
 
   // Update statistics
-  await ScormPackage.updateStats(scormPackage._id.toString());
+  await ScormPackage.updateStats(scormPackage.packageId, scormPackage._id as any);
 
   res.status(200).json({
     success: true,

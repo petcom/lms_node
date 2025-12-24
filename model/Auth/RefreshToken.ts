@@ -27,6 +27,7 @@ const refreshTokenSchema = new Schema<IRefreshToken, IRefreshTokenModel>(
     expiresAt: {
       type: Date,
       required: true,
+      expires: 7 * 24 * 60 * 60, // TTL: 7 days
     },
     isUsed: {
       type: Boolean,
@@ -45,9 +46,6 @@ const refreshTokenSchema = new Schema<IRefreshToken, IRefreshTokenModel>(
     timestamps: true,
   }
 );
-
-// TTL index - automatically remove expired tokens after 7 days
-refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 });
 
 // Static method to validate refresh token
 refreshTokenSchema.statics.validateToken = async function (

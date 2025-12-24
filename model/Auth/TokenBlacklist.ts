@@ -33,15 +33,13 @@ const tokenBlacklistSchema = new Schema<ITokenBlacklist, ITokenBlacklistModel>(
     expiresAt: {
       type: Date,
       required: true,
+      expires: 0, // TTL: expire at provided timestamp
     },
   },
   {
     timestamps: true,
   }
 );
-
-// TTL index - automatically remove documents after they expire
-tokenBlacklistSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Static method to check if a token is blacklisted
 tokenBlacklistSchema.statics.isBlacklisted = async function (

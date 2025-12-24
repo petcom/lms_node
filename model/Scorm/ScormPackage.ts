@@ -256,14 +256,27 @@ scormPackageSchema.virtual('completionRate').get(function (this: IScormPackage) 
 });
 
 // Static method to find packages assigned to a student
-scormPackageSchema.statics.findAssignedToStudent = function (
+scormPackageSchema.statics.findAssignedToStudent = async function (
   studentId: mongoose.Types.ObjectId
 ) {
+  const student = await mongoose.model('Student').findById(studentId).lean();
+
+  const orConditions: any[] = [{ 'assignedTo.students': studentId }];
+
+  if (student?.program) {
+    orConditions.push({ 'assignedTo.programs': student.program });
+  }
+
+  const validClassLevels = Array.isArray(student?.classLevels)
+    ? (student!.classLevels as any[]).filter((lvl) => mongoose.Types.ObjectId.isValid(lvl))
+    : [];
+
+  if (validClassLevels.length > 0) {
+    orConditions.push({ 'assignedTo.classLevels': { $in: validClassLevels } });
+  }
+
   return this.find({
-    $or: [
-      { 'assignedTo.students': studentId },
-      // Will need to check classLevels and programs separately with population
-    ],
+    $or: orConditions,
     status: 'published',
     isActive: true,
   });

@@ -363,12 +363,14 @@ export const validatePasswordStrength = AsyncHandler(async (req: Request<{}, {},
     });
 });
 
-// Cleanup expired tokens periodically (run every hour)
-setInterval(() => {
-    const now = Date.now();
-    for (const [hash, data] of passwordResetTokens.entries()) {
-        if (now > data.expiresAt) {
-            passwordResetTokens.delete(hash);
+// Cleanup expired tokens periodically (run every hour; skip in tests to avoid open handles)
+if (process.env.NODE_ENV !== 'test') {
+    setInterval(() => {
+        const now = Date.now();
+        for (const [hash, data] of passwordResetTokens.entries()) {
+            if (now > data.expiresAt) {
+                passwordResetTokens.delete(hash);
+            }
         }
-    }
-}, 60 * 60 * 1000);
+    }, 60 * 60 * 1000);
+}

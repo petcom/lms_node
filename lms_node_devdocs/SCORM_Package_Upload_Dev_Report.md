@@ -11,10 +11,10 @@
 ## Progress Log
 - [x] Init: review existing upload controller, routes, storage (local/S3) abstractions.
 - [x] Design alignment: map request/response/validation to new contract.
-- [x] Implementation: update controller/route, env behaviors (title required, SCORM_MAX_FILE_SIZE enforcement, ValidationError usage, file field `file`, draft-only upload, metadata persistence, dev=local storage/provider, prod=S3 when configured).
-- [x] Tests: add integration coverage (happy path, missing manifest 400, oversize 413, unauthorized 401) using in-memory Mongo and local storage path.
+- [x] Implementation: update controller/route, env behaviors (title required, SCORM_MAX_FILE_SIZE enforcement, ValidationError usage, file field `file`, draft-only upload, metadata persistence, dev=local storage/provider, prod=S3 when configured, audit log on upload, status filter on packages listing).
+- [x] Tests: add integration coverage (happy path, missing manifest 400, oversize 413, unauthorized 401; package listing filters search/status/pagination) using in-memory Mongo and local storage path.
 - [x] Verification: run Jest suite for new tests (pass).
-- [x] Finalize: docs updated, status set to complete.
+- [x] Finalize: docs updated (audit log/perf limits noted), status set to complete.
 
 ## Notes
 - Current storage defaults to local; S3 available via SCORM_STORAGE_PROVIDER env.

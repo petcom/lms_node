@@ -1,16 +1,16 @@
 # SCORM Package Upload API Design
 
-- [ ] Implement POST /api/v1/scorm/packages (multipart/form-data) with teacher/admin JWT auth
-- [ ] Enforce zip mime and max size; return 413 on oversize
-- [ ] Validate required fields (file, title); optional fields: subject, classLevel, program, isGraded, maxScore, dueDate; 400 on invalid
-- [ ] Parse imsmanifest.xml to extract launch href, version, title; 400 on missing/invalid manifest
-- [ ] Derive metadata (packageId UUID, launchUrl/entryPoint, fileSize); set status=draft, isPublished=false; set createdBy/uploadedBy
-- [ ] Persist package record and store file with unique path
-- [ ] Cleanup temp/unzip dirs; guard against zip bombs/virus as needed
-- [ ] Keep upload separate from publish (use existing publish endpoint)
-- [ ] Add audit logging (uploader id/timestamp) and optional event emit
-- [ ] Integration tests: valid zip → 201; invalid manifest → 400; oversize → 413; unauthorized/forbidden → 401/403
-- [ ] Document performance limits (max upload size, timeouts) for UI
+- [x] Implement POST /api/v1/scorm/packages (multipart/form-data) with teacher/admin JWT auth
+- [x] Enforce zip mime and max size; return 413 on oversize
+- [x] Validate required fields (file, title); optional fields: subject, classLevel, program, isGraded, maxScore, dueDate; 400 on invalid
+- [x] Parse imsmanifest.xml to extract launch href, version, title; 400 on missing/invalid manifest
+- [x] Derive metadata (packageId UUID, launchUrl/entryPoint, fileSize); set status=draft, isPublished=false; set createdBy/uploadedBy
+- [x] Persist package record and store file with unique path
+- [x] Cleanup temp/unzip dirs; guard against zip bombs/virus as needed
+- [x] Keep upload separate from publish (use existing publish endpoint)
+- [x] Add audit logging (uploader id/timestamp) and optional event emit
+- [x] Integration tests: valid zip → 201; invalid manifest → 400; oversize → 413; unauthorized/forbidden → 401/403
+- [x] Document performance limits (max upload size, timeouts) for UI
 
 ## Storage Behavior
 
@@ -65,3 +65,13 @@
 - No auto-publish on upload; use publish endpoint separately
 - Consider background job for heavy parsing/caching if needed; expose status if deferred
 - Emit activity/audit event with uploader id and timestamp
+
+## Package Table Pagination & Filters
+
+- [x] Backend: ensure packages endpoint supports page/limit/search/status filters and returns pagination metadata
+- [ ] UI: add paging controls plus search/status inputs; store page/filter state, refetch on change, render total/pageSize
+
+## Upload Form Fields (subject/program/classLevel)
+
+- [ ] Confirm backend field names/IDs and allowed values for subject, program, classLevel; fetch options if enumerated
+- [ ] Add form inputs (selects/text) and pass through upload payload; validate required fields and surface backend errors

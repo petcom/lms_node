@@ -6,6 +6,7 @@ import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, ValidationError } from '../../utils/errors';
+import logger from '../../utils/logger';
 
 /**
  * @desc    Upload a new SCORM package
@@ -160,6 +161,15 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       },
       warnings: validationResult.warnings,
     });
+
+    logger.info('SCORM package uploaded', {
+      packageId: scormPackage.packageId,
+      uploadedBy: scormPackage.uploadedBy,
+      uploadedByRole: req.userAuth?.role,
+      fileName: scormPackage.fileName,
+      fileSize: scormPackage.fileSize,
+      storageProvider: scormPackage.storageProvider,
+    });
   } catch (error: any) {
     // Clean up on failure
     try {
@@ -185,6 +195,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     program,
     classLevel,
     isPublished,
+    status,
     search,
   } = req.query;
 
@@ -208,6 +219,11 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   // Filter by published status
   if (isPublished !== undefined) {
     query.isPublished = isPublished === 'true';
+  }
+
+  // Filter by status
+  if (status) {
+    query.status = status;
   }
 
   // Search by title or description

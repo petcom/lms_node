@@ -30,12 +30,12 @@
    - When access is denied by scope, show a friendly empty state: “No items in your department scope.”
 
 ## API Integration Notes
-- Departments API (to be added): CRUD under `/api/v1/departments` with scope enforcement.
+- Departments API (implemented): CRUD under `/api/v1/departments` with scope enforcement and counts for UI badges.
    - Create: POST `/api/v1/departments` body `{ name, code?, level: 'top'|'sub', parent?: deptId }`; Master can create top; Top can create sub under self. Master department is singleton and not creatable.
-   - List: GET `/api/v1/departments` returns scoped tree/flat list; Master sees all; Top sees self+subs; Sub sees self.
-   - Detail: GET `/api/v1/departments/:id` scoped similarly.
-   - Update: PUT `/api/v1/departments/:id` (rename/code change) scoped; no level/parent change initially.
-   - Delete: DELETE `/api/v1/departments/:id` only if empty; Master cannot be deleted.
+   - List: GET `/api/v1/departments` returns a scoped flat list (Master sees all; Top sees self+subs; Sub sees self) with `counts` `{ staffCount, programCount, subjectCount, classLevelCount, packageCount, globalPackageCount }` for each item. Use `?limit=` to control pagination (default 2).
+   - Detail: GET `/api/v1/departments/:id` scoped similarly and includes the same `counts` payload.
+   - Update: PUT `/api/v1/departments/:id` (rename/code change) scoped; no level/parent change allowed (backend rejects).
+   - Delete: DELETE `/api/v1/departments/:id` only if no children/staff/content; Master cannot be deleted.
 - Content endpoints now emit `department`:
    - Programs: GET `/api/v1/programs` (admin/teacher view) returns `department`; auto-scoped; Master may filter by `department` if filter is added.
    - Subjects: GET `/api/v1/subjects` similarly scoped and returns `department`.
@@ -45,6 +45,15 @@
    - Programs/Subjects/Class Levels: department auto-set from creator; Master admin may target a department (future: explicit field).
    - SCORM upload: accepts optional `department` when admin; otherwise defaults to creator’s department; optional `isGlobal` (admin-only) to share across departments.
 - Auth/testing note: test bypass uses `MASTER_DEPARTMENT_ID=000000000000000000000d00`; ignore in UI.
+
+## Phase 5 UI Behaviors
+- Department hierarchy manager: use `/api/v1/departments` list to render rows/cards with `counts` badges; disable delete when any count > 0 or when `level === 'master'`.
+- Create flows: show level selector with parent picker only when level=sub; on success, append to local list; handle 403 by showing scope warning (“You can only create within your department”).
+- Edit flows: allow name/code inline edit; block level/parent fields (backend rejects changes).
+- Delete flows: attempt DELETE and surface backend message from 400/403 (non-empty or master) in a toast/banner.
+- Filters/pagination: pass `?limit=` to control page size; for master admin, add department badge filter for downstream content pages (programs/subjects/class levels) when those endpoints gain `department` query.
+- Staff/content creation: default department to current user; master admins expose a department selector; surface `isGlobal` toggle for SCORM uploads with helper text “Visible to all departments”.
+- Empty states: when list returns empty under scope, show friendly message “No items in your department scope”.
 
 ## UX Copy / Labels
 - Department badge: "Dept: {name}"; Global badge: "Global".

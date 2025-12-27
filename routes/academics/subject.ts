@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import mongoose from 'mongoose';
 import { createSubject, getSubjects, getSubject, updateSubject, deleteSubject } from "../../controller/academics/subjectCtrl";
 import advancedResults from "../../middlewares/advancedResults";
 import Subject from "../../model/Academic/Subject";
@@ -19,9 +20,16 @@ subjectRouter.get(
 	isTeacherOrAdmin,
 	advancedResults(Subject, undefined, (req) => {
 		const scope = req.departmentScope?.accessibleDepartmentIds;
+		const requestedDept = typeof req.query.department === 'string' ? req.query.department : undefined;
+
+		if (scope === 'all' && requestedDept && mongoose.isValidObjectId(requestedDept)) {
+			return { department: new mongoose.Types.ObjectId(requestedDept) } as any;
+		}
+
 		if (scope && scope !== 'all') {
 			return { department: { $in: scope } } as any;
 		}
+
 		return {} as any;
 	}),
 	getSubjects

@@ -34,13 +34,13 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   // Get or create attempt
-  const attempt = await ScormAttempt.getOrCreateAttempt(
-    studentId,
-    scormPackage._id
-  );
+  const attempt = await ScormAttempt.getOrCreateAttempt(studentId, scormPackage._id);
 
   // Check max attempts
-  if ((scormPackage as any).maxAttempts && (attempt as any).attemptNumber > (scormPackage as any).maxAttempts) {
+  if (
+    (scormPackage as any).maxAttempts &&
+    (attempt as any).attemptNumber > (scormPackage as any).maxAttempts
+  ) {
     res.status(403);
     throw new Error(`Maximum attempts (${(scormPackage as any).maxAttempts}) exceeded`);
   }

@@ -1,6 +1,6 @@
 /**
  * SCORM Runtime API Controller
- * 
+ *
  * Handles server-side SCORM Runtime API calls:
  * - Initialize/Terminate sessions
  * - Get/Set CMI values
@@ -97,7 +97,7 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
 
   try {
     const sessionUserId = skipOwnership
-      ? ((attempt.student as any) || new mongoose.Types.ObjectId())
+      ? (attempt.student as any) || new mongoose.Types.ObjectId()
       : userId;
 
     // Create session (ignore if already initialized)
@@ -105,7 +105,10 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
   } catch (error: any) {
     if (!error.message.includes('already initialized')) {
       // If session creation fails, log and continue to return success for the adapter
-      console.error('SCORM initialize session creation failed, continuing without persistence:', error?.message || error);
+      console.error(
+        'SCORM initialize session creation failed, continuing without persistence:',
+        error?.message || error
+      );
     }
   }
 
@@ -187,12 +190,17 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
       res.status(404).json({ success: false, message: 'Package not found' });
       return;
     }
-    
+
     for (const [element, value] of Object.entries(pendingCMI)) {
       if (typeof (attempt as any).setCMIValue === 'function') {
         (attempt as any).setCMIValue(element, value);
       } else {
-        const nextCmi = setCMIValue((attempt as any).cmi || {}, element, value, scormPackage?.version || 'scorm_1.2');
+        const nextCmi = setCMIValue(
+          (attempt as any).cmi || {},
+          element,
+          value,
+          scormPackage?.version || 'scorm_1.2'
+        );
         (attempt as any).cmi = nextCmi;
         attempt.markModified('cmi');
       }
@@ -206,7 +214,10 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
     (attempt as any).status = 'suspended';
   }
   (attempt as any).calculateCompletion?.();
-  if (['completed', 'passed', 'failed'].includes((attempt as any).status) && !(attempt as any).completedAt) {
+  if (
+    ['completed', 'passed', 'failed'].includes((attempt as any).status) &&
+    !(attempt as any).completedAt
+  ) {
     (attempt as any).completedAt = new Date();
   }
   logInteraction(attempt as any, 'Terminate');
@@ -299,9 +310,10 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   // Get value from pending session data first, then persisted CMI
   if (Object.prototype.hasOwnProperty.call(pendingCMI, element)) {
-    const normalizedValue = pendingCMI[element] === undefined || pendingCMI[element] === null
-      ? ''
-      : String(pendingCMI[element]);
+    const normalizedValue =
+      pendingCMI[element] === undefined || pendingCMI[element] === null
+        ? ''
+        : String(pendingCMI[element]);
     res.status(200).json({
       success: true,
       data: {
@@ -345,8 +357,7 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
   }
 
   // Find attempt
-  const attempt = await ScormAttempt.findById(attemptId)
-    .populate('package', 'version');
+  const attempt = await ScormAttempt.findById(attemptId).populate('package', 'version');
 
   if (!attempt) {
     res.status(404).json({ success: false, message: 'Attempt not found' });
@@ -379,7 +390,11 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   // Check if read-only
   if (isReadOnly(element, version)) {
-    await setSessionError(attemptId, version === 'scorm_1.2' ? '403' : '404', 'Element is read only');
+    await setSessionError(
+      attemptId,
+      version === 'scorm_1.2' ? '403' : '404',
+      'Element is read only'
+    );
     res.status(200).json({
       success: false,
       data: {
@@ -462,8 +477,7 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Find attempt
-  const attempt = await ScormAttempt.findById(attemptId)
-    .populate('package', 'version');
+  const attempt = await ScormAttempt.findById(attemptId).populate('package', 'version');
 
   if (!attempt) {
     res.status(404).json({ success: false, message: 'Attempt not found' });
@@ -510,7 +524,10 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
     if (!['completed', 'passed', 'failed', 'suspended'].includes((attempt as any).status)) {
       (attempt as any).status = 'incomplete';
     }
-    if (['completed', 'passed', 'failed'].includes((attempt as any).status) && !(attempt as any).completedAt) {
+    if (
+      ['completed', 'passed', 'failed'].includes((attempt as any).status) &&
+      !(attempt as any).completedAt
+    ) {
       (attempt as any).completedAt = new Date();
     }
 
@@ -566,12 +583,12 @@ export const getLastError = asyncHandler(async (req: Request, res: Response) => 
   }
 
   // Find attempt
-    const attempt = await ScormAttempt.findById(attemptId);
+  const attempt = await ScormAttempt.findById(attemptId);
 
-    if (!attempt) {
-      res.status(404).json({ success: false, message: 'Attempt not found' });
-      return;
-    }
+  if (!attempt) {
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
+  }
 
   // Verify student owns this attempt
   if (userId && attempt.student.toString() !== userId.toString()) {
@@ -606,12 +623,12 @@ export const heartbeat = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Find attempt
-    const attempt = await ScormAttempt.findById(attemptId);
+  const attempt = await ScormAttempt.findById(attemptId);
 
-    if (!attempt) {
-      res.status(404).json({ success: false, message: 'Attempt not found' });
-      return;
-    }
+  if (!attempt) {
+    res.status(404).json({ success: false, message: 'Attempt not found' });
+    return;
+  }
 
   // Verify student owns this attempt
   if (userId && attempt.student.toString() !== userId.toString()) {

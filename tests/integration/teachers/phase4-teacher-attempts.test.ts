@@ -108,7 +108,9 @@ describe('Teacher Phase 4: Attempts Listing', () => {
     } as any);
 
     const res = await request(app)
-      .get(`/api/v1/teachers/attempts?classId=${klass._id.toString()}&packageId=${pkg._id.toString()}`)
+      .get(
+        `/api/v1/teachers/attempts?classId=${klass._id.toString()}&packageId=${pkg._id.toString()}`
+      )
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);

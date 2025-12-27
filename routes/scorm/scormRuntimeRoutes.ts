@@ -1,6 +1,6 @@
 /**
  * SCORM Runtime API Routes
- * 
+ *
  * Routes for SCORM Runtime API communication between
  * SCORM content and the LMS server.
  */

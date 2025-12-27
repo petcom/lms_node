@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express, { Router } from 'express';
 import {
   adminRegisterStudent,
   loginStudent,
@@ -8,11 +8,11 @@ import {
   studentUpdateProfile,
   adminUpdateStudent,
   writeExam,
-} from "../../controller/students/studentsCtrl";
-import advancedResults from "../../middlewares/advancedResults";
-import Student from "../../model/Academic/Student";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
+} from '../../controller/students/studentsCtrl';
+import advancedResults from '../../middlewares/advancedResults';
+import Student from '../../model/Academic/Student';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
 
 const studentRouter: Router = express.Router();
 
@@ -49,9 +49,9 @@ const studentRouter: Router = express.Router();
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 studentRouter.post(
-  "/admin/register",
+  '/admin/register',
   isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   adminRegisterStudent
 );
 
@@ -96,7 +96,7 @@ studentRouter.post(
  *                       type: string
  *                       enum: [student]
  */
-studentRouter.post("/login", loginStudent);
+studentRouter.post('/login', loginStudent);
 /**
  * @swagger
  * /api/v1/students/profile:
@@ -111,43 +111,33 @@ studentRouter.post("/login", loginStudent);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
+studentRouter.get('/profile', isAuthenticated(), roleRestriction('student'), getStudentProfile);
 studentRouter.get(
-  "/profile",
+  '/admin',
   isAuthenticated(),
-  roleRestriction("student"),
-  getStudentProfile
-);
-studentRouter.get(
-  "/admin",
-  isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   advancedResults(Student),
   getAllStudentsByAdmin
 );
 studentRouter.get(
-  "/:studentID/admin",
+  '/:studentID/admin',
   isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   getStudentByAdmin
 );
 /** Students taking exams can access following: */
 studentRouter.post(
-  "/exams/:examID/write",
+  '/exams/:examID/write',
   isAuthenticated(),
-  roleRestriction("student"),
+  roleRestriction('student'),
   writeExam
 ); // Student only writes exams
 /** */
+studentRouter.put('/update', isAuthenticated(), roleRestriction('student'), studentUpdateProfile); // student only
 studentRouter.put(
-  "/update",
+  '/:studentID/update/admin',
   isAuthenticated(),
-  roleRestriction("student"),
-  studentUpdateProfile
-); // student only
-studentRouter.put(
-  "/:studentID/update/admin",
-  isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   adminUpdateStudent
 ); // Admin only
 

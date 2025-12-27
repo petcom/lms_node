@@ -1,6 +1,6 @@
 /**
  * SCORM Player Controller
- * 
+ *
  * Handles SCORM content delivery and player interface
  */
 
@@ -23,7 +23,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - user not authenticated'
+        message: 'Unauthorized - user not authenticated',
       });
     }
 
@@ -32,7 +32,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
       const rawToken = authHeader.startsWith('Bearer') ? authHeader.split(' ')[1] : authHeader;
       res.cookie('token', rawToken, {
         httpOnly: true,
-        sameSite: 'lax'
+        sameSite: 'lax',
       });
     }
 
@@ -42,7 +42,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
     if (!scormPackage) {
       return res.status(404).json({
         success: false,
-        message: 'SCORM package not found'
+        message: 'SCORM package not found',
       });
     }
 
@@ -50,7 +50,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
     if (scormPackage.status !== 'published' && !['admin', 'teacher'].includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: 'Package is not published'
+        message: 'Package is not published',
       });
     }
 
@@ -60,7 +60,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
       if (!hasAccess) {
         return res.status(403).json({
           success: false,
-          message: 'You do not have access to this package'
+          message: 'You do not have access to this package',
         });
       }
 
@@ -68,13 +68,13 @@ export const launchPlayer = async (req: Request, res: Response) => {
       if (scormPackage.trackingOptions.maxAttempts) {
         const attemptCount = await ScormAttempt.countDocuments({
           student: userId,
-          package: scormPackage._id
+          package: scormPackage._id,
         });
 
         if (attemptCount >= scormPackage.trackingOptions.maxAttempts) {
           return res.status(403).json({
             success: false,
-            message: `Maximum attempts (${scormPackage.trackingOptions.maxAttempts}) reached`
+            message: `Maximum attempts (${scormPackage.trackingOptions.maxAttempts}) reached`,
           });
         }
       }
@@ -84,15 +84,16 @@ export const launchPlayer = async (req: Request, res: Response) => {
     let attempt = await ScormAttempt.findOne({
       student: userId,
       package: scormPackage._id,
-      status: { $in: ['running', 'suspended'] }
+      status: { $in: ['running', 'suspended'] },
     });
 
     if (!attempt) {
       // Create new attempt
-      const attemptNumber = await ScormAttempt.countDocuments({
-        student: userId,
-        package: scormPackage._id
-      }) + 1;
+      const attemptNumber =
+        (await ScormAttempt.countDocuments({
+          student: userId,
+          package: scormPackage._id,
+        })) + 1;
 
       attempt = await ScormAttempt.create({
         attemptId: `${scormPackage.packageId}-${attemptNumber}`,
@@ -108,9 +109,9 @@ export const launchPlayer = async (req: Request, res: Response) => {
             entry: 'ab-initio',
             score: {},
             session_time: '00:00:00',
-            total_time: '00:00:00'
-          }
-        } as any
+            total_time: '00:00:00',
+          },
+        } as any,
       });
     }
 
@@ -127,7 +128,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
       timeLimit: scormPackage.trackingOptions.timeLimit,
       trackTime: scormPackage.trackingOptions.trackTime,
       trackScore: scormPackage.trackingOptions.trackScore,
-      authToken: authHeader
+      authToken: authHeader,
     });
 
     res.setHeader('Content-Type', 'text/html');
@@ -144,13 +145,12 @@ export const launchPlayer = async (req: Request, res: Response) => {
         "frame-ancestors 'self';"
     );
     return res.send(playerHTML);
-
   } catch (error: any) {
     console.error('Launch player error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error launching SCORM player',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -170,7 +170,7 @@ export const serveContent = async (req: Request, res: Response) => {
     if (!scormPackage) {
       return res.status(404).json({
         success: false,
-        message: 'SCORM package not found'
+        message: 'SCORM package not found',
       });
     }
 
@@ -183,28 +183,22 @@ export const serveContent = async (req: Request, res: Response) => {
       if (!hasAccess) {
         return res.status(403).json({
           success: false,
-          message: 'Access denied'
+          message: 'Access denied',
         });
       }
     }
 
     // Construct file path
-    const contentPath = path.join(
-      process.cwd(),
-      'scorm-content',
-      'packages',
-      packageId,
-      filePath
-    );
+    const contentPath = path.join(process.cwd(), 'scorm-content', 'packages', packageId, filePath);
 
     // Security: prevent directory traversal
     const normalizedPath = path.normalize(contentPath);
     const packageDir = path.join(process.cwd(), 'scorm-content', 'packages', packageId);
-    
+
     if (!normalizedPath.startsWith(packageDir)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied - invalid file path'
+        message: 'Access denied - invalid file path',
       });
     }
 
@@ -230,13 +224,12 @@ export const serveContent = async (req: Request, res: Response) => {
 
     // Send file
     return res.sendFile(normalizedPath);
-
   } catch (error: any) {
     console.error('Serve content error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error serving content',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -255,7 +248,7 @@ export const exitPlayer = async (req: Request, res: Response) => {
     if (!attempt) {
       return res.status(404).json({
         success: false,
-        message: 'Attempt not found'
+        message: 'Attempt not found',
       });
     }
 
@@ -263,7 +256,7 @@ export const exitPlayer = async (req: Request, res: Response) => {
     if (String(attempt.student) !== String(userId)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied'
+        message: 'Access denied',
       });
     }
 
@@ -276,16 +269,15 @@ export const exitPlayer = async (req: Request, res: Response) => {
         status: attempt.status,
         score: cmiData?.core?.score?.raw || cmiData?.score?.raw || 0,
         completionStatus: cmiData?.core?.lesson_status || cmiData?.completion_status || 'unknown',
-        totalTime: cmiData?.core?.total_time || cmiData?.total_time || '00:00:00'
-      }
+        totalTime: cmiData?.core?.total_time || cmiData?.total_time || '00:00:00',
+      },
     });
-
   } catch (error: any) {
     console.error('Exit player error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error exiting player',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -304,7 +296,17 @@ function generatePlayerHTML(options: {
   trackScore: boolean;
   authToken: string;
 }): string {
-  const { packageId, attemptId, title, version, launchUrl, timeLimit, trackTime, trackScore, authToken } = options;
+  const {
+    packageId,
+    attemptId,
+    title,
+    version,
+    launchUrl,
+    timeLimit,
+    trackTime,
+    trackScore,
+    authToken,
+  } = options;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -314,9 +316,11 @@ function generatePlayerHTML(options: {
   <title>${title} - SCORM Player</title>
   
   <!-- SCORM API Adapters -->
-  ${version === 'scorm_1.2' 
-    ? '<script src="/scorm/scorm-api-1.2.js"></script>' 
-    : '<script src="/scorm/scorm-api-2004.js"></script>'}
+  ${
+    version === 'scorm_1.2'
+      ? '<script src="/scorm/scorm-api-1.2.js"></script>'
+      : '<script src="/scorm/scorm-api-2004.js"></script>'
+  }
   <script src="/scorm/scorm-api-finder.js"></script>
   
   <style>
@@ -453,7 +457,9 @@ function generatePlayerHTML(options: {
       box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
     }
     
-    ${timeLimit ? `
+    ${
+      timeLimit
+        ? `
     .time-warning {
       color: #f6ad55;
     }
@@ -467,7 +473,9 @@ function generatePlayerHTML(options: {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
-    ` : ''}
+    `
+        : ''
+    }
     
     #loading-overlay {
       position: fixed;
@@ -518,18 +526,26 @@ function generatePlayerHTML(options: {
             <span id="status-text">Initializing...</span>
           </div>
         </div>
-        ${trackScore ? `
+        ${
+          trackScore
+            ? `
         <div class="stat-item">
           <div class="stat-label">Score</div>
           <div class="stat-value" id="score-text">--</div>
         </div>
-        ` : ''}
-        ${trackTime ? `
+        `
+            : ''
+        }
+        ${
+          trackTime
+            ? `
         <div class="stat-item">
           <div class="stat-label">Time ${timeLimit ? `(Limit: ${timeLimit}min)` : ''}</div>
           <div class="stat-value" id="time-text">00:00:00</div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       
       <div class="control-group">
@@ -813,7 +829,7 @@ function generatePlayerHTML(options: {
  */
 function getContentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
-  
+
   const types: Record<string, string> = {
     '.html': 'text/html',
     '.htm': 'text/html',
@@ -837,8 +853,8 @@ function getContentType(filePath: string): string {
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
     '.ttf': 'font/ttf',
-    '.eot': 'application/vnd.ms-fontobject'
+    '.eot': 'application/vnd.ms-fontobject',
   };
-  
+
   return types[ext] || 'application/octet-stream';
 }

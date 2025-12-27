@@ -186,10 +186,7 @@ export const scormPerformanceMonitor = (req: Request, res: Response, next: NextF
 
     // Track errors
     if (res.statusCode >= 400) {
-      ScormMetrics.recordError(
-        `HTTP ${res.statusCode}`,
-        `${req.method} ${req.path}`
-      );
+      ScormMetrics.recordError(`HTTP ${res.statusCode}`, `${req.method} ${req.path}`);
     }
   });
 

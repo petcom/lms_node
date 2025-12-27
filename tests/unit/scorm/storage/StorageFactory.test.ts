@@ -9,7 +9,7 @@ describe('StorageFactory', () => {
     // Reset environment and singleton instance
     jest.resetModules();
     process.env = { ...originalEnv };
-    
+
     // Reset singleton instance via private property
     (StorageFactory as any).instance = null;
   });
@@ -28,7 +28,7 @@ describe('StorageFactory', () => {
 
     it('should create LocalStorageProvider by default', () => {
       process.env.SCORM_STORAGE_PROVIDER = undefined;
-      
+
       const factory = StorageFactory.getInstance();
       const provider = factory.getProvider();
 

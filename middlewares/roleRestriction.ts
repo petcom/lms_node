@@ -11,7 +11,7 @@ import { UserRole } from '../types/auth';
  * @example
  * // Single role
  * router.get('/admin-only', isAuthenticated(), roleRestriction('admin'), controller);
- * 
+ *
  * // Multiple roles
  * router.get('/staff-only', isAuthenticated(), roleRestriction('admin', 'teacher'), controller);
  */
@@ -19,27 +19,19 @@ const roleRestriction = (...roles: UserRole[]) => {
   // Validate that all provided roles are valid
   const invalidRoles = roles.filter((role) => !isValidRole(role));
   if (invalidRoles.length > 0) {
-    throw new Error(
-      `Invalid role(s) provided to roleRestriction: ${invalidRoles.join(', ')}`
-    );
+    throw new Error(`Invalid role(s) provided to roleRestriction: ${invalidRoles.join(', ')}`);
   }
 
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       // Check if user is authenticated
       if (!req.userAuth) {
-        return next(
-          new AuthenticationError('Authentication required to access this resource')
-        );
+        return next(new AuthenticationError('Authentication required to access this resource'));
       }
 
       // Check if user has required role
       if (!roles.includes(req.userAuth.role as UserRole)) {
-        return next(
-          new AuthorizationError(
-            `Access denied. Required role(s): ${roles.join(', ')}`
-          )
-        );
+        return next(new AuthorizationError(`Access denied. Required role(s): ${roles.join(', ')}`));
       }
 
       // User has required role, proceed

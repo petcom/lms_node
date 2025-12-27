@@ -13,12 +13,7 @@ const scormContentRouter = express.Router();
 scormContentRouter.get('/:packageId/launch', isAuthenticated(), launchPackage);
 
 // Get manifest (Teacher/Admin)
-scormContentRouter.get(
-  '/:packageId/manifest',
-  isAuthenticated(),
-  isTeacherOrAdmin,
-  getManifest
-);
+scormContentRouter.get('/:packageId/manifest', isAuthenticated(), isTeacherOrAdmin, getManifest);
 
 // Serve content files (Student) - This must be last to catch all paths
 scormContentRouter.get('/:packageId/*', isAuthenticated(), getContentFile);

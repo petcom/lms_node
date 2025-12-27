@@ -3,6 +3,8 @@ import expressAsyncHandler from 'express-async-handler';
 import Admin from '../../model/Staff/Admin';
 import generateToken from '../../utils/generateToken';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
+import mongoose from 'mongoose';
+import { AuthorizationError, ValidationError } from '../../utils/errors';
 
 // Request body interfaces
 interface RegisterAdminBody {
@@ -20,6 +22,7 @@ interface UpdateAdminBody {
   email?: string;
   name?: string;
   password?: string;
+  department?: string;
 }
 
 /**
@@ -27,172 +30,195 @@ interface UpdateAdminBody {
  * @route       POST /api/v1/admins/register
  * @access      Private
  */
-export const registerAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, RegisterAdminBody>, res: Response): Promise<void> => {
-  const { name, email, password } = req.body;
+export const registerAdminCtrl = expressAsyncHandler(
+  async (req: Request<{}, {}, RegisterAdminBody>, res: Response): Promise<void> => {
+    const { name, email, password } = req.body;
 
-  // Check if admin already exists in the database
-  const adminFound = await Admin.findOne({ email });
+    // Check if admin already exists in the database
+    const adminFound = await Admin.findOne({ email });
 
-  if (adminFound) {
-    res.status(401).json({ msg: "Email is already registered" });
-    return;
+    if (adminFound) {
+      res.status(401).json({ msg: 'Email is already registered' });
+      return;
+    }
+
+    // register user
+    const user = await Admin.create({
+      name,
+      email,
+      password: await hashPassword(password),
+    });
+
+    const sanitizedUser = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    res.status(201).json({
+      status: 'success',
+      data: sanitizedUser,
+      message: 'Admin registered successfully. Glad you are here.',
+    });
   }
-
-  // register user
-  const user = await Admin.create({
-    name,
-    email,
-    password: await hashPassword(password),
-  });
-
-  const sanitizedUser = {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  };
-
-  res.status(201).json({
-    status: "success",
-    data: sanitizedUser,
-    message: "Admin registered successfully. Glad you are here.",
-  });
-});
+);
 
 /**
  * @description login admins
  * @route       POST /api/v1/admins/login
  * @access      Public
  */
-export const loginAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, LoginAdminBody>, res: Response): Promise<void> => {
-  const { email, password } = req.body;
-  const user = await Admin.findOne({ email });
+export const loginAdminCtrl = expressAsyncHandler(
+  async (req: Request<{}, {}, LoginAdminBody>, res: Response): Promise<void> => {
+    const { email, password } = req.body;
+    const user = await Admin.findOne({ email });
 
-  if (!user) {
-    res.status(401).json({
-      status: "error",
-      message: "Invalid login credentials. Please try again.",
-    });
-    return;
+    if (!user) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Invalid login credentials. Please try again.',
+      });
+      return;
+    }
+
+    // verify password
+    const isMatched = await isPassMatched(password, user.password);
+
+    if (!isMatched) {
+      res.status(401).json({
+        status: 'error',
+        message: 'Invalid login credentials. Please try again.',
+      });
+    } else {
+      const role = user.role || 'admin';
+      const accessToken = generateToken(user._id.toString(), role);
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          token: accessToken,
+          accessToken,
+          role,
+        },
+        message: 'Admin logged in successfully. Welcome back!',
+      });
+    }
   }
-
-  // verify password
-  const isMatched = await isPassMatched(password, user.password);
-
-  if (!isMatched) {
-    res.status(401).json({
-      status: "error",
-      message: "Invalid login credentials. Please try again.",
-    });
-  } else {
-    const role = user.role || 'admin';
-    const accessToken = generateToken(user._id.toString(), role);
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        token: accessToken,
-        accessToken,
-        role,
-      },
-      message: "Admin logged in successfully. Welcome back!",
-    });
-  }
-});
+);
 
 /**
  * @description Get all admins
  * @route       GET /api/v1/admins
  * @access      Private
  */
-export const getAdminsCtrl = expressAsyncHandler(async (_req: Request, res: Response): Promise<void> => {
-  res.status(200).json(res.results);
-});
+export const getAdminsCtrl = expressAsyncHandler(
+  async (_req: Request, res: Response): Promise<void> => {
+    res.status(200).json(res.results);
+  }
+);
 
 /**
  * @description Get Admin Profile
  * @route       GET /api/v1/admins/profile
  * @access      Private
  */
-export const getAdminProfileCtrl = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const adminId = req.userAuth?._id;
-  const admin = adminId
-    ? await Admin.findById(adminId).select("-password -createdAt -updatedAt").lean()
-    : null;
+export const getAdminProfileCtrl = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const adminId = req.userAuth?._id;
+    const admin = adminId
+      ? await Admin.findById(adminId).select('-password -createdAt -updatedAt').lean()
+      : null;
 
-  const profile = admin || req.userAuth;
+    const profile = admin || req.userAuth;
 
-  if (!profile) {
-    res.status(404).json({
-      status: "error",
-      message: "Admin not found",
+    if (!profile) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Admin not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: profile,
+      message: 'Admin Profile fetched successfully',
     });
-    return;
   }
-
-  res.status(200).json({
-    status: "success",
-    data: profile,
-    message: "Admin Profile fetched successfully",
-  });
-});
+);
 
 /**
  * @description Update Admin
  * @route       UPDATE /api/v1/admins/:id
  * @access      Private
  */
-export const updateAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, UpdateAdminBody>, res: Response): Promise<void> => {
-  const { email, name, password } = req.body;
-  
-  // if email is taken
-  if (email) {
-    const emailExists = await Admin.findOne({ email });
-    if (emailExists) {
-      throw new Error("This email already exists");
+export const updateAdminCtrl = expressAsyncHandler(
+  async (req: Request<{}, {}, UpdateAdminBody>, res: Response): Promise<void> => {
+    const { email, name, password, department } = req.body;
+
+    // if email is taken
+    if (email) {
+      const emailExists = await Admin.findOne({ email });
+      if (emailExists) {
+        throw new Error('This email already exists');
+      }
+    }
+
+    // department scope validation
+    if (department) {
+      const scope = req.departmentScope?.accessibleDepartmentIds;
+      if (!mongoose.isValidObjectId(department)) {
+        throw new ValidationError('Invalid department id');
+      }
+      if (scope && scope !== 'all' && !scope.includes(department)) {
+        throw new AuthorizationError('Access denied for this department');
+      }
+    }
+
+    // check if user is updating password
+    if (password) {
+      // update user
+      const admin = await Admin.findByIdAndUpdate(
+        req.userAuth?._id,
+        {
+          email,
+          password: await hashPassword(password),
+          name,
+          department: department ? new mongoose.Types.ObjectId(department) : undefined,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      res.status(200).json({
+        success: 'success',
+        data: admin,
+        message: 'Admin profile updated successfully',
+      });
+    } else {
+      // update user email and name
+      const admin = await Admin.findByIdAndUpdate(
+        req.userAuth?._id,
+        {
+          email,
+          name,
+          department: department ? new mongoose.Types.ObjectId(department) : undefined,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      res.status(200).json({
+        success: 'success',
+        data: admin,
+        message: 'Admin profile updated successfully',
+      });
     }
   }
-
-  // check if user is updating password
-  if (password) {
-    // update user
-    const admin = await Admin.findByIdAndUpdate(
-      req.userAuth?._id,
-      {
-        email,
-        password: await hashPassword(password),
-        name,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-    res.status(200).json({
-      success: "success",
-      data: admin,
-      message: "Admin profile updated successfully",
-    });
-  } else {
-    // update user email and name
-    const admin = await Admin.findByIdAndUpdate(
-      req.userAuth?._id,
-      {
-        email,
-        name,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-    res.status(200).json({
-      success: "success",
-      data: admin,
-      message: "Admin profile updated successfully",
-    });
-  }
-});
+);
 
 /**
  * @description Admin suspends a teacher
@@ -202,12 +228,12 @@ export const updateAdminCtrl = expressAsyncHandler(async (req: Request<{}, {}, U
 export const adminSuspendTeacherCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has Suspended teacher successfully",
+      status: 'success',
+      data: 'Admin has Suspended teacher successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -221,12 +247,12 @@ export const adminSuspendTeacherCtrl = (_req: Request, res: Response): void => {
 export const adminUnsuspendteacherCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has Unsuspended teacher successfully",
+      status: 'success',
+      data: 'Admin has Unsuspended teacher successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -240,12 +266,12 @@ export const adminUnsuspendteacherCtrl = (_req: Request, res: Response): void =>
 export const adminWithdrawTeacherCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has withdrawn teacher successfully",
+      status: 'success',
+      data: 'Admin has withdrawn teacher successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -259,12 +285,12 @@ export const adminWithdrawTeacherCtrl = (_req: Request, res: Response): void => 
 export const adminUnwithdrawTeacherCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has Unwithdrawn teacher successfully",
+      status: 'success',
+      data: 'Admin has Unwithdrawn teacher successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -278,12 +304,12 @@ export const adminUnwithdrawTeacherCtrl = (_req: Request, res: Response): void =
 export const adminPublishResultsCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has published exam result(s) successfully",
+      status: 'success',
+      data: 'Admin has published exam result(s) successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -297,12 +323,12 @@ export const adminPublishResultsCtrl = (_req: Request, res: Response): void => {
 export const adminUnpublishResultsCtrl = (_req: Request, res: Response): void => {
   try {
     res.status(201).json({
-      status: "success",
-      data: "Admin has Unpublished exam result(s) successfully",
+      status: 'success',
+      data: 'Admin has Unpublished exam result(s) successfully',
     });
   } catch (error) {
     res.json({
-      status: "failed",
+      status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

@@ -12,15 +12,16 @@ export const departmentScope = () => {
         return next(new AuthorizationError('Authentication required')); // should be caught earlier
       }
 
-      const requesterDeptId = req.userAuth.department
-        ? new mongoose.Types.ObjectId(req.userAuth.department as any)
+      const requesterDeptId = (req.userAuth as any)?.department
+        ? new mongoose.Types.ObjectId((req.userAuth as any).department as any)
         : null;
 
       const master = await Department.findOne({ level: 'master' }).lean();
       const masterId = master?._id?.toString() || MASTER_DEPARTMENT_ID;
 
       // If no department set, fall back to master (default-open model)
-      const departmentIdToUse = requesterDeptId || master?._id || new mongoose.Types.ObjectId(masterId);
+      const departmentIdToUse =
+        requesterDeptId || master?._id || new mongoose.Types.ObjectId(masterId);
       const department = await Department.findById(departmentIdToUse).lean();
 
       if (!department) {

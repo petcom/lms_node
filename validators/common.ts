@@ -42,13 +42,10 @@ export const password = Joi.string()
 /**
  * Password confirmation validation (must match password)
  */
-export const passwordConfirmation = Joi.string()
-  .valid(Joi.ref('password'))
-  .required()
-  .messages({
-    'any.only': 'Password confirmation does not match password',
-    'any.required': 'Password confirmation is required',
-  });
+export const passwordConfirmation = Joi.string().valid(Joi.ref('password')).required().messages({
+  'any.only': 'Password confirmation does not match password',
+  'any.required': 'Password confirmation is required',
+});
 
 /**
  * Name validation pattern (for first/last name)
@@ -69,9 +66,11 @@ export const name = Joi.string()
 /**
  * Phone number validation (basic international format)
  */
-export const phone = Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).messages({
-  'string.pattern.base': 'Please provide a valid phone number',
-});
+export const phone = Joi.string()
+  .pattern(/^\+?[1-9]\d{1,14}$/)
+  .messages({
+    'string.pattern.base': 'Please provide a valid phone number',
+  });
 
 /**
  * Date validation (ISO format or Date object)

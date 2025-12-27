@@ -1,9 +1,15 @@
-import express, { Router } from "express";
-import { createExam, getExams, getExam, updateExam, deleteExam } from "../../controller/academics/examsCtrl";
-import Exam from "../../model/Academic/Exam";
-import advancedResults from "../../middlewares/advancedResults";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
+import express, { Router } from 'express';
+import {
+  createExam,
+  getExams,
+  getExam,
+  updateExam,
+  deleteExam,
+} from '../../controller/academics/examsCtrl';
+import Exam from '../../model/Academic/Exam';
+import advancedResults from '../../middlewares/advancedResults';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
 
 const examRouter: Router = express.Router();
 
@@ -53,17 +59,20 @@ const examRouter: Router = express.Router();
  *         description: List of exams
  */
 examRouter
-    .route("/")
-    .post(isAuthenticated(), roleRestriction("teacher"), createExam)
-    .get(isAuthenticated(), roleRestriction("teacher"), advancedResults(Exam, {
-        path: "questions",
-        populate: {
-            path: "createdBy",
-        }
-    }), 
+  .route('/')
+  .post(isAuthenticated(), roleRestriction('teacher'), createExam)
+  .get(
+    isAuthenticated(),
+    roleRestriction('teacher'),
+    advancedResults(Exam, {
+      path: 'questions',
+      populate: {
+        path: 'createdBy',
+      },
+    }),
     getExams
-);
-    
+  );
+
 /**
  * @swagger
  * /api/v1/exams/{id}:
@@ -113,9 +122,9 @@ examRouter
  *         description: Exam deleted successfully
  */
 examRouter
-    .route("/:id")
-    .get(isAuthenticated(), roleRestriction("teacher"), getExam)
-    .put(isAuthenticated(), roleRestriction("teacher"), updateExam)
-    .delete(isAuthenticated(), roleRestriction("teacher"), deleteExam);
+  .route('/:id')
+  .get(isAuthenticated(), roleRestriction('teacher'), getExam)
+  .put(isAuthenticated(), roleRestriction('teacher'), updateExam)
+  .delete(isAuthenticated(), roleRestriction('teacher'), deleteExam);
 
 export default examRouter;

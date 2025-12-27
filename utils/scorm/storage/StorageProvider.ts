@@ -41,10 +41,10 @@ export abstract class StorageProvider implements IStorageProvider {
   protected sanitizePath(filePath: string): string {
     // Remove null bytes
     let sanitized = filePath.replace(/\x00/g, '');
-    
+
     // Remove any ../ or ..\\ patterns
     sanitized = sanitized.replace(/\.\.[/\\]/g, '');
-    
+
     return sanitized;
   }
 

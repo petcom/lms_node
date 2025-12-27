@@ -11,10 +11,7 @@ const getAllowedOrigins = (): string[] => {
   const list = origins.split(',').map((origin) => origin.trim());
 
   // Always allow API host origins to avoid self-CORS blocks during local dev
-  const defaults = [
-    'http://localhost:8082',
-    'http://127.0.0.1:8082',
-  ];
+  const defaults = ['http://localhost:8082', 'http://127.0.0.1:8082'];
 
   return Array.from(new Set([...list, ...defaults]));
 };

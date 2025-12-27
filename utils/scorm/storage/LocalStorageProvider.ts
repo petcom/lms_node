@@ -103,9 +103,7 @@ export class LocalStorageProvider extends StorageProvider {
   getUrl(filePath: string): string {
     const sanitizedPath = this.sanitizePath(filePath);
     // Normalize path separators and remove ./ patterns
-    const normalizedPath = sanitizedPath
-      .replace(/\/+/g, '/')
-      .replace(/\/\.\/|^\.\//g, '/');
+    const normalizedPath = sanitizedPath.replace(/\/+/g, '/').replace(/\/\.\/|^\.\//g, '/');
     return `/scorm-content/${normalizedPath}`;
   }
 

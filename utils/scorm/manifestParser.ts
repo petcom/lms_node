@@ -153,9 +153,7 @@ export class ManifestParser {
 
     // Schema version
     if (metadata.schemaversion || metadata.schemaVersion) {
-      result.schemaVersion = this.getElementText(
-        metadata.schemaversion || metadata.schemaVersion
-      );
+      result.schemaVersion = this.getElementText(metadata.schemaversion || metadata.schemaVersion);
     }
 
     // LOM (Learning Object Metadata) - if present
@@ -176,7 +174,8 @@ export class ManifestParser {
 
         // Description
         if (general.description) {
-          const descLangstring = general.description[0]?.langstring || general.description[0]?.langString;
+          const descLangstring =
+            general.description[0]?.langstring || general.description[0]?.langString;
           if (descLangstring) {
             result.description = this.getElementText(descLangstring);
           }
@@ -299,8 +298,9 @@ export class ManifestParser {
         const identifier = this.getAttributeValue(resource, 'identifier');
         const type = this.getAttributeValue(resource, 'type') || 'webcontent';
         const href = this.getAttributeValue(resource, 'href') || '';
-        const scormType = this.getAttributeValue(resource, 'adlcp:scormType') || 
-                         this.getAttributeValue(resource, 'adlcp:scormtype');
+        const scormType =
+          this.getAttributeValue(resource, 'adlcp:scormType') ||
+          this.getAttributeValue(resource, 'adlcp:scormtype');
 
         // Parse dependencies
         const dependencies: string[] = [];

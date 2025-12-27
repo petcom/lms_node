@@ -34,7 +34,10 @@ export const ensureMasterDepartment = async (): Promise<void> => {
       Program.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       Subject.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       ClassLevel.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
-      ScormPackage.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
+      ScormPackage.updateMany(
+        { department: { $exists: false } },
+        { $set: { department: masterId } }
+      ),
     ];
 
     await Promise.all(bulkOps);

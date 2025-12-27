@@ -12,13 +12,13 @@ declare global {
         userDepartmentId?: string;
         accessibleDepartmentIds?: string[] | 'all';
       };
-      
+
       // User type for multi-tenant auth
       userType?: 'admin' | 'teacher' | 'student';
-      
+
       // JWT token from authorization header
       token?: string;
-      
+
       // Advanced results data from pagination middleware
       results?: {
         total: number;

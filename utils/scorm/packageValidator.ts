@@ -90,9 +90,7 @@ export class PackageValidator {
       const entries = zip.getEntries();
 
       // Check for imsmanifest.xml
-      const manifestEntry = entries.find(
-        (e) => e.entryName.toLowerCase() === 'imsmanifest.xml'
-      );
+      const manifestEntry = entries.find((e) => e.entryName.toLowerCase() === 'imsmanifest.xml');
 
       if (!manifestEntry) {
         errors.push('Missing imsmanifest.xml in package root');

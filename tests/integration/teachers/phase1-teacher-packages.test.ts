@@ -8,7 +8,6 @@ import Admin from '../../../model/Staff/Admin';
 const teacherId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
 const teacherToken = 'test-teacher-token';
-const adminToken = 'test-admin-token';
 
 const makePackage = (overrides: Partial<any> = {}) => {
   const uploader = overrides.uploadedBy || new mongoose.Types.ObjectId(teacherId);
@@ -89,9 +88,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
   });
 
   it('is idempotent when publishing an already published package', async () => {
-    const pkg = await ScormPackage.create(
-      makePackage({ isPublished: true, status: 'published' })
-    );
+    const pkg = await ScormPackage.create(makePackage({ isPublished: true, status: 'published' }));
 
     const res = await request(app)
       .post(`/api/v1/teachers/packages/${pkg.packageId}/publish`)
@@ -119,9 +116,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
   });
 
   it('unpublishes a published package owned by the teacher', async () => {
-    const pkg = await ScormPackage.create(
-      makePackage({ isPublished: true, status: 'published' })
-    );
+    const pkg = await ScormPackage.create(makePackage({ isPublished: true, status: 'published' }));
 
     const res = await request(app)
       .post(`/api/v1/teachers/packages/${pkg._id.toString()}/unpublish`)

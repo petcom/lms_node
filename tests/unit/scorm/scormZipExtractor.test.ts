@@ -36,7 +36,7 @@ describe('ScormZipExtractor', () => {
       const extractedPath = await extractor.extract(packageBuffer, packageId);
 
       expect(extractedPath).toBe(packageId);
-      
+
       // Verify manifest exists
       const manifestExists = await storageProvider.fileExists(
         path.join(packageId, 'imsmanifest.xml')
@@ -44,9 +44,7 @@ describe('ScormZipExtractor', () => {
       expect(manifestExists).toBe(true);
 
       // Verify index.html exists
-      const indexExists = await storageProvider.fileExists(
-        path.join(packageId, 'index.html')
-      );
+      const indexExists = await storageProvider.fileExists(path.join(packageId, 'index.html'));
       expect(indexExists).toBe(true);
     });
 
@@ -69,9 +67,7 @@ describe('ScormZipExtractor', () => {
       const packageId = 'test-malicious-package';
 
       // Should extract without throwing, but sanitize paths
-      await expect(
-        extractor.extract(maliciousPackage, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(maliciousPackage, packageId)).resolves.not.toThrow();
 
       // Verify that path traversal was prevented
       const parentDirFiles = await fs.readdir(testStoragePath);
@@ -128,9 +124,7 @@ describe('ScormZipExtractor', () => {
       await extractor.extract(packageBuffer, packageId);
 
       // Check for HTML file
-      const htmlExists = await storageProvider.fileExists(
-        path.join(packageId, 'index.html')
-      );
+      const htmlExists = await storageProvider.fileExists(path.join(packageId, 'index.html'));
       expect(htmlExists).toBe(true);
 
       // Check for manifest
@@ -157,9 +151,7 @@ describe('ScormZipExtractor', () => {
       const packageId = 'test-empty-dirs';
 
       // Should not throw even if ZIP contains empty directories
-      await expect(
-        extractor.extract(packageBuffer, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(packageBuffer, packageId)).resolves.not.toThrow();
     });
 
     it('should handle packages with sanitized filenames', async () => {
@@ -167,9 +159,7 @@ describe('ScormZipExtractor', () => {
       const packageId = 'test-sanitized';
 
       // Should extract successfully after sanitizing dangerous paths
-      await expect(
-        extractor.extract(maliciousPackage, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(maliciousPackage, packageId)).resolves.not.toThrow();
     });
 
     it('should handle large file counts efficiently', async () => {
@@ -199,9 +189,9 @@ describe('ScormZipExtractor', () => {
     it('should throw error if manifest not found', async () => {
       const packageId = 'non-existent-package';
 
-      await expect(
-        extractor.getManifestContent(packageId)
-      ).rejects.toThrow('Failed to read manifest');
+      await expect(extractor.getManifestContent(packageId)).rejects.toThrow(
+        'Failed to read manifest'
+      );
     });
   });
 
@@ -210,18 +200,14 @@ describe('ScormZipExtractor', () => {
       const packageBuffer = ScormTestHelper.createScorm12Package();
       const packageId = 'test-package_123-abc';
 
-      await expect(
-        extractor.extract(packageBuffer, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(packageBuffer, packageId)).resolves.not.toThrow();
     });
 
     it('should handle very small packages', async () => {
       const packageBuffer = ScormTestHelper.createScorm12Package();
       const packageId = 'test-small-package';
 
-      await expect(
-        extractor.extract(packageBuffer, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(packageBuffer, packageId)).resolves.not.toThrow();
     });
 
     it('should handle packages with Unicode filenames', async () => {
@@ -229,9 +215,7 @@ describe('ScormZipExtractor', () => {
       const packageId = 'test-unicode-files';
 
       // Modern ZIP libraries should handle Unicode
-      await expect(
-        extractor.extract(packageBuffer, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(packageBuffer, packageId)).resolves.not.toThrow();
     });
 
     it('should not overwrite existing extracted packages without confirmation', async () => {
@@ -242,9 +226,7 @@ describe('ScormZipExtractor', () => {
       await extractor.extract(packageBuffer, packageId);
 
       // Attempt to extract again (should handle gracefully)
-      await expect(
-        extractor.extract(packageBuffer, packageId)
-      ).resolves.not.toThrow();
+      await expect(extractor.extract(packageBuffer, packageId)).resolves.not.toThrow();
     });
   });
 });

@@ -6,7 +6,9 @@ import Department from '../../../model/Academic/Department';
 
 const teacherToken = 'test-teacher-token';
 const teacherId = new mongoose.Types.ObjectId('0000000000000000000000b1');
-const masterDepartmentId = new mongoose.Types.ObjectId(process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00');
+const masterDepartmentId = new mongoose.Types.ObjectId(
+  process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
+);
 
 const basePackage = (overrides: Partial<any> = {}) => ({
   packageId: new mongoose.Types.ObjectId().toString(),

@@ -126,14 +126,17 @@ app.use(express.json({ limit: '10mb' })); // parse incoming json data with size 
  * Static File Serving
  */
 // Serve SCORM API JavaScript files
-app.use('/scorm', express.static('public/scorm', {
-  maxAge: '1d',
-  setHeaders: (res, path) => {
-    if (path.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    }
-  }
-}));
+app.use(
+  '/scorm',
+  express.static('public/scorm', {
+    maxAge: '1d',
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    },
+  })
+);
 
 /**
  * Routes

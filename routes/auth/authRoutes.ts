@@ -1,13 +1,8 @@
-import express, { Router } from "express";
-import {
-    logout,
-    logoutAll,
-    refreshToken,
-    getTokenInfo
-} from "../../controller/auth/authCtrl";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import validate from "../../middlewares/validate";
-import { refreshToken as refreshTokenValidation } from "../../validators/authValidation";
+import express, { Router } from 'express';
+import { logout, logoutAll, refreshToken, getTokenInfo } from '../../controller/auth/authCtrl';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import validate from '../../middlewares/validate';
+import { refreshToken as refreshTokenValidation } from '../../validators/authValidation';
 
 const authRouter: Router = express.Router();
 
@@ -50,7 +45,7 @@ const authRouter: Router = express.Router();
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-authRouter.post("/refresh", validate(refreshTokenValidation), refreshToken);
+authRouter.post('/refresh', validate(refreshTokenValidation), refreshToken);
 
 /**
  * @swagger
@@ -77,7 +72,7 @@ authRouter.post("/refresh", validate(refreshTokenValidation), refreshToken);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-authRouter.post("/logout", isAuthenticated(), logout);
+authRouter.post('/logout', isAuthenticated(), logout);
 
 /**
  * @swagger
@@ -93,7 +88,7 @@ authRouter.post("/logout", isAuthenticated(), logout);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-authRouter.post("/logout-all", isAuthenticated(), logoutAll);
+authRouter.post('/logout-all', isAuthenticated(), logoutAll);
 
 /**
  * @swagger
@@ -134,6 +129,6 @@ authRouter.post("/logout-all", isAuthenticated(), logoutAll);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-authRouter.get("/token-info", isAuthenticated(), getTokenInfo);
+authRouter.get('/token-info', isAuthenticated(), getTokenInfo);
 
 export default authRouter;

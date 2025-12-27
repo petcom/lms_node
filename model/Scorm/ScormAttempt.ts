@@ -248,7 +248,6 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
   }
 );
 
-
 // Instance method to set CMI value
 scormAttemptSchema.methods.setCMIValue = function (element: string, value: any) {
   // Update raw CMI data using plain object to permit dotted keys

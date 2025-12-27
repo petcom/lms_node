@@ -31,12 +31,32 @@ const isAuthenticated = () => {
 
       if (shouldBypassAuth && token) {
         const roleMap: Record<string, { role: string; id: string; department?: string }> = {
-          'test-admin-token': { role: 'admin', id: '0000000000000000000000a1', department: bypassDepartmentId },
-          'test-teacher-token': { role: 'teacher', id: '0000000000000000000000b1', department: bypassDepartmentId },
-          'test-student-token': { role: 'student', id: '0000000000000000000000c1', department: bypassDepartmentId },
+          'test-admin-token': {
+            role: 'admin',
+            id: '0000000000000000000000a1',
+            department: bypassDepartmentId,
+          },
+          'test-teacher-token': {
+            role: 'teacher',
+            id: '0000000000000000000000b1',
+            department: bypassDepartmentId,
+          },
+          'test-student-token': {
+            role: 'student',
+            id: '0000000000000000000000c1',
+            department: bypassDepartmentId,
+          },
           // Department-scoped admin tokens for integration tests
-          'test-top-admin-token': { role: 'admin', id: '0000000000000000000000a2', department: '0000000000000000000000d1' },
-          'test-sub-admin-token': { role: 'admin', id: '0000000000000000000000a3', department: '0000000000000000000000d2' },
+          'test-top-admin-token': {
+            role: 'admin',
+            id: '0000000000000000000000a2',
+            department: '0000000000000000000000d1',
+          },
+          'test-sub-admin-token': {
+            role: 'admin',
+            id: '0000000000000000000000a3',
+            department: '0000000000000000000000d2',
+          },
         };
 
         if (token in roleMap) {
@@ -47,7 +67,9 @@ const isAuthenticated = () => {
             name: `${role} test user`,
             email: `${role}@example.com`,
             role,
-            department: new mongoose.Types.ObjectId(roleMap[token].department || bypassDepartmentId),
+            department: new mongoose.Types.ObjectId(
+              roleMap[token].department || bypassDepartmentId
+            ),
           } as any;
           req.token = token;
           return next();
@@ -58,7 +80,9 @@ const isAuthenticated = () => {
 
       if (!tokenValue && req.headers.cookie) {
         const cookiePairs = req.headers.cookie.split(';').map((c) => c.trim().split('='));
-        const cookieMap = Object.fromEntries(cookiePairs.map(([k, ...v]) => [k, decodeURIComponent(v.join('='))]));
+        const cookieMap = Object.fromEntries(
+          cookiePairs.map(([k, ...v]) => [k, decodeURIComponent(v.join('='))])
+        );
         const cookieToken = cookieMap.token;
         if (cookieToken) {
           tokenValue = cookieToken.startsWith('Bearer') ? cookieToken.split(' ')[1] : cookieToken;

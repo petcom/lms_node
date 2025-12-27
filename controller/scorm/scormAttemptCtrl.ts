@@ -44,8 +44,10 @@ export const getAttemptsByPackage = asyncHandler(async (req: Request, res: Respo
 export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
 
-  const attempt = await ScormAttempt.findById(attemptId)
-    .populate('package', 'title version packageId');
+  const attempt = await ScormAttempt.findById(attemptId).populate(
+    'package',
+    'title version packageId'
+  );
 
   if (!attempt) {
     throw new NotFoundError('Attempt not found');
@@ -183,7 +185,7 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
       raw: score.raw || 0,
       min: score.min || 0,
       max: score.max || 100,
-      scaled: score.scaled || (score.raw / (score.max || 100)),
+      scaled: score.scaled || score.raw / (score.max || 100),
     };
   }
 
@@ -231,13 +233,7 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
  * @access  Private (Teacher/Admin)
  */
 export const getAllAttempts = asyncHandler(async (req: Request, res: Response) => {
-  const {
-    page = 1,
-    limit = 10,
-    packageId,
-    studentId,
-    status,
-  } = req.query;
+  const { page = 1, limit = 10, packageId, studentId, status } = req.query;
 
   const query: any = {};
 

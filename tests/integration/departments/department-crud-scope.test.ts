@@ -8,7 +8,9 @@ const masterToken = 'test-admin-token';
 const topAdminToken = 'test-top-admin-token';
 const subAdminToken = 'test-sub-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
-const masterDepartmentId = new mongoose.Types.ObjectId(process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00');
+const masterDepartmentId = new mongoose.Types.ObjectId(
+  process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
+);
 const topDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d1');
 const subDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d2');
 const otherTopDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d3');

@@ -40,7 +40,7 @@ async function run(): Promise<void> {
       update.uploadedByModel = DEFAULT_MODEL;
     }
 
-    if (Object.keys(update).length > 0) {    
+    if (Object.keys(update).length > 0) {
       await ScormPackage.updateOne({ _id: pkg._id }, { $set: update });
       updated += 1;
     }

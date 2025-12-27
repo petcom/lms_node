@@ -18,119 +18,140 @@ interface UpdateAcademicYearBody {
 }
 
 // Create Academic Year
-export const createAcademicYear = AsyncHandler(async (req: Request<{}, {}, CreateAcademicYearBody>, res: Response): Promise<void> => {
-  const { name, fromYear, toYear } = req.body;
+export const createAcademicYear = AsyncHandler(
+  async (
+    req: Request<Record<string, never>, any, CreateAcademicYearBody>,
+    res: Response
+  ): Promise<void> => {
+    const { name, fromYear, toYear } = req.body;
 
-  const existingYear = await AcademicYear.findOne({ name }).lean() as IAcademicYear | null;
-  if (existingYear) {
-    res.status(400).json({
-      status: 'error',
-      message: 'Academic year already exists',
-    });
-    return;
-  }
-
-  const academicYearCreated = await AcademicYear.create({
-    name,
-    fromYear,
-    toYear,
-    createdBy: req.userAuth?._id,
-  }) as IAcademicYear;
-
-  const admin = await Admin.findById(req.userAuth?._id) as IAdmin | null;
-  if (admin) {
-    admin.academicYears?.push(academicYearCreated._id);
-    await admin.save();
-  }
-
-  res.status(201).json({
-    status: 'success',
-    message: 'Academic year created',
-    data: academicYearCreated,
-  });
-});
-
-// Get all Academic Years
-export const getAcademicYears = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
-  res.status(200).json(res.results);
-});
-
-// Get single Academic Year
-export const getAcademicYear = AsyncHandler(async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  const academicYear = await AcademicYear.findById(req.params.id).lean() as IAcademicYear | null;
-
-  if (!academicYear) {
-    res.status(404).json({
-      status: 'error',
-      message: 'Academic year not found',
-    });
-    return;
-  }
-
-  res.status(200).json({
-    status: 'success',
-    message: 'Academic year fetched successfully',
-    data: academicYear,
-  });
-});
-
-// Update Academic Year
-export const updateAcademicYear = AsyncHandler(async (req: Request<{ id: string }, {}, UpdateAcademicYearBody>, res: Response): Promise<void> => {
-  const { name, fromYear, toYear, isCurrent } = req.body;
-
-  if (name) {
-    const existingWithName = await AcademicYear.findOne({ name }).lean() as IAcademicYear | null;
-    if (existingWithName && existingWithName._id.toString() !== req.params.id) {
+    const existingYear = (await AcademicYear.findOne({ name }).lean()) as IAcademicYear | null;
+    if (existingYear) {
       res.status(400).json({
         status: 'error',
         message: 'Academic year already exists',
       });
       return;
     }
-  }
 
-  const updatePayload: Partial<IAcademicYear> = {};
-  if (name !== undefined) updatePayload.name = name;
-  if (fromYear !== undefined) updatePayload.fromYear = fromYear;
-  if (toYear !== undefined) updatePayload.toYear = toYear;
-  if (isCurrent !== undefined) updatePayload.isCurrent = isCurrent;
+    const academicYearCreated = (await AcademicYear.create({
+      name,
+      fromYear,
+      toYear,
+      createdBy: req.userAuth?._id,
+    })) as IAcademicYear;
 
-  const academicYear = await AcademicYear.findByIdAndUpdate(
-    req.params.id,
-    updatePayload,
-    { new: true, runValidators: true }
-  ).lean() as IAcademicYear | null;
+    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
+    if (admin) {
+      admin.academicYears?.push(academicYearCreated._id);
+      await admin.save();
+    }
 
-  if (!academicYear) {
-    res.status(404).json({
-      status: 'error',
-      message: 'Academic year not found',
+    res.status(201).json({
+      status: 'success',
+      message: 'Academic year created',
+      data: academicYearCreated,
     });
-    return;
   }
+);
 
-  res.status(200).json({
-    status: 'success',
-    message: 'Academic year updated successfully',
-    data: academicYear,
-  });
-});
+// Get all Academic Years
+export const getAcademicYears = AsyncHandler(
+  async (_req: Request, res: Response): Promise<void> => {
+    res.status(200).json(res.results);
+  }
+);
+
+// Get single Academic Year
+export const getAcademicYear = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const academicYear = (await AcademicYear.findById(
+      req.params.id
+    ).lean()) as IAcademicYear | null;
+
+    if (!academicYear) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Academic year not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Academic year fetched successfully',
+      data: academicYear,
+    });
+  }
+);
+
+// Update Academic Year
+export const updateAcademicYear = AsyncHandler(
+  async (
+    req: Request<{ id: string }, any, UpdateAcademicYearBody>,
+    res: Response
+  ): Promise<void> => {
+    const { name, fromYear, toYear, isCurrent } = req.body;
+
+    if (name) {
+      const existingWithName = (await AcademicYear.findOne({
+        name,
+      }).lean()) as IAcademicYear | null;
+      if (existingWithName && existingWithName._id.toString() !== req.params.id) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Academic year already exists',
+        });
+        return;
+      }
+    }
+
+    const updatePayload: Partial<IAcademicYear> = {};
+    if (name !== undefined) updatePayload.name = name;
+    if (fromYear !== undefined) updatePayload.fromYear = fromYear;
+    if (toYear !== undefined) updatePayload.toYear = toYear;
+    if (isCurrent !== undefined) updatePayload.isCurrent = isCurrent;
+
+    const academicYear = (await AcademicYear.findByIdAndUpdate(req.params.id, updatePayload, {
+      new: true,
+      runValidators: true,
+    }).lean()) as IAcademicYear | null;
+
+    if (!academicYear) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Academic year not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Academic year updated successfully',
+      data: academicYear,
+    });
+  }
+);
 
 // Delete Academic Year
-export const deleteAcademicYear = AsyncHandler(async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  const academicYear = await AcademicYear.findByIdAndDelete(req.params.id).lean() as IAcademicYear | null;
+export const deleteAcademicYear = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const academicYear = (await AcademicYear.findByIdAndDelete(
+      req.params.id
+    ).lean()) as IAcademicYear | null;
 
-  if (!academicYear) {
-    res.status(404).json({
-      status: 'error',
-      message: 'Academic year not found',
+    if (!academicYear) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Academic year not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Academic year deleted successfully',
+      data: academicYear,
     });
-    return;
   }
-
-  res.status(200).json({
-    status: 'success',
-    message: 'Academic year deleted successfully',
-    data: academicYear,
-  });
-});
+);

@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
+import { isTeacherOrAdmin, isAdmin } from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 import {
   uploadPackage,
@@ -14,6 +14,7 @@ import {
   getMyAssignments,
   publishPackage,
   unpublishPackage,
+  clonePackage,
 } from '../../controller/scorm/scormPackageCtrl';
 
 const scormPackageRouter = express.Router();
@@ -54,12 +55,33 @@ scormPackageRouter.get('/', isAuthenticated(), departmentScope(), isTeacherOrAdm
 
 scormPackageRouter.get('/:id', isAuthenticated(), departmentScope(), getPackage);
 
-scormPackageRouter.put('/:id', isAuthenticated(), departmentScope(), isTeacherOrAdmin, updatePackage);
+scormPackageRouter.put(
+  '/:id',
+  isAuthenticated(),
+  departmentScope(),
+  isTeacherOrAdmin,
+  updatePackage
+);
 
-scormPackageRouter.delete('/:id', isAuthenticated(), departmentScope(), isTeacherOrAdmin, deletePackage);
+scormPackageRouter.delete(
+  '/:id',
+  isAuthenticated(),
+  departmentScope(),
+  isTeacherOrAdmin,
+  deletePackage
+);
+
+// Clone global package into a department (Admin only)
+scormPackageRouter.post('/:id/clone', isAuthenticated(), departmentScope(), isAdmin, clonePackage);
 
 // Assignment routes (Teacher/Admin)
-scormPackageRouter.post('/:id/assign', isAuthenticated(), departmentScope(), isTeacherOrAdmin, assignPackage);
+scormPackageRouter.post(
+  '/:id/assign',
+  isAuthenticated(),
+  departmentScope(),
+  isTeacherOrAdmin,
+  assignPackage
+);
 
 scormPackageRouter.post(
   '/:id/unassign',
@@ -70,7 +92,19 @@ scormPackageRouter.post(
 );
 
 // Publish controls (Teacher/Admin)
-scormPackageRouter.post('/:id/publish', isAuthenticated(), departmentScope(), isTeacherOrAdmin, publishPackage);
-scormPackageRouter.post('/:id/unpublish', isAuthenticated(), departmentScope(), isTeacherOrAdmin, unpublishPackage);
+scormPackageRouter.post(
+  '/:id/publish',
+  isAuthenticated(),
+  departmentScope(),
+  isTeacherOrAdmin,
+  publishPackage
+);
+scormPackageRouter.post(
+  '/:id/unpublish',
+  isAuthenticated(),
+  departmentScope(),
+  isTeacherOrAdmin,
+  unpublishPackage
+);
 
 export default scormPackageRouter;

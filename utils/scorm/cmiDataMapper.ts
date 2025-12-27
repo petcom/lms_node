@@ -1,6 +1,6 @@
 /**
  * CMI Data Mapper Utility
- * 
+ *
  * Maps between SCORM CMI elements and database structure.
  * Handles validation, data type conversions, and time formatting.
  * Supports both SCORM 1.2 and SCORM 2004.
@@ -195,18 +195,18 @@ const SCORM_2004_READONLY = [
  */
 export function validateCMIElement(element: string, version: ScormVersion): boolean {
   const validElements = version === 'scorm_1.2' ? SCORM_12_ELEMENTS : SCORM_2004_ELEMENTS;
-  
+
   // Check exact match
   if (validElements.includes(element)) {
     return true;
   }
-  
+
   // Check pattern match for array elements (e.g., cmi.objectives.0.id)
   // const pattern = element.replace(/\.\d+\./g, '.N.');
-  if (validElements.some(e => e.includes('.N.'))) {
+  if (validElements.some((e) => e.includes('.N.'))) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -269,27 +269,27 @@ export function setCMIValue(cmiData: any, element: string, value: any, version: 
  */
 export function scormTimeToSeconds(timeString: string, version: ScormVersion): number {
   if (!timeString) return 0;
-  
+
   if (version === 'scorm_1.2') {
     // SCORM 1.2: HHHH:MM:SS.SS format
     const parts = timeString.split(':');
     if (parts.length !== 3) return 0;
-    
+
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
     const seconds = parseFloat(parts[2]);
-    
-    return (hours * 3600) + (minutes * 60) + seconds;
+
+    return hours * 3600 + minutes * 60 + seconds;
   } else {
     // SCORM 2004: ISO 8601 duration (PT1H30M45S)
     const match = timeString.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?/);
     if (!match) return 0;
-    
+
     const hours = parseInt(match[1] || '0', 10);
     const minutes = parseInt(match[2] || '0', 10);
     const seconds = parseFloat(match[3] || '0');
-    
-    return (hours * 3600) + (minutes * 60) + seconds;
+
+    return hours * 3600 + minutes * 60 + seconds;
   }
 }
 
@@ -298,12 +298,12 @@ export function scormTimeToSeconds(timeString: string, version: ScormVersion): n
  */
 export function secondsToScormTime(seconds: number, version: ScormVersion): string {
   if (seconds < 0) seconds = 0;
-  
+
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   const centiseconds = Math.floor((seconds % 1) * 100);
-  
+
   if (version === 'scorm_1.2') {
     // SCORM 1.2: HHHH:MM:SS.SS format
     return `${hours.toString().padStart(4, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
@@ -313,7 +313,7 @@ export function secondsToScormTime(seconds: number, version: ScormVersion): stri
     if (hours > 0) result += `${hours}H`;
     if (minutes > 0) result += `${minutes}M`;
     if (secs > 0 || (hours === 0 && minutes === 0)) {
-      const totalSecs = secs + (centiseconds / 100);
+      const totalSecs = secs + centiseconds / 100;
       result += `${totalSecs.toFixed(2)}S`;
     }
     return result;
@@ -337,7 +337,8 @@ export function normalizeScore(score: number, version: ScormVersion): number {
  * Get error string for error code
  */
 export function getErrorString(errorCode: number, version: ScormVersion): string {
-  const errors: Record<number, string> = version === 'scorm_1.2' ? SCORM_12_ERRORS : SCORM_2004_ERRORS;
+  const errors: Record<number, string> =
+    version === 'scorm_1.2' ? SCORM_12_ERRORS : SCORM_2004_ERRORS;
   return errors[errorCode] || 'Unknown error';
 }
 
@@ -358,25 +359,27 @@ export function mapCMIToDatabase(cmiData: any, version: ScormVersion): any {
  */
 export function mapDatabaseToCMI(dbData: any, version: ScormVersion): any {
   if (!dbData) {
-    return version === 'scorm_1.2' ? {
-      core: {},
-      suspend_data: '',
-      launch_data: '',
-      comments: '',
-      objectives: [],
-      interactions: [],
-    } : {
-      learner_id: '',
-      learner_name: '',
-      completion_status: 'not attempted',
-      success_status: 'unknown',
-      score: {},
-      session_time: 'PT0H0M0S',
-      total_time: 'PT0H0M0S',
-      suspend_data: '',
-      launch_data: '',
-    };
+    return version === 'scorm_1.2'
+      ? {
+          core: {},
+          suspend_data: '',
+          launch_data: '',
+          comments: '',
+          objectives: [],
+          interactions: [],
+        }
+      : {
+          learner_id: '',
+          learner_name: '',
+          completion_status: 'not attempted',
+          success_status: 'unknown',
+          score: {},
+          session_time: 'PT0H0M0S',
+          total_time: 'PT0H0M0S',
+          suspend_data: '',
+          launch_data: '',
+        };
   }
-  
+
   return dbData;
 }

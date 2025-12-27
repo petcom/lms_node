@@ -14,4 +14,3 @@ export class ValidationError extends AppError {
     this.errors = errors;
   }
 }
-

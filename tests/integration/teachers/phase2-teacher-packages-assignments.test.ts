@@ -83,7 +83,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     const pkgPublished = await ScormPackage.create(
       makePackage({ title: 'Published', isPublished: true, status: 'published' })
     );
-    const pkgDraft = await ScormPackage.create(makePackage({ title: 'Draft', status: 'draft' }));
+    await ScormPackage.create(makePackage({ title: 'Draft', status: 'draft' }));
 
     await ScormPackage.create(
       makePackage({

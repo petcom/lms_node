@@ -1,6 +1,6 @@
 /**
  * Integration Tests for SCORM Phase 2: Package Management API
- * 
+ *
  * Tests the complete API workflow:
  * 1. Package upload
  * 2. Package CRUD operations
@@ -52,7 +52,8 @@ describe('SCORM Phase 2: Package Management API', () => {
   beforeAll(async () => {
     // Ensure database connection (prefer in-memory URI from global setup)
     if (mongoose.connection.readyState !== 1) {
-      const uri = process.env.MONGO_TEST_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/lms-test';
+      const uri =
+        process.env.MONGO_TEST_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/lms-test';
       await mongoose.connect(uri);
     }
     // Seed a teacher user so uploadedBy populate returns data
@@ -482,8 +483,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     });
 
     it('should reject unauthenticated requests', async () => {
-      const res = await request(app)
-        .get('/api/v1/scorm/packages');
+      const res = await request(app).get('/api/v1/scorm/packages');
 
       expect(res.status).toBe(401);
     });

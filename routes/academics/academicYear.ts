@@ -1,18 +1,22 @@
-import express, { Router } from "express";
+import express, { Router } from 'express';
 import {
   createAcademicYear,
   getAcademicYears,
   getAcademicYear,
   updateAcademicYear,
   deleteAcademicYear,
-} from "../../controller/academics/academicYearCtrl";
-import AcademicYear from "../../model/Academic/AcademicYear";
-import advancedResults from "../../middlewares/advancedResults";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
-import validate from "../../middlewares/validate";
-import { createAcademicYear as createAcademicYearValidation, updateAcademicYear as updateAcademicYearValidation, idParam } from "../../validators/academicValidation";
-import { cachePrivate } from "../../middlewares/caching";
+} from '../../controller/academics/academicYearCtrl';
+import AcademicYear from '../../model/Academic/AcademicYear';
+import advancedResults from '../../middlewares/advancedResults';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
+import validate from '../../middlewares/validate';
+import {
+  createAcademicYear as createAcademicYearValidation,
+  updateAcademicYear as updateAcademicYearValidation,
+  idParam,
+} from '../../validators/academicValidation';
+import { cachePrivate } from '../../middlewares/caching';
 
 const academicYearRouter: Router = express.Router();
 
@@ -85,16 +89,16 @@ const academicYearRouter: Router = express.Router();
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 academicYearRouter
-  .route("/")
+  .route('/')
   .post(
-    isAuthenticated(), 
-    roleRestriction("admin"), 
-    validate(createAcademicYearValidation), 
+    isAuthenticated(),
+    roleRestriction('admin'),
+    validate(createAcademicYearValidation),
     createAcademicYear
   )
   .get(
     isAuthenticated(),
-    roleRestriction("admin"),
+    roleRestriction('admin'),
     cachePrivate(120),
     advancedResults(AcademicYear),
     getAcademicYears
@@ -178,25 +182,20 @@ academicYearRouter
  *         $ref: '#/components/responses/NotFoundError'
  */
 academicYearRouter
-  .route("/:id")
+  .route('/:id')
   .get(
-    isAuthenticated(), 
-    roleRestriction("admin"), 
+    isAuthenticated(),
+    roleRestriction('admin'),
     cachePrivate(120),
-    validate(idParam), 
+    validate(idParam),
     getAcademicYear
   )
   .put(
-    isAuthenticated(), 
-    roleRestriction("admin"), 
-    validate(updateAcademicYearValidation), 
+    isAuthenticated(),
+    roleRestriction('admin'),
+    validate(updateAcademicYearValidation),
     updateAcademicYear
   )
-  .delete(
-    isAuthenticated(), 
-    roleRestriction("admin"), 
-    validate(idParam), 
-    deleteAcademicYear
-  );
+  .delete(isAuthenticated(), roleRestriction('admin'), validate(idParam), deleteAcademicYear);
 
 export default academicYearRouter;

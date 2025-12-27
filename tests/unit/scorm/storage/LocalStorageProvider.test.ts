@@ -80,7 +80,7 @@ describe('LocalStorageProvider', () => {
 
     it('should overwrite existing files', async () => {
       const filePath = 'test/file.txt';
-      
+
       await provider.save(filePath, Buffer.from('First content'));
       await provider.save(filePath, Buffer.from('Second content'));
 
@@ -94,7 +94,7 @@ describe('LocalStorageProvider', () => {
     it('should read an existing file', async () => {
       const filePath = 'test/read.txt';
       const content = 'Read me!';
-      
+
       await provider.save(filePath, Buffer.from(content));
       const result = await provider.read(filePath);
 
@@ -109,7 +109,7 @@ describe('LocalStorageProvider', () => {
 
     it('should read binary files correctly', async () => {
       const filePath = 'test/binary.bin';
-      const binaryData = Buffer.from([0x00, 0x01, 0x02, 0xFF, 0xFE]);
+      const binaryData = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe]);
 
       await provider.save(filePath, binaryData);
       const result = await provider.read(filePath);
@@ -121,7 +121,7 @@ describe('LocalStorageProvider', () => {
   describe('delete', () => {
     it('should delete an existing file', async () => {
       const filePath = 'test/delete.txt';
-      
+
       await provider.save(filePath, Buffer.from('Delete me'));
       await provider.delete(filePath);
 
@@ -132,7 +132,7 @@ describe('LocalStorageProvider', () => {
 
     it('should delete a directory recursively', async () => {
       const dirPath = 'test-dir';
-      
+
       await provider.save(`${dirPath}/file1.txt`, Buffer.from('File 1'));
       await provider.save(`${dirPath}/subdir/file2.txt`, Buffer.from('File 2'));
 
@@ -153,7 +153,7 @@ describe('LocalStorageProvider', () => {
   describe('fileExists', () => {
     it('should return true for existing file', async () => {
       const filePath = 'test/exists.txt';
-      
+
       await provider.save(filePath, Buffer.from('I exist'));
       const exists = await provider.fileExists(filePath);
 
@@ -162,7 +162,7 @@ describe('LocalStorageProvider', () => {
 
     it('should return true for existing directory', async () => {
       const dirPath = 'test-directory';
-      
+
       await provider.save(`${dirPath}/file.txt`, Buffer.from('In directory'));
       const exists = await provider.fileExists(dirPath);
 
@@ -204,19 +204,15 @@ describe('LocalStorageProvider', () => {
   describe('Path sanitization', () => {
     it('should prevent path traversal with ../', async () => {
       const testData = Buffer.from('Test');
-      const paths = [
-        '../outside.txt',
-        'dir/../../outside.txt',
-        './pkg/../../../outside.txt',
-      ];
+      const paths = ['../outside.txt', 'dir/../../outside.txt', './pkg/../../../outside.txt'];
 
       for (const dangerousPath of paths) {
         await provider.save(dangerousPath, testData);
-        
+
         // Verify file is saved within basePath
         const outsideBasePath = path.join(path.dirname(testBasePath), 'outside.txt');
         const escaped = await fs.pathExists(outsideBasePath);
-        
+
         expect(escaped).toBe(false);
       }
     });
@@ -226,7 +222,7 @@ describe('LocalStorageProvider', () => {
 
       // Should sanitize null bytes
       await provider.save(pathWithNull, Buffer.from('Test'));
-      
+
       // Verify file was saved with sanitized name
       const exists = await provider.fileExists('file.txt');
       expect(exists).toBe(true);
@@ -249,9 +245,7 @@ describe('LocalStorageProvider', () => {
     it('should handle empty filenames', async () => {
       const emptyPath = '';
 
-      await expect(
-        provider.save(emptyPath, Buffer.from('Test'))
-      ).rejects.toThrow();
+      await expect(provider.save(emptyPath, Buffer.from('Test'))).rejects.toThrow();
     });
 
     it('should handle very long paths', async () => {
@@ -259,9 +253,7 @@ describe('LocalStorageProvider', () => {
       const longFile = 'b'.repeat(100) + '.txt';
       const longPath = `${longDir}/${longFile}`;
 
-      await expect(
-        provider.save(longPath, Buffer.from('Long path test'))
-      ).resolves.not.toThrow();
+      await expect(provider.save(longPath, Buffer.from('Long path test'))).resolves.not.toThrow();
     });
 
     it('should handle Unicode in paths', async () => {

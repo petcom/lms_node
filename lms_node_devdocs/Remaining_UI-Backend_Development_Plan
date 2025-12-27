@@ -1,0 +1,100 @@
+### Phase 6 — Admin Experience
+- [ ] User management: CRUD admins/teachers/students; suspend/withdraw.
+- [ ] Academic structure: programs, subjects, class levels, terms.
+- [ ] System SCORM registry: filters by status/subject/owner.
+- [ ] Platform health tiles: storage, active sessions, error rates (wire to /health, /metrics).
+- [ ] Permissions matrix UI for SCORM capabilities.
+
+Notes: Add confirmation dialogs for destructive actions; include audit-friendly activity logs.
+
+### Phase 7 — Reporting & Exports
+- [ ] Reports: student progress, package analytics, attempts detail, completion rates, score distribution, time analytics, interactions.
+- [ ] Filters: date range, package, student, class/program; server-side pagination.
+- [ ] Export UX: CSV/JSON/XLSX with progress + error states; link to downloads.
+- [ ] Deep links from charts to detail tables.
+
+Notes: Debounce filters; persist filter state per user; skeleton-load charts.
+
+### Phase 8 — Quality, A11y, Performance, Mobile
+- [ ] Responsive sweeps: nav collapse, tables→cards, tap targets.
+- [ ] A11y: ARIA labels, focus traps in modals/drawers, contrast checks.
+- [ ] Performance: route-based code splitting, lazy charts, memoized lists, virtualized tables.
+- [ ] PWA shell readiness (manifest/icons); abstract headless hooks to ease RN port.
+- [ ] E2E critical paths: login, launch SCORM, assignment, upload, export.
+
+Notes: Define perf budgets (bundle size, TTI); add Lighthouse/Axe checks in CI.
+
+### Phase 9 — Delivery & Hardening
+- [ ] UAT checklists per role; sign-off criteria.
+- [ ] Feature flags for risky areas (player, exports).
+- [ ] Front-end logging for player/runtime errors; surface backend health in UI.
+- [ ] Release playbook and rollback steps.
+
+Notes: Smoke test before deploy; ensure versioned API base URL support.
+
+---
+
+## Cross-Cutting Components & Reuse
+- Shell: role-aware nav, breadcrumbs, user menu, notifications tray.
+- Tables: headless + UI kit styling; pagination, sorting, filtering, column hiding.
+- Forms: shared field components (text, select, date, file, password with meter), inline errors.
+- Charts: shared wrappers with loading/empty/error states and theming.
+- Modals/Drawers: standard header/body/footer, focus management, ESC/overlay close.
+- Layout: responsive grid/container system with spacing tokens.
+
+---
+
+## Data & API Integration Map (high level)
+- Auth: login/refresh/logout, password reset/change, token-info.
+- Users: admin/teacher/student CRUD, profile fetch/update.
+- Academics: programs, subjects, class levels, terms.
+- SCORM: packages (list/detail/upload/publish/assign), content, player launch, runtime, attempts, reports/analytics, exports.
+- Health/Monitoring: /health, /metrics for dashboard tiles.
+
+---
+
+## Testing Strategy
+- Unit: utilities, hooks, renderless logic.
+- Component: forms, tables, charts, player shell.
+- E2E: auth flows, student launch/resume SCORM, teacher upload/assign, admin user CRUD, exports.
+- Accessibility: Axe/Lighthouse checks in CI; keyboard nav smoke tests.
+
+---
+
+## Risks & Mitigations
+- Token refresh loops → single-flight refresh, backoff, force-logout on repeat 401.
+- Large SCORM payloads → visible loading/reconnect banner; preflight assignment.
+- Role drift → centralize guards; add route-level tests.
+- Mobile UX gaps → early responsive testing; avoid hover-only interactions.
+
+---
+
+## Definition of Done (per feature)
+- Loading, empty, and error states implemented.
+- A11y: focus order, ARIA labels, contrast, keyboard paths.
+- Responsive at mobile/tablet/desktop breakpoints.
+- Tests: unit + component, and e2e where critical.
+- Copy centralized (for future i18n).
+
+---
+
+## Clarified Decisions (Q&A)
+- Q: Should teachers be allowed to request/report on their own classes in the SCORM registry?
+	- A: Yes. Teachers can query the registry for packages they own and classes they teach, scoped to their department.
+- Q: Where should non-system files (reports, packages, custom-course content, media) live?
+	- A: Use S3 in non-local environments; when running locally, use local storage. Provide a local mock of S3 at `scorm-content/mock-s3/` with per-domain folders (e.g., `reports/`, `packages/`, `exports/`, `media/`) and date-partitioned subfolders `YYYY/MM/DD/`.
+- Q: Should we create a new audits model?
+	- A: Yes. Add an `audits` collection to record `{ action, entityType, entityId, actorId, actorRole, before?, after?, reason?, createdAt }` with indexes on `entityType`, `actorId`, `createdAt`.
+- Q: Is a summarized JSON metrics endpoint sufficient?
+	- A: Yes. Expose `/metrics` as summarized JSON; Prometheus-style scrape is not required.
+
+## Phase 6 Action Notes
+- Implement teacher-scoped access in SCORM registry queries (owner + department scope).
+- Add S3-first storage abstraction with local mock path `scorm-content/mock-s3/` and folders: `reports/`, `packages/`, `exports/`, `media/`, each date-partitioned under `YYYY/MM/DD/`.
+- Introduce `audits` model and write entries for create/update/delete, suspend/withdraw, archive, permissions changes, and export jobs.
+- Keep `/metrics` as summarized JSON; surface storage/sessions/errors for dashboard tiles.
+
+## Phase 7 Preparation & Questions
+- Exports: confirm max payload size and retention window for generated files in S3/local mock; default proposal: 7-14 days.
+- Reports: confirm required aggregation intervals (daily/weekly) and max lookback for heavy endpoints.
+- Deep links: confirm URL scheme for linking charts to detail tables (reuse report filters in query params?).

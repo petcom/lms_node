@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express, { Router } from 'express';
 
 import {
   adminRegisterTeacher,
@@ -8,7 +8,7 @@ import {
   getTeacherProfile,
   teacherUpdateProfile,
   adminUpdateTeacher,
-} from "../../controller/staff/teachersCtrl";
+} from '../../controller/staff/teachersCtrl';
 import {
   publishTeacherPackage,
   unpublishTeacherPackage,
@@ -18,68 +18,69 @@ import {
   teacherDashboard,
   listTeacherAttempts,
   listTeacherAssignments,
-} from "../../controller/teachers/teacherPackageCtrl";
-import advancedResults from "../../middlewares/advancedResults";
-import Teacher from "../../model/Staff/Teacher";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
+} from '../../controller/teachers/teacherPackageCtrl';
+import advancedResults from '../../middlewares/advancedResults';
+import Teacher from '../../model/Staff/Teacher';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
+import departmentScope from '../../middlewares/departmentScope';
 
 const teachersRouter: Router = express.Router();
 
 // Teacher SCORM package controls (phase 1)
 teachersRouter.post(
-  "/packages/:id/publish",
+  '/packages/:id/publish',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   publishTeacherPackage
 );
 
 teachersRouter.post(
-  "/packages/:id/unpublish",
+  '/packages/:id/unpublish',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   unpublishTeacherPackage
 );
 
 teachersRouter.get(
-  "/packages",
+  '/packages',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   listTeacherPackages
 );
 
 teachersRouter.post(
-  "/assignments/assign",
+  '/assignments/assign',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   assignTeacherPackage
 );
 
 teachersRouter.get(
-  "/classes",
+  '/classes',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   listTeacherClasses
 );
 
 teachersRouter.get(
-  "/dashboard",
+  '/dashboard',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   teacherDashboard
 );
 
 teachersRouter.get(
-  "/attempts",
+  '/attempts',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   listTeacherAttempts
 );
 
 teachersRouter.get(
-  "/assignments",
+  '/assignments',
   isAuthenticated(),
-  roleRestriction("teacher", "admin"),
+  roleRestriction('teacher', 'admin'),
   listTeacherAssignments
 );
 
@@ -119,9 +120,10 @@ teachersRouter.get(
  *         $ref: '#/components/responses/ForbiddenError'
  */
 teachersRouter.post(
-  "/admin/register",
+  '/admin/register',
   isAuthenticated(),
-  roleRestriction("admin"),
+  departmentScope(),
+  roleRestriction('admin'),
   adminRegisterTeacher
 );
 
@@ -170,16 +172,16 @@ teachersRouter.post(
  *       400:
  *         description: Invalid credentials
  */
-teachersRouter.post("/login", loginTeacher);
+teachersRouter.post('/login', loginTeacher);
 
 teachersRouter.get(
-  "/admin",
+  '/admin',
   isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   advancedResults(Teacher, {
-    path: "examsCreated",
+    path: 'examsCreated',
     populate: {
-      path: "questions", // inside exam created, we want to populate questions
+      path: 'questions', // inside exam created, we want to populate questions
     },
   }), // model first, then data IDs you want populate
   getAllTeachersAdmin
@@ -199,29 +201,26 @@ teachersRouter.get(
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-teachersRouter.get(
-  "/profile",
-  isAuthenticated(),
-  roleRestriction("teacher"),
-  getTeacherProfile
-);
+teachersRouter.get('/profile', isAuthenticated(), roleRestriction('teacher'), getTeacherProfile);
 
 teachersRouter.get(
-  "/:teacherID/admin",
+  '/:teacherID/admin',
   isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   getTeacherByAdmin
 );
 teachersRouter.put(
-  "/:teacherID/update",
+  '/:teacherID/update',
   isAuthenticated(),
-  roleRestriction("teacher"),
+  departmentScope(),
+  roleRestriction('teacher'),
   teacherUpdateProfile
 );
 teachersRouter.put(
-  "/:teacherID/update/admin",
+  '/:teacherID/update/admin',
   isAuthenticated(),
-  roleRestriction("admin"),
+  departmentScope(),
+  roleRestriction('admin'),
   adminUpdateTeacher
 );
 

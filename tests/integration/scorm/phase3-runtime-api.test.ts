@@ -108,7 +108,9 @@ describe('SCORM Phase 3: Runtime API', () => {
     expect(initRes.body.data.result).toBe('true');
 
     await request(app)
-      .put(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.lesson_status')}`)
+      .put(
+        `/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.lesson_status')}`
+      )
       .set('Authorization', `Bearer ${studentToken}`)
       .send({ value: 'completed' });
 

@@ -256,11 +256,21 @@ export interface ITokenBlacklistModel extends Model<ITokenBlacklist> {
     token: string,
     userId: string | Types.ObjectId,
     userType: UserRole,
-    reason?: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation'
+    reason?:
+      | 'logout'
+      | 'password_change'
+      | 'token_refresh'
+      | 'security_breach'
+      | 'manual_revocation'
   ): Promise<ITokenBlacklist | null>;
   blacklistAllUserTokens(
     userId: string | Types.ObjectId,
-    reason?: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation'
+    reason?:
+      | 'logout'
+      | 'password_change'
+      | 'token_refresh'
+      | 'security_breach'
+      | 'manual_revocation'
   ): Promise<ITokenBlacklist>;
 }
 

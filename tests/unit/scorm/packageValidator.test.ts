@@ -72,7 +72,7 @@ describe('PackageValidator', () => {
     it('should warn about unusual file extensions', async () => {
       const zip = require('adm-zip');
       const testZip = new zip();
-      
+
       const manifest = `<?xml version="1.0"?>
 <manifest identifier="test" version="1.0"
           xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2">
@@ -95,7 +95,7 @@ describe('PackageValidator', () => {
     it('should detect XXE attacks in manifest', async () => {
       const zip = require('adm-zip');
       const testZip = new zip();
-      
+
       const maliciousManifest = `<?xml version="1.0"?>
 <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
 <manifest identifier="malicious" version="1.0">
@@ -146,7 +146,7 @@ describe('PackageValidator', () => {
     it('should validate packages with absolute paths after sanitization', async () => {
       const zip = require('adm-zip');
       const testZip = new zip();
-      
+
       const manifest = `<?xml version="1.0"?>
 <manifest identifier="test" version="1.0"
           xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2">
@@ -167,7 +167,7 @@ describe('PackageValidator', () => {
     it('should validate packages with null bytes after sanitization', async () => {
       const zip = require('adm-zip');
       const testZip = new zip();
-      
+
       const manifest = `<?xml version="1.0"?>
 <manifest identifier="test" version="1.0"
           xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2">

@@ -203,7 +203,7 @@ export class ScormTestHelper {
 </manifest>`;
 
     zip.addFile('imsmanifest.xml', Buffer.from(manifest, 'utf-8'));
-    
+
     // Create a large dummy file
     const largeContent = Buffer.alloc(sizeInMB * 1024 * 1024, 'x');
     zip.addFile('largefile.bin', largeContent);
@@ -217,10 +217,10 @@ export class ScormTestHelper {
   static async savePackageToFile(buffer: Buffer, filename: string): Promise<string> {
     const fixturesDir = path.join(__dirname, '../../../tests/fixtures/scorm');
     await fs.ensureDir(fixturesDir);
-    
+
     const filePath = path.join(fixturesDir, filename);
     await fs.writeFile(filePath, buffer);
-    
+
     return filePath;
   }
 

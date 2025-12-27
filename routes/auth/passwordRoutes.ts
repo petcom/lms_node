@@ -1,19 +1,19 @@
-import express, { Router } from "express";
+import express, { Router } from 'express';
 import {
-    changePassword,
-    forgotPassword,
-    resetPassword,
-    validatePasswordStrength
-} from "../../controller/auth/passwordCtrl";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import validate from "../../middlewares/validate";
-import { 
-    forgotPassword as forgotPasswordValidation,
-    resetPassword as resetPasswordValidation,
-    validatePasswordStrength as validatePasswordStrengthValidation,
-    changePassword as changePasswordValidation
-} from "../../validators/authValidation";
-import { passwordResetLimiter } from "../../middlewares/rateLimiter";
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  validatePasswordStrength,
+} from '../../controller/auth/passwordCtrl';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import validate from '../../middlewares/validate';
+import {
+  forgotPassword as forgotPasswordValidation,
+  resetPassword as resetPasswordValidation,
+  validatePasswordStrength as validatePasswordStrengthValidation,
+  changePassword as changePasswordValidation,
+} from '../../validators/authValidation';
+import { passwordResetLimiter } from '../../middlewares/rateLimiter';
 
 const passwordRouter: Router = express.Router();
 
@@ -46,7 +46,12 @@ const passwordRouter: Router = express.Router();
  *       429:
  *         description: Too many password reset attempts
  */
-passwordRouter.post("/forgot", passwordResetLimiter, validate(forgotPasswordValidation), forgotPassword);
+passwordRouter.post(
+  '/forgot',
+  passwordResetLimiter,
+  validate(forgotPasswordValidation),
+  forgotPassword
+);
 
 /**
  * @swagger
@@ -89,7 +94,12 @@ passwordRouter.post("/forgot", passwordResetLimiter, validate(forgotPasswordVali
  *       429:
  *         description: Too many password reset attempts
  */
-passwordRouter.put("/reset/:token", passwordResetLimiter, validate(resetPasswordValidation), resetPassword);
+passwordRouter.put(
+  '/reset/:token',
+  passwordResetLimiter,
+  validate(resetPasswordValidation),
+  resetPassword
+);
 
 /**
  * @swagger
@@ -115,7 +125,11 @@ passwordRouter.put("/reset/:token", passwordResetLimiter, validate(resetPassword
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
-passwordRouter.post("/validate", validate(validatePasswordStrengthValidation), validatePasswordStrength);
+passwordRouter.post(
+  '/validate',
+  validate(validatePasswordStrengthValidation),
+  validatePasswordStrength
+);
 
 /**
  * @swagger
@@ -153,6 +167,11 @@ passwordRouter.post("/validate", validate(validatePasswordStrengthValidation), v
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-passwordRouter.put("/change", isAuthenticated(), validate(changePasswordValidation), changePassword);
+passwordRouter.put(
+  '/change',
+  isAuthenticated(),
+  validate(changePasswordValidation),
+  changePassword
+);
 
 export default passwordRouter;

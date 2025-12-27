@@ -15,7 +15,7 @@ export class StorageFactory {
    */
   static getInstance(): StorageFactory {
     const providerType = (process.env.SCORM_STORAGE_PROVIDER || 'local').toLowerCase().trim();
-    
+
     if (providerType && providerType !== 'local' && providerType !== 's3') {
       throw new Error(`Invalid storage provider: ${process.env.SCORM_STORAGE_PROVIDER}`);
     }

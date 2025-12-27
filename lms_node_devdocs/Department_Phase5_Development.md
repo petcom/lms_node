@@ -14,24 +14,24 @@
 2) Department scoping middleware — [x] complete
    - `departmentScope` provides master/top/sub accessible ids; helpers applied to listings.
 
-3) Staff assignment — [ ] pending
-   - Add department selection on admin/teacher create/update; scope validation; emit department in responses.
+3) Staff assignment — [x] complete
+   - Department selection on admin/teacher create/update with scope validation; department returned in responses.
 
 4) Content models and creation — [x] complete
    - Department defaults to caller; admin may target department on SCORM; `isGlobal` supported.
 
-5) Content listing filters — [x] complete for academic listings; [ ] SCORM department filter remaining
+5) Content listing filters — [x] complete
    - Programs/subjects/class levels accept master-only `department` query; scoped defaults for others.
-   - SCORM: add master-only `department` query + surface existing `isGlobal` filter.
+   - SCORM packages accept master-only `department` query; `isGlobal` filter surfaced and scoped fallbacks retained.
 
-6) Global templates / cloning — [ ] pending
-   - Add `POST /api/v1/scorm/packages/:id/clone` for global-to-department copy and audit log.
+6) Global templates / cloning — [x] complete (endpoint delivered; audit logging TBD)
+   - `POST /api/v1/scorm/packages/:id/clone` creates department copy from global packages; logs can be extended later.
 
 7) Counts for hierarchy view — [x] complete
    - Aggregated counts returned on department list/detail.
 
-8) Tests — [x] partial; extend as remaining items ship
-   - Departments CRUD scope + delete guards; programs department filter. Add subjects/class-level filters, staff assignment, and SCORM filter/clone tests when implemented.
+8) Tests — [x] covered
+- Departments CRUD scope + delete guards; programs/subjects/class-level filters; SCORM filter and clone; staff department assignment scenarios via controller validation.
 
 ## 2025-12-26 Implementation Notes
 - Delivered `/api/v1/departments` CRUD with scope enforcement: Master admin can create top-level; top admin can create sub under self; master department is protected from deletion.

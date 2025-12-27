@@ -56,7 +56,12 @@ tokenBlacklistSchema.statics.blacklistToken = async function (
   token: string,
   userId: string,
   userType: 'admin' | 'teacher' | 'student',
-  reason: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation' = 'logout'
+  reason:
+    | 'logout'
+    | 'password_change'
+    | 'token_refresh'
+    | 'security_breach'
+    | 'manual_revocation' = 'logout'
 ): Promise<ITokenBlacklist | null> {
   try {
     // Decode token to get expiry time (don't verify, just decode)
@@ -95,7 +100,12 @@ tokenBlacklistSchema.statics.blacklistToken = async function (
 tokenBlacklistSchema.statics.blacklistAllUserTokens = async function (
   this: ITokenBlacklistModel,
   userId: string,
-  reason: 'logout' | 'password_change' | 'token_refresh' | 'security_breach' | 'manual_revocation' = 'security_breach'
+  reason:
+    | 'logout'
+    | 'password_change'
+    | 'token_refresh'
+    | 'security_breach'
+    | 'manual_revocation' = 'security_breach'
 ): Promise<ITokenBlacklist> {
   // This creates a special entry that will be checked during token verification
   return await this.create({

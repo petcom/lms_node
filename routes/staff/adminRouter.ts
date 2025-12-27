@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express, { Router } from 'express';
 import {
   registerAdminCtrl,
   loginAdminCtrl,
@@ -11,17 +11,18 @@ import {
   adminUnwithdrawTeacherCtrl,
   adminPublishResultsCtrl,
   adminUnpublishResultsCtrl,
-} from "../../controller/staff/adminCtrl";
+} from '../../controller/staff/adminCtrl';
 
-import Admin from "../../model/Staff/Admin";
-import advancedResults from "../../middlewares/advancedResults";
-import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
-import validate from "../../middlewares/validate";
-import { registerAdmin, login } from "../../validators/authValidation";
-import { updateAdminProfile, staffAction } from "../../validators/staffValidation";
-import { idParam } from "../../validators/academicValidation";
-import { registerLimiter, authLimiter } from "../../middlewares/rateLimiter";
+import Admin from '../../model/Staff/Admin';
+import advancedResults from '../../middlewares/advancedResults';
+import isAuthenticated from '../../middlewares/isAuthenticated';
+import roleRestriction from '../../middlewares/roleRestriction';
+import departmentScope from '../../middlewares/departmentScope';
+import validate from '../../middlewares/validate';
+import { registerAdmin, login } from '../../validators/authValidation';
+import { updateAdminProfile, staffAction } from '../../validators/staffValidation';
+import { idParam } from '../../validators/academicValidation';
+import { registerLimiter, authLimiter } from '../../middlewares/rateLimiter';
 
 const adminRouter: Router = express.Router();
 
@@ -66,7 +67,7 @@ const adminRouter: Router = express.Router();
  *       429:
  *         description: Too many registration attempts
  */
-adminRouter.post("/register", registerLimiter, validate(registerAdmin), registerAdminCtrl);
+adminRouter.post('/register', registerLimiter, validate(registerAdmin), registerAdminCtrl);
 
 /**
  * @swagger
@@ -118,7 +119,7 @@ adminRouter.post("/register", registerLimiter, validate(registerAdmin), register
  *         description: Too many login attempts
  */
 
-adminRouter.post("/login", authLimiter, validate(login), loginAdminCtrl);
+adminRouter.post('/login', authLimiter, validate(login), loginAdminCtrl);
 
 /**
  * @swagger
@@ -153,9 +154,9 @@ adminRouter.post("/login", authLimiter, validate(login), loginAdminCtrl);
  *         $ref: '#/components/responses/ForbiddenError'
  */
 adminRouter.get(
-  "/",
+  '/',
   isAuthenticated(),
-  roleRestriction("admin"),
+  roleRestriction('admin'),
   advancedResults(Admin),
   getAdminsCtrl
 );
@@ -178,12 +179,7 @@ adminRouter.get(
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-adminRouter.get(
-  "/profile",
-  isAuthenticated(),
-  roleRestriction("admin"),
-  getAdminProfileCtrl
-);
+adminRouter.get('/profile', isAuthenticated(), roleRestriction('admin'), getAdminProfileCtrl);
 
 /**
  * @swagger
@@ -214,13 +210,13 @@ adminRouter.get(
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 adminRouter.put(
-  "/",
+  '/',
   isAuthenticated(),
-  roleRestriction("admin"),
+  departmentScope(),
+  roleRestriction('admin'),
   validate(updateAdminProfile),
   updateAdminCtrl
 );
-
 
 /**
  * @swagger
@@ -247,10 +243,11 @@ adminRouter.put(
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/suspend/teacher/:id", 
+adminRouter.put(
+  '/suspend/teacher/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(staffAction), 
+  roleRestriction('admin'),
+  validate(staffAction),
   adminSuspendTeacherCtrl
 );
 
@@ -279,10 +276,11 @@ adminRouter.put("/suspend/teacher/:id",
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/unsuspend/teacher/:id", 
+adminRouter.put(
+  '/unsuspend/teacher/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(staffAction), 
+  roleRestriction('admin'),
+  validate(staffAction),
   adminUnsuspendteacherCtrl
 );
 
@@ -311,10 +309,11 @@ adminRouter.put("/unsuspend/teacher/:id",
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/withdraw/teacher/:id", 
+adminRouter.put(
+  '/withdraw/teacher/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(staffAction), 
+  roleRestriction('admin'),
+  validate(staffAction),
   adminWithdrawTeacherCtrl
 );
 
@@ -343,10 +342,11 @@ adminRouter.put("/withdraw/teacher/:id",
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/unwithdraw/teacher/:id", 
+adminRouter.put(
+  '/unwithdraw/teacher/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(staffAction), 
+  roleRestriction('admin'),
+  validate(staffAction),
   adminUnwithdrawTeacherCtrl
 );
 
@@ -375,10 +375,11 @@ adminRouter.put("/unwithdraw/teacher/:id",
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/publish/exam/:id", 
+adminRouter.put(
+  '/publish/exam/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(idParam), 
+  roleRestriction('admin'),
+  validate(idParam),
   adminPublishResultsCtrl
 );
 
@@ -407,10 +408,11 @@ adminRouter.put("/publish/exam/:id",
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminRouter.put("/unpublish/exam/:id", 
+adminRouter.put(
+  '/unpublish/exam/:id',
   isAuthenticated(),
-  roleRestriction("admin"),
-  validate(idParam), 
+  roleRestriction('admin'),
+  validate(idParam),
   adminUnpublishResultsCtrl
 );
 

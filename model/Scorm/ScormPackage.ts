@@ -329,29 +329,31 @@ scormPackageSchema.statics.updateStats = async function (
   packageObjectId: mongoose.Types.ObjectId
 ) {
   const ScormAttempt = mongoose.model('ScormAttempt');
-  
+
   const attempts = await ScormAttempt.find({ package: packageObjectId });
-  
+
   const totalAttempts = attempts.length;
   const completedAttempts = attempts.filter(
     (a: any) => a.status === 'completed' || a.status === 'passed'
   ).length;
-  
+
   const scores = attempts
     .filter((a: any) => a.scorePercentage !== undefined && a.scorePercentage !== null)
     .map((a: any) => a.scorePercentage);
-  
-  const averageScore = scores.length > 0
-    ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length
-    : undefined;
-  
+
+  const averageScore =
+    scores.length > 0
+      ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length
+      : undefined;
+
   const times = attempts
     .filter((a: any) => a.timeSpentSeconds > 0)
     .map((a: any) => a.timeSpentSeconds);
-  
-  const averageTimeSpent = times.length > 0
-    ? times.reduce((sum: number, time: number) => sum + time, 0) / times.length
-    : undefined;
+
+  const averageTimeSpent =
+    times.length > 0
+      ? times.reduce((sum: number, time: number) => sum + time, 0) / times.length
+      : undefined;
 
   await this.updateOne(
     { packageId },

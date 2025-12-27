@@ -14,6 +14,7 @@ export const updateAdminProfile = {
     name,
     email,
     phone,
+    department: objectId,
   }).min(1),
 };
 
@@ -28,6 +29,7 @@ export const updateTeacherProfile = {
     employeeId: Joi.string().trim(),
     subject: objectId,
     program: objectId,
+    department: objectId,
   }).min(1),
 };
 

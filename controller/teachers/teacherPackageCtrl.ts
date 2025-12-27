@@ -22,8 +22,6 @@ const serializePackage = (pkg: any) => {
   return { ...obj, id: obj._id?.toString?.() };
 };
 
-const toIdString = (value: any) => (value ? value.toString() : undefined);
-
 const ensureOwnership = (pkg: any, req: Request) => {
   const role = req.userAuth!.role;
   const userId = req.userAuth!._id?.toString();
@@ -32,51 +30,57 @@ const ensureOwnership = (pkg: any, req: Request) => {
   }
 };
 
-export const publishTeacherPackage = asyncHandler(async (req: Request, res: Response) => {
-  const pkg = await findPackageByAnyId(req.params.id);
-  if (!pkg) {
-    throw new NotFoundError('SCORM package not found');
+export const publishTeacherPackage = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const pkg = await findPackageByAnyId(req.params.id);
+    if (!pkg) {
+      throw new NotFoundError('SCORM package not found');
+    }
+
+    ensureOwnership(pkg, req);
+
+    if (pkg.isPublished && pkg.status === 'published') {
+      res.status(200).json({ success: true, data: serializePackage(pkg) });
+      return;
+    }
+
+    pkg.isPublished = true;
+    (pkg as any).status = 'published';
+    (pkg as any).publishedAt = new Date();
+    (pkg as any).publishedBy = req.userAuth!._id;
+    (pkg as any).publishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
+
+    await pkg.save();
+
+    res.status(200).json({ success: true, data: serializePackage(pkg) });
   }
+);
 
-  ensureOwnership(pkg, req);
+export const unpublishTeacherPackage = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const pkg = await findPackageByAnyId(req.params.id);
+    if (!pkg) {
+      throw new NotFoundError('SCORM package not found');
+    }
 
-  if (pkg.isPublished && pkg.status === 'published') {
-    return res.status(200).json({ success: true, data: serializePackage(pkg) });
+    ensureOwnership(pkg, req);
+
+    if (!pkg.isPublished && pkg.status === 'draft') {
+      res.status(200).json({ success: true, data: serializePackage(pkg) });
+      return;
+    }
+
+    pkg.isPublished = false;
+    (pkg as any).status = 'draft';
+    (pkg as any).unpublishedAt = new Date();
+    (pkg as any).unpublishedBy = req.userAuth!._id;
+    (pkg as any).unpublishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
+
+    await pkg.save();
+
+    res.status(200).json({ success: true, data: serializePackage(pkg) });
   }
-
-  pkg.isPublished = true;
-  (pkg as any).status = 'published';
-  (pkg as any).publishedAt = new Date();
-  (pkg as any).publishedBy = req.userAuth!._id;
-  (pkg as any).publishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
-
-  await pkg.save();
-
-  res.status(200).json({ success: true, data: serializePackage(pkg) });
-});
-
-export const unpublishTeacherPackage = asyncHandler(async (req: Request, res: Response) => {
-  const pkg = await findPackageByAnyId(req.params.id);
-  if (!pkg) {
-    throw new NotFoundError('SCORM package not found');
-  }
-
-  ensureOwnership(pkg, req);
-
-  if (!pkg.isPublished && pkg.status === 'draft') {
-    return res.status(200).json({ success: true, data: serializePackage(pkg) });
-  }
-
-  pkg.isPublished = false;
-  (pkg as any).status = 'draft';
-  (pkg as any).unpublishedAt = new Date();
-  (pkg as any).unpublishedBy = req.userAuth!._id;
-  (pkg as any).unpublishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
-
-  await pkg.save();
-
-  res.status(200).json({ success: true, data: serializePackage(pkg) });
-});
+);
 
 export const listTeacherClasses = asyncHandler(async (req: Request, res: Response) => {
   const teacherId = req.userAuth!._id.toString();
@@ -100,7 +104,9 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
   ]);
 
   const classIds = classes.map((c) => c._id.toString());
-  const students = await Student.find({ classLevels: { $in: classIds } }).select('name classLevels');
+  const students = await Student.find({ classLevels: { $in: classIds } }).select(
+    'name classLevels'
+  );
   const studentsByClass: Record<string, mongoose.Types.ObjectId[]> = {};
   students.forEach((s) => {
     (s.classLevels || []).forEach((cl: any) => {
@@ -127,17 +133,16 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
       },
     },
   ]);
-  const attemptMap = attemptAgg.reduce<Record<string, { completed: number; passed: number; total: number }>>(
-    (acc, cur) => {
-      acc[cur._id.toString()] = {
-        completed: cur.completed,
-        passed: cur.passed,
-        total: cur.total,
-      };
-      return acc;
-    },
-    {}
-  );
+  const attemptMap = attemptAgg.reduce<
+    Record<string, { completed: number; passed: number; total: number }>
+  >((acc, cur) => {
+    acc[cur._id.toString()] = {
+      completed: cur.completed,
+      passed: cur.passed,
+      total: cur.total,
+    };
+    return acc;
+  }, {});
 
   const items = classes.map((cls) => {
     const clsId = cls._id.toString();
@@ -153,7 +158,8 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
         passedAttempts += stats.passed;
       }
     });
-    const completion = totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
+    const completion =
+      totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
     const passRate = totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0;
 
     return {
@@ -191,13 +197,18 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
   const students = await Student.find({ classLevels: { $in: classIds } }).select('_id');
   const studentIds = students.map((s) => s._id);
 
-  const attempts = await ScormAttempt.find({ student: { $in: studentIds } }).select('status package');
+  const attempts = await ScormAttempt.find({ student: { $in: studentIds } }).select(
+    'status package'
+  );
 
   const totalAttempts = attempts.length;
-  const completedAttempts = attempts.filter((a) => ['completed', 'passed'].includes(a.status)).length;
+  const completedAttempts = attempts.filter((a) =>
+    ['completed', 'passed'].includes(a.status)
+  ).length;
   const passedAttempts = attempts.filter((a) => a.status === 'passed').length;
 
-  const avgCompletion = totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
+  const avgCompletion =
+    totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
   const passRate = totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0;
 
   const activePackages = await ScormPackage.countDocuments(
@@ -237,7 +248,9 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
 
   const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
 
-  const students = await Student.find({ classLevels: { $in: classIdsToUse } }).select('name classLevels');
+  const students = await Student.find({ classLevels: { $in: classIdsToUse } }).select(
+    'name classLevels'
+  );
   const studentIds = students.map((s) => s._id);
   const studentNameMap = students.reduce<Record<string, string>>((acc, s) => {
     acc[s._id.toString()] = s.name;
@@ -332,9 +345,9 @@ export const listTeacherAssignments = asyncHandler(async (req: Request, res: Res
   ]);
 
   const items = packages.map((pkg) => {
-    const clsIds = (pkg.assignedTo?.classLevels || []).map(String).filter((id) =>
-      classIdsToUse.includes(id)
-    );
+    const clsIds = (pkg.assignedTo?.classLevels || [])
+      .map(String)
+      .filter((id) => classIdsToUse.includes(id));
     return {
       id: pkg._id.toString(),
       packageTitle: pkg.title,
@@ -440,7 +453,11 @@ export const listTeacherPackages = asyncHandler(async (req: Request, res: Respon
 });
 
 export const assignTeacherPackage = asyncHandler(async (req: Request, res: Response) => {
-  const { packageId, classIds = [], dueDate } = req.body as {
+  const {
+    packageId,
+    classIds = [],
+    dueDate,
+  } = req.body as {
     packageId?: string;
     classIds?: string[];
     dueDate?: string;

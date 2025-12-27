@@ -28,7 +28,21 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const maxUploadBytes = Number(process.env.SCORM_MAX_FILE_SIZE) || 500 * 1024 * 1024;
-  const { title, description, subject, subjectId, program, programId, classLevel, classLevelId, isGraded, maxScore, dueDate, department, isGlobal } = req.body as any;
+  const {
+    title,
+    description,
+    subject,
+    subjectId,
+    program,
+    programId,
+    classLevel,
+    classLevelId,
+    isGraded,
+    maxScore,
+    dueDate,
+    department,
+    isGlobal,
+  } = req.body as any;
   const { originalname, size } = req.file;
 
   if (!title) {
@@ -64,15 +78,15 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
     parsedDueDate = parsed;
   }
 
-  const parsedIsGraded = typeof isGraded === 'string' ? isGraded.toLowerCase() !== 'false' : isGraded !== false;
+  const parsedIsGraded =
+    typeof isGraded === 'string' ? isGraded.toLowerCase() !== 'false' : isGraded !== false;
   const parsedMaxScore = maxScore !== undefined ? Number(maxScore) : undefined;
   if (parsedMaxScore !== undefined && Number.isNaN(parsedMaxScore)) {
     throw new ValidationError('Invalid maxScore');
   }
 
-  const parsedIsGlobal = req.userAuth?.role === 'admin'
-    ? Boolean(isGlobal === 'true' || isGlobal === true)
-    : false;
+  const parsedIsGlobal =
+    req.userAuth?.role === 'admin' ? Boolean(isGlobal === 'true' || isGlobal === true) : false;
 
   // Generate unique package ID
   const packageId = uuidv4();
@@ -190,7 +204,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       uploadedByRole: req.userAuth?.role,
       fileName: scormPackage.fileName,
       fileSize: scormPackage.fileSize,
-      storageProvider: scormPackage.storageProvider,
+      storageProvider: (scormPackage as any).storageProvider,
     });
   } catch (error: any) {
     // Clean up on failure
@@ -219,6 +233,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     isPublished,
     status,
     search,
+    department,
   } = req.query;
 
   const query: any = {};
@@ -262,6 +277,11 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   if (scope && scope !== 'all') {
     query.$and = query.$and || [];
     query.$and.push({ $or: [{ department: { $in: scope } }, { isGlobal: true }] });
+  } else if (scope === 'all' && department) {
+    if (!mongoose.isValidObjectId(department as any)) {
+      throw new ValidationError('Invalid department query parameter');
+    }
+    query.department = new mongoose.Types.ObjectId(department as any);
   }
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -411,6 +431,89 @@ export const deletePackage = asyncHandler(async (req: Request, res: Response) =>
 });
 
 /**
+ * @desc    Clone a global SCORM package into a department
+ * @route   POST /api/scorm/packages/:id/clone
+ * @access  Private (Admin only)
+ */
+export const clonePackage = asyncHandler(
+  async (req: Request<{ id: string }, {}, { department?: string }>, res: Response) => {
+    if (req.userAuth?.role !== 'admin') {
+      throw new AuthorizationError('Only admins can clone packages');
+    }
+
+    const targetDept = req.body.department || (req.userAuth as any)?.department?.toString();
+    if (!targetDept || !mongoose.isValidObjectId(targetDept)) {
+      throw new ValidationError('Target department is required and must be valid');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all' && !scope.includes(targetDept)) {
+      throw new AuthorizationError('Access denied for target department');
+    }
+
+    const source = await ScormPackage.findById(req.params.id);
+    if (!source) {
+      throw new NotFoundError('SCORM package not found');
+    }
+
+    if (!source.isGlobal) {
+      throw new AuthorizationError('Only global packages can be cloned');
+    }
+
+    const newPackageId = uuidv4();
+
+    const sourceAny: any = source;
+
+    const clone = await ScormPackage.create({
+      packageId: newPackageId,
+      title: source.title,
+      description: (source as any).description,
+      version: source.version,
+      manifestData: source.manifestData,
+      launchUrl: source.launchUrl,
+      entryPoint: source.entryPoint,
+      fileName: source.fileName,
+      fileSize: source.fileSize,
+      filePath: source.filePath,
+      storagePath: sourceAny.storagePath,
+      storageProvider: sourceAny.storageProvider,
+      subject: source.subject,
+      program: source.program,
+      classLevel: source.classLevel,
+      department: new mongoose.Types.ObjectId(targetDept),
+      createdBy: req.userAuth!._id,
+      uploadedBy: req.userAuth!._id,
+      uploadedByModel: 'Admin',
+      status: 'draft',
+      isGlobal: false,
+      isPublished: false,
+      isGraded: source.isGraded,
+      maxScore: source.maxScore,
+      passingScore: source.passingScore,
+      requiredScore: (source as any).requiredScore,
+      maxAttempts: (source as any).maxAttempts,
+      assignedTo: {
+        students: [],
+        classLevels: [],
+        programs: [],
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Package cloned successfully',
+      data: {
+        id: clone._id?.toString?.(),
+        packageId: clone.packageId,
+        department: clone.department,
+        isGlobal: clone.isGlobal,
+        status: clone.status,
+      },
+    });
+  }
+);
+
+/**
  * @desc    Assign package to students
  * @route   POST /api/scorm/packages/:id/assign
  * @access  Private (Teacher/Admin)
@@ -513,7 +616,7 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
  * @route   POST /api/scorm/packages/:id/publish
  * @access  Private (Teacher/Admin)
  */
-export const publishPackage = asyncHandler(async (req: Request, res: Response) => {
+export const publishPackage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const userId = req.userAuth!._id?.toString();
   const role = req.userAuth!.role;
 
@@ -535,7 +638,8 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response) =
 
   // Idempotent: already published
   if (scormPackage.isPublished && scormPackage.status === 'published') {
-    return res.status(200).json({ success: true, data: scormPackage });
+    res.status(200).json({ success: true, data: scormPackage });
+    return;
   }
 
   scormPackage.isPublished = true;
@@ -554,7 +658,7 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response) =
  * @route   POST /api/scorm/packages/:id/unpublish
  * @access  Private (Teacher/Admin)
  */
-export const unpublishPackage = asyncHandler(async (req: Request, res: Response) => {
+export const unpublishPackage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const userId = req.userAuth!._id?.toString();
   const role = req.userAuth!.role;
 
@@ -576,7 +680,8 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
 
   // Idempotent: already unpublished/draft
   if (!scormPackage.isPublished && scormPackage.status === 'draft') {
-    return res.status(200).json({ success: true, data: scormPackage });
+    res.status(200).json({ success: true, data: scormPackage });
+    return;
   }
 
   scormPackage.isPublished = false;

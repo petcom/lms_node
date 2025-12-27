@@ -14,9 +14,8 @@ export const registerAdmin = {
     name: Joi.string().min(2).max(100).trim().required(),
     email,
     password,
-    passwordConfirmation: process.env.NODE_ENV === 'test'
-      ? Joi.string().optional()
-      : passwordConfirmation,
+    passwordConfirmation:
+      process.env.NODE_ENV === 'test' ? Joi.string().optional() : passwordConfirmation,
   }),
 };
 
@@ -85,13 +84,10 @@ export const changePassword = {
       'any.required': 'Current password is required',
     }),
     newPassword: password,
-    confirmNewPassword: Joi.string()
-      .valid(Joi.ref('newPassword'))
-      .required()
-      .messages({
-        'any.only': 'Password confirmation does not match new password',
-        'any.required': 'Password confirmation is required',
-      }),
+    confirmNewPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({
+      'any.only': 'Password confirmation does not match new password',
+      'any.required': 'Password confirmation is required',
+    }),
   }),
 };
 

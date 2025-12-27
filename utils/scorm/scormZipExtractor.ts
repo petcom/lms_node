@@ -159,12 +159,10 @@ export class ScormZipExtractor {
   async listFiles(packageId: string): Promise<string[]> {
     try {
       const files = await this.storageProvider.listFiles(`${packageId}/`);
-      
+
       // Remove package ID prefix from paths
       return files.map((file) => {
-        return file.startsWith(`${packageId}/`) 
-          ? file.substring(`${packageId}/`.length)
-          : file;
+        return file.startsWith(`${packageId}/`) ? file.substring(`${packageId}/`.length) : file;
       });
     } catch (error) {
       return [];

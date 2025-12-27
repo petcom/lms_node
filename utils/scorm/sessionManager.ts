@@ -1,12 +1,12 @@
 /**
  * SCORM Session Manager
- * 
+ *
  * Manages active SCORM sessions including:
  * - Session creation and initialization
  * - Heartbeat tracking
  * - Timeout detection
  * - Session cleanup
- * 
+ *
  * Uses Redis for persistent session storage across server restarts
  * and multi-instance deployments
  */
@@ -120,7 +120,7 @@ export async function createSession(
     SESSION_TIMEOUT,
     serializeSession(session)
   );
-  
+
   return { attemptId, ...session };
 }
 
@@ -135,7 +135,8 @@ export async function getSession(attemptId: string): Promise<ScormSession | null
     if (!session) return null;
 
     const now = Date.now();
-    const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+    const lastActivity =
+      session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
     if (now - lastActivity > SESSION_TIMEOUT * 1000) {
       await terminateSession(attemptId, 'timeout');
       return null;
@@ -144,20 +145,20 @@ export async function getSession(attemptId: string): Promise<ScormSession | null
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (!data) {
     return null;
   }
-  
+
   const session = deserializeSession(attemptId, data);
-  
+
   // Check if session has timed out (TTL check)
   const ttl = await redisClient.ttl(`${SESSION_KEY_PREFIX}${attemptId}`);
   if (ttl <= 0) {
     await terminateSession(attemptId, 'timeout');
     return null;
   }
-  
+
   return session;
 }
 
@@ -176,17 +177,17 @@ export async function updateHeartbeat(attemptId: string): Promise<boolean> {
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (!data) {
     return false;
   }
-  
+
   const session = deserializeSession(attemptId, data);
-  
+
   if (session.status !== 'active') {
     return false;
   }
-  
+
   // Update last activity and refresh TTL
   session.lastActivity = new Date();
   await redisClient.setex(
@@ -194,7 +195,7 @@ export async function updateHeartbeat(attemptId: string): Promise<boolean> {
     SESSION_TIMEOUT,
     serializeSession(session)
   );
-  
+
   return true;
 }
 
@@ -207,7 +208,8 @@ export async function checkTimeout(attemptId: string): Promise<boolean> {
     const session = memorySessions.get(attemptId);
     if (!session) return true;
     const now = Date.now();
-    const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+    const lastActivity =
+      session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
     return now - lastActivity > SESSION_TIMEOUT * 1000;
   }
 
@@ -218,11 +220,7 @@ export async function checkTimeout(attemptId: string): Promise<boolean> {
 /**
  * Add pending CMI data to session
  */
-export async function addPendingCMI(
-  attemptId: string,
-  element: string,
-  value: any
-): Promise<void> {
+export async function addPendingCMI(attemptId: string, element: string, value: any): Promise<void> {
   const storeIsRedis = ensureStoreReady();
 
   if (!storeIsRedis) {
@@ -235,15 +233,15 @@ export async function addPendingCMI(
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (!data) {
     throw new Error('Session not initialized');
   }
-  
+
   const session = deserializeSession(attemptId, data);
   session.pendingCMI[element] = value;
   session.lastActivity = new Date();
-  
+
   // Update session in Redis
   await redisClient.setex(
     `${SESSION_KEY_PREFIX}${attemptId}`,
@@ -264,11 +262,11 @@ export async function getPendingCMI(attemptId: string): Promise<Record<string, a
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (!data) {
     return {};
   }
-  
+
   const session = deserializeSession(attemptId, data);
   return { ...session.pendingCMI };
 }
@@ -289,11 +287,11 @@ export async function clearPendingCMI(attemptId: string): Promise<void> {
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (data) {
     const session = deserializeSession(attemptId, data);
     session.pendingCMI = {};
-    
+
     await redisClient.setex(
       `${SESSION_KEY_PREFIX}${attemptId}`,
       SESSION_TIMEOUT,
@@ -323,12 +321,12 @@ export async function setSessionError(
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (data) {
     const session = deserializeSession(attemptId, data);
     session.errorCode = errorCode;
     session.errorMessage = errorMessage;
-    
+
     await redisClient.setex(
       `${SESSION_KEY_PREFIX}${attemptId}`,
       SESSION_TIMEOUT,
@@ -340,7 +338,9 @@ export async function setSessionError(
 /**
  * Get session error
  */
-export async function getSessionError(attemptId: string): Promise<{ code: string; message?: string }> {
+export async function getSessionError(
+  attemptId: string
+): Promise<{ code: string; message?: string }> {
   const storeIsRedis = ensureStoreReady();
 
   if (!storeIsRedis) {
@@ -349,11 +349,11 @@ export async function getSessionError(attemptId: string): Promise<{ code: string
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (!data) {
     return { code: '0' };
   }
-  
+
   const session = deserializeSession(attemptId, data);
   return {
     code: session.errorCode,
@@ -380,11 +380,11 @@ export async function terminateSession(
   }
 
   const data = await redisClient.get(`${SESSION_KEY_PREFIX}${attemptId}`);
-  
+
   if (data) {
     const session = deserializeSession(attemptId, data);
     session.status = reason === 'timeout' ? 'timeout' : 'terminated';
-    
+
     // Keep session for 1 minute for final data retrieval, then auto-delete via TTL
     await redisClient.setex(
       `${SESSION_KEY_PREFIX}${attemptId}`,
@@ -406,7 +406,8 @@ export async function autoCommitStale(): Promise<string[]> {
   if (!storeIsRedis) {
     const now = Date.now();
     for (const [attemptId, session] of memorySessions.entries()) {
-      const lastActivity = session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
+      const lastActivity =
+        session.lastActivity?.getTime?.() || new Date(session.lastActivity).getTime();
       const ttlMs = SESSION_TIMEOUT * 1000 - (now - lastActivity);
       if (session.status === 'active' && ttlMs > 0 && ttlMs < 300000) {
         staleAttempts.push(attemptId);
@@ -419,25 +420,25 @@ export async function autoCommitStale(): Promise<string[]> {
 
   // Scan for all session keys
   const keys = await redisClient.keys(`${SESSION_KEY_PREFIX}*`);
-  
+
   for (const key of keys) {
     const data = await redisClient.get(key);
     if (!data) continue;
-    
+
     const attemptId = key.replace(SESSION_KEY_PREFIX, '');
     const session = deserializeSession(attemptId, data);
-    
+
     // Check if session is about to timeout (TTL < 5 minutes)
     const ttl = await redisClient.ttl(key);
     if (session.status === 'active' && ttl > 0 && ttl < 300) {
       staleAttempts.push(attemptId);
-      
+
       // Mark as timeout but keep data
       session.status = 'timeout';
       await redisClient.setex(key, ttl, serializeSession(session));
     }
   }
-  
+
   return staleAttempts;
 }
 
@@ -480,14 +481,14 @@ export async function getSessionStats(): Promise<{
   // Scan for all session keys
   const keys = await redisClient.keys(`${SESSION_KEY_PREFIX}*`);
   stats.total = keys.length;
-  
+
   for (const key of keys) {
     const data = await redisClient.get(key);
     if (!data) continue;
-    
+
     const attemptId = key.replace(SESSION_KEY_PREFIX, '');
     const session = deserializeSession(attemptId, data);
-    
+
     switch (session.status) {
       case 'active':
         stats.active++;
@@ -500,7 +501,7 @@ export async function getSessionStats(): Promise<{
         break;
     }
   }
-  
+
   return stats;
 }
 

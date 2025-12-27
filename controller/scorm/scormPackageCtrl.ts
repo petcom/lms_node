@@ -234,9 +234,13 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     status,
     search,
     department,
+    owner,
   } = req.query;
 
   const query: any = {};
+
+  const role = req.userAuth?.role;
+  const userId = req.userAuth?._id?.toString();
 
   // Department scoping
   const scope = req.departmentScope?.accessibleDepartmentIds;
@@ -274,6 +278,18 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     ];
   }
 
+  // Owner filter
+  if (owner) {
+    const ownerValue = owner === 'me' ? userId : String(owner);
+    if (!ownerValue || !mongoose.isValidObjectId(ownerValue)) {
+      throw new ValidationError('Invalid owner');
+    }
+    if (role === 'teacher' && ownerValue !== userId) {
+      throw new AuthorizationError('Access denied for this owner filter');
+    }
+    query.uploadedBy = new mongoose.Types.ObjectId(ownerValue);
+  }
+
   if (scope && scope !== 'all') {
     query.$and = query.$and || [];
     query.$and.push({ $or: [{ department: { $in: scope } }, { isGlobal: true }] });
@@ -282,6 +298,18 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
       throw new ValidationError('Invalid department query parameter');
     }
     query.department = new mongoose.Types.ObjectId(department as any);
+  }
+
+  // Teacher registry scoping: only own packages or global, plus optional department scope
+  if (role === 'teacher' && userId) {
+    const teacherScope: any = {
+      $or: [{ uploadedBy: new mongoose.Types.ObjectId(userId) }, { isGlobal: true }],
+    };
+    if (scope && scope !== 'all') {
+      teacherScope.$or.push({ department: { $in: scope } });
+    }
+    query.$and = query.$and || [];
+    query.$and.push(teacherScope);
   }
 
   const skip = (Number(page) - 1) * Number(limit);

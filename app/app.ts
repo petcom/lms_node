@@ -34,6 +34,7 @@ import scormReportRouter from '../routes/scorm/scormReportRoutes';
 import scormHealthRouter from '../routes/scorm/scormHealthRoutes';
 import metricsRouter from '../routes/metricsRouter';
 import departmentRouter from '../routes/departments/departmentRoutes';
+import permissionsRouter from '../routes/permissionsRouter';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -165,6 +166,7 @@ app.use('/api/v1/scorm/reports', scormReportRouter); // SCORM tracking and repor
 app.use('/api/v1/scorm', scormHealthRouter); // SCORM health and monitoring
 app.use('/api/v1/metrics', metricsRouter); // Platform metrics summary
 app.use('/api/v1/departments', departmentRouter); // Department hierarchy management
+app.use('/api/v1/permissions', permissionsRouter); // Permissions matrix
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects
 app.get('/student/dashboard', (_req, res) => res.redirect('/'));

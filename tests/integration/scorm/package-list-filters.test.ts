@@ -6,6 +6,7 @@ import Department from '../../../model/Academic/Department';
 
 const teacherToken = 'test-teacher-token';
 const teacherId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+const adminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
 const masterDepartmentId = new mongoose.Types.ObjectId(
   process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
 );
@@ -98,5 +99,39 @@ describe('SCORM packages listing filters', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(1);
     expect(res.body.data[0].title).toBe('Alpha Course');
+  });
+
+  it('limits teacher registry to own or global packages and supports owner=me', async () => {
+    await ScormPackage.create([
+      basePackage({ title: 'My Package' }),
+      basePackage({
+        title: 'Other Teacher Same Dept',
+        uploadedBy: new mongoose.Types.ObjectId('0000000000000000000000ff'),
+        uploadedByModel: 'Teacher',
+      }),
+      basePackage({
+        title: 'Global Package',
+        isGlobal: true,
+        createdBy: adminId,
+        uploadedBy: adminId,
+        uploadedByModel: 'Admin',
+      }),
+    ]);
+
+    const res = await request(app)
+      .get('/api/v1/scorm/packages')
+      .set('Authorization', `Bearer ${teacherToken}`);
+
+    expect(res.status).toBe(200);
+    const titles = res.body.data.map((p: any) => p.title).sort();
+    expect(titles).toEqual(['Global Package', 'My Package']);
+
+    const ownerRes = await request(app)
+      .get('/api/v1/scorm/packages?owner=me')
+      .set('Authorization', `Bearer ${teacherToken}`);
+
+    expect(ownerRes.status).toBe(200);
+    expect(ownerRes.body.data.length).toBe(1);
+    expect(ownerRes.body.data[0].title).toBe('My Package');
   });
 });

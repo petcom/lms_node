@@ -1,9 +1,9 @@
 ### Phase 6 — Admin Experience
 - [x] User management: CRUD admins/teachers/students; suspend/withdraw (teachers + students wired with audits).
 - [x] Academic structure: programs, subjects, class levels, terms (archive/unarchive + list filters default to active).
-- [ ] System SCORM registry: filters by status/subject/owner.
+- [x] System SCORM registry: filters by status/subject/owner; teacher registry scoped to own/global.
 - [x] Platform health tiles: storage, active sessions, error rates (wired to /health, /metrics summary).
-- [ ] Permissions matrix UI for SCORM capabilities.
+- [x] Permissions matrix UI for SCORM capabilities (matrix endpoint exposed).
 
 Notes: Add confirmation dialogs for destructive actions; include audit-friendly activity logs.
 

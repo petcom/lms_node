@@ -9,6 +9,10 @@ import {
   adminUnsuspendteacherCtrl,
   adminWithdrawTeacherCtrl,
   adminUnwithdrawTeacherCtrl,
+  adminSuspendStudentCtrl,
+  adminUnsuspendStudentCtrl,
+  adminWithdrawStudentCtrl,
+  adminUnwithdrawStudentCtrl,
   adminPublishResultsCtrl,
   adminUnpublishResultsCtrl,
 } from '../../controller/staff/adminCtrl';
@@ -344,6 +348,34 @@ adminRouter.put(
   isAuthenticated(),
   roleRestriction('admin'),
   adminUnwithdrawTeacherCtrl
+);
+
+adminRouter.put(
+  '/suspend/student/:id',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  adminSuspendStudentCtrl
+);
+
+adminRouter.put(
+  '/unsuspend/student/:id',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  adminUnsuspendStudentCtrl
+);
+
+adminRouter.put(
+  '/withdraw/student/:id',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  adminWithdrawStudentCtrl
+);
+
+adminRouter.put(
+  '/unwithdraw/student/:id',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  adminUnwithdrawStudentCtrl
 );
 
 /**

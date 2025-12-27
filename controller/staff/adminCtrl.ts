@@ -6,6 +6,7 @@ import { hashPassword, isPassMatched } from '../../utils/helpers';
 import mongoose from 'mongoose';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import Teacher from '../../model/Staff/Teacher';
+import Student from '../../model/Academic/Student';
 import logAudit from '../../utils/auditLogger';
 
 // Request body interfaces
@@ -406,6 +407,170 @@ export const adminUnwithdrawTeacherCtrl = expressAsyncHandler(
       status: 'success',
       data: teacher,
       message: 'Teacher unwithdrawn successfully',
+    });
+  }
+);
+
+/**
+ * @description Admin suspends a student
+ * @route       PUT /api/v1/admins/suspend/student/:id
+ * @access      Private
+ */
+export const adminSuspendStudentCtrl = expressAsyncHandler(
+  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+    const studentId = req.params.id;
+    const reason = req.body?.reason;
+
+    if (!mongoose.isValidObjectId(studentId)) {
+      throw new ValidationError('Invalid student id');
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+
+    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
+    student.isSuspended = true;
+    await student.save();
+
+    await logAudit({
+      req,
+      action: 'student.suspend',
+      entityType: 'Student',
+      entityId: student._id,
+      reason,
+      before,
+      after: { isSuspended: true, isWithdrawn: student.isWithdrawn },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: student,
+      message: 'Student suspended successfully',
+    });
+  }
+);
+
+/**
+ * @description Admin unsuspends a student
+ * @route       PUT /api/v1/admins/unsuspend/student/:id
+ * @access      Private
+ */
+export const adminUnsuspendStudentCtrl = expressAsyncHandler(
+  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+    const studentId = req.params.id;
+    const reason = req.body?.reason;
+
+    if (!mongoose.isValidObjectId(studentId)) {
+      throw new ValidationError('Invalid student id');
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+
+    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
+    student.isSuspended = false;
+    await student.save();
+
+    await logAudit({
+      req,
+      action: 'student.unsuspend',
+      entityType: 'Student',
+      entityId: student._id,
+      reason,
+      before,
+      after: { isSuspended: false, isWithdrawn: student.isWithdrawn },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: student,
+      message: 'Student unsuspended successfully',
+    });
+  }
+);
+
+/**
+ * @description Admin withdraws a student
+ * @route       PUT /api/v1/admins/withdraw/student/:id
+ * @access      Private
+ */
+export const adminWithdrawStudentCtrl = expressAsyncHandler(
+  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+    const studentId = req.params.id;
+    const reason = req.body?.reason;
+
+    if (!mongoose.isValidObjectId(studentId)) {
+      throw new ValidationError('Invalid student id');
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+
+    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
+    student.isWithdrawn = true;
+    await student.save();
+
+    await logAudit({
+      req,
+      action: 'student.withdraw',
+      entityType: 'Student',
+      entityId: student._id,
+      reason,
+      before,
+      after: { isSuspended: student.isSuspended, isWithdrawn: true },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: student,
+      message: 'Student withdrawn successfully',
+    });
+  }
+);
+
+/**
+ * @description Admin unwithdraws a student
+ * @route       PUT /api/v1/admins/unwithdraw/student/:id
+ * @access      Private
+ */
+export const adminUnwithdrawStudentCtrl = expressAsyncHandler(
+  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+    const studentId = req.params.id;
+    const reason = req.body?.reason;
+
+    if (!mongoose.isValidObjectId(studentId)) {
+      throw new ValidationError('Invalid student id');
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+
+    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
+    student.isWithdrawn = false;
+    await student.save();
+
+    await logAudit({
+      req,
+      action: 'student.unwithdraw',
+      entityType: 'Student',
+      entityId: student._id,
+      reason,
+      before,
+      after: { isSuspended: student.isSuspended, isWithdrawn: false },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: student,
+      message: 'Student unwithdrawn successfully',
     });
   }
 );

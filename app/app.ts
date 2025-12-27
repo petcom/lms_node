@@ -32,6 +32,7 @@ import scormRuntimeRouter from '../routes/scorm/scormRuntimeRoutes';
 import scormPlayerRouter from '../routes/scorm/scormPlayerRoutes';
 import scormReportRouter from '../routes/scorm/scormReportRoutes';
 import scormHealthRouter from '../routes/scorm/scormHealthRoutes';
+import metricsRouter from '../routes/metricsRouter';
 import departmentRouter from '../routes/departments/departmentRoutes';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
@@ -162,6 +163,7 @@ app.use('/api/v1/scorm/runtime', scormRuntimeRouter); // SCORM runtime API
 app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 app.use('/api/v1/scorm/reports', scormReportRouter); // SCORM tracking and reporting
 app.use('/api/v1/scorm', scormHealthRouter); // SCORM health and monitoring
+app.use('/api/v1/metrics', metricsRouter); // Platform metrics summary
 app.use('/api/v1/departments', departmentRouter); // Department hierarchy management
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects

@@ -177,6 +177,21 @@ export interface IYearGroup extends Document {
   updatedAt: Date;
 }
 
+// Audit Interface
+export interface IAudit extends Document {
+  _id: Types.ObjectId;
+  action: string;
+  entityType: string;
+  entityId: Types.ObjectId;
+  actorId: Types.ObjectId;
+  actorRole: string;
+  reason?: string;
+  before?: any;
+  after?: any;
+  context?: any;
+  createdAt: Date;
+}
+
 // Exam Interface
 export interface IExam extends Document {
   _id: Types.ObjectId;

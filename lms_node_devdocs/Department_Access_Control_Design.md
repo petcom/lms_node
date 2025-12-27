@@ -105,5 +105,5 @@
 - [x] Add Department model + seed Master.
 - [x] Add department field to staff and core content models; migrate data to Master.
 - [x] Implement scope middleware + apply to list/detail endpoints (programs, subjects, class levels, SCORM packages).
-- [ ] Add department CRUD endpoints with proper guards.
+- [ ] Add department CRUD endpoints with proper guards (Master → top; top → sub; delete with emptiness checks).
 - [ ] Update docs/tests for new scoping behavior (scoping tests beyond SCORM listing still pending).

@@ -8,8 +8,8 @@
 Notes: Add confirmation dialogs for destructive actions; include audit-friendly activity logs.
 
 ### Phase 7 — Reporting & Exports
-- [ ] Reports: student progress, package analytics, attempts detail, completion rates, score distribution, time analytics, interactions.
-- [ ] Filters: date range, package, student, class/program; server-side pagination.
+- [x] Reports: student progress, package analytics, attempts detail, completion rates, score distribution, time analytics, interactions.
+- [x] Filters: date range, package, student, class/program; server-side pagination.
 - [ ] Export UX: CSV/JSON/XLSX with progress + error states; link to downloads.
 - [ ] Deep links from charts to detail tables.
 

@@ -16,8 +16,9 @@ import {
   getInteractionData,
 } from '../../controller/scorm/scormReportCtrl';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import roleRestriction from '../../middlewares/roleRestriction';
+import roleRestriction, { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
 import { cachePrivate } from '../../middlewares/caching';
+import departmentScope from '../../middlewares/departmentScope';
 
 const isTeacher = roleRestriction('teacher');
 
@@ -31,7 +32,13 @@ const router = express.Router();
  * Students can view their own, Teachers/Admins can view any
  * Cached for 2 minutes (student data changes frequently)
  */
-router.get('/student/:studentId', isAuthenticated, cachePrivate(120), getStudentProgress);
+router.get(
+  '/student/:studentId',
+  isAuthenticated,
+  departmentScope(),
+  cachePrivate(120),
+  getStudentProgress
+);
 
 /**
  * Package Analytics
@@ -44,7 +51,8 @@ router.get('/student/:studentId', isAuthenticated, cachePrivate(120), getStudent
 router.get(
   '/package/:packageId/analytics',
   isAuthenticated,
-  isTeacher,
+  departmentScope(),
+  isTeacherOrAdmin,
   cachePrivate(300),
   getPackageAnalytics
 );
@@ -57,7 +65,13 @@ router.get(
  * Includes full CMI data and session log
  * Cached for 1 minute (can change during active session)
  */
-router.get('/attempts/:attemptId', isAuthenticated, cachePrivate(60), getAttemptDetails);
+router.get(
+  '/attempts/:attemptId',
+  isAuthenticated,
+  departmentScope(),
+  cachePrivate(60),
+  getAttemptDetails
+);
 
 /**
  * Export Tracking Data
@@ -67,7 +81,7 @@ router.get('/attempts/:attemptId', isAuthenticated, cachePrivate(60), getAttempt
  * Teacher/Admin only
  * No caching (generates fresh export each time)
  */
-router.get('/export', isAuthenticated, isTeacher, exportTrackingData);
+router.get('/export', isAuthenticated, departmentScope(), isTeacherOrAdmin, exportTrackingData);
 
 /**
  * Completion Rates
@@ -80,7 +94,8 @@ router.get('/export', isAuthenticated, isTeacher, exportTrackingData);
 router.get(
   '/completion/:packageId',
   isAuthenticated,
-  isTeacher,
+  departmentScope(),
+  isTeacherOrAdmin,
   cachePrivate(300),
   getCompletionRates
 );
@@ -96,7 +111,8 @@ router.get(
 router.get(
   '/scores/:packageId',
   isAuthenticated,
-  isTeacher,
+  departmentScope(),
+  isTeacherOrAdmin,
   cachePrivate(300),
   getScoreDistribution
 );
@@ -109,7 +125,14 @@ router.get(
  * Teacher/Admin only
  * Cached for 5 minutes
  */
-router.get('/time/:packageId', isAuthenticated, isTeacher, cachePrivate(300), getTimeAnalytics);
+router.get(
+  '/time/:packageId',
+  isAuthenticated,
+  departmentScope(),
+  isTeacherOrAdmin,
+  cachePrivate(300),
+  getTimeAnalytics
+);
 
 /**
  * Interaction Data
@@ -119,6 +142,12 @@ router.get('/time/:packageId', isAuthenticated, isTeacher, cachePrivate(300), ge
  * Includes question responses, correct/incorrect answers
  * Cached for 2 minutes
  */
-router.get('/interactions/:attemptId', isAuthenticated, cachePrivate(120), getInteractionData);
+router.get(
+  '/interactions/:attemptId',
+  isAuthenticated,
+  departmentScope(),
+  cachePrivate(120),
+  getInteractionData
+);
 
 export default router;

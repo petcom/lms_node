@@ -5,9 +5,11 @@
  */
 
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Student from '../../model/Academic/Student';
+import { AuthorizationError, ValidationError } from '../../utils/errors';
 import {
   calculateBestScore,
   calculateAverageScore,
@@ -24,6 +26,73 @@ import {
   formatTimeForDisplay,
 } from '../../utils/scorm/completionCalculator';
 
+type DepartmentScope = string[] | 'all' | undefined;
+
+const isPackageAccessible = (
+  pkg: any,
+  role: string | undefined,
+  userId: string | undefined,
+  scope: DepartmentScope
+): boolean => {
+  if (!pkg) return false;
+  if (pkg.isGlobal) return true;
+
+  const pkgDept = pkg.department?.toString();
+  if (role === 'admin') {
+    if (!scope || scope === 'all') return true;
+    return !!pkgDept && scope.includes(pkgDept);
+  }
+
+  if (role === 'teacher') {
+    const owner = pkg.uploadedBy?.toString?.();
+    if (owner && owner === userId) return true;
+    if (scope && scope !== 'all') {
+      return !!pkgDept && scope.includes(pkgDept);
+    }
+    return false;
+  }
+
+  return true;
+};
+
+const parseDateRange = (start?: string | string[], end?: string | string[]) => {
+  const parsed: { start?: Date; end?: Date } = {};
+  if (start) {
+    const d = new Date(start as string);
+    if (Number.isNaN(d.getTime())) throw new ValidationError('Invalid startDate');
+    parsed.start = d;
+  }
+  if (end) {
+    const d = new Date(end as string);
+    if (Number.isNaN(d.getTime())) throw new ValidationError('Invalid endDate');
+    parsed.end = d;
+  }
+  return parsed;
+};
+
+const applyPagination = <T>(items: T[], pageRaw: any, limitRaw: any) => {
+  const page = Math.max(1, Number(pageRaw) || 1);
+  const limit = Math.max(1, Math.min(100, Number(limitRaw) || 10));
+  const start = (page - 1) * limit;
+  const data = items.slice(start, start + limit);
+  const total = items.length;
+  return {
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 1,
+    },
+  };
+};
+
+const mapErrorToStatus = (error: any): number => {
+  if (error instanceof AuthorizationError) return 403;
+  if (error instanceof ValidationError) return 400;
+  return 500;
+};
+
 /**
  * Get student progress across all SCORM packages
  * GET /api/v1/scorm/reports/student/:studentId
@@ -31,9 +100,34 @@ import {
 export const getStudentProgress = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
+    const { startDate, endDate, packageId, program, classLevel } = req.query;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
+
+    if (role === 'student' && userId !== studentId) {
+      throw new AuthorizationError('Students can only view their own progress');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
+
+    const query: any = { student: studentId };
+    if (start || end) {
+      query.startedAt = {};
+      if (start) query.startedAt.$gte = start;
+      if (end) query.startedAt.$lte = end;
+    }
+
+    if (packageId) {
+      if (!mongoose.isValidObjectId(packageId as any)) {
+        throw new ValidationError('Invalid packageId');
+      }
+      query.package = packageId;
+    }
 
     // Get all attempts for this student
-    const attempts = await ScormAttempt.find({ student: studentId })
+    const attempts = await ScormAttempt.find(query)
       .populate('package')
       .sort({ startedAt: -1 });
 
@@ -47,12 +141,18 @@ export const getStudentProgress = async (req: Request, res: Response) => {
       });
     }
 
-    // Group attempts by package
     const packageMap = new Map();
 
     attempts.forEach((attempt) => {
       const pkg = attempt.package as any;
       if (!pkg) return;
+
+      if (!isPackageAccessible(pkg, role, userId, scope)) {
+        return;
+      }
+
+      if (program && pkg.program?.toString() !== String(program)) return;
+      if (classLevel && pkg.classLevel?.toString() !== String(classLevel)) return;
 
       const packageId = pkg._id.toString();
 
@@ -108,13 +208,16 @@ export const getStudentProgress = async (req: Request, res: Response) => {
     const averageScore = calculateAverageScore(allAttempts);
     const totalTimeSpent = calculateTotalTimeSpent(allAttempts);
 
+    const paged = applyPagination(packages, req.query.page, req.query.limit);
+
     return res.status(200).json({
       success: true,
       data: {
         studentId: student._id,
         studentName: `${(student as any).firstName} ${(student as any).lastName}`,
         studentEmail: (student as any).email,
-        packages,
+        packages: paged.data,
+        pagination: paged.pagination,
         summary: {
           totalPackages,
           completedPackages,
@@ -125,9 +228,10 @@ export const getStudentProgress = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting student progress:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get student progress',
+      message: error.message || 'Failed to get student progress',
       error: error.message,
     });
   }
@@ -140,7 +244,11 @@ export const getStudentProgress = async (req: Request, res: Response) => {
 export const getPackageAnalytics = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, studentId, program, classLevel } = req.query;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     // Get package
     const pkg = await ScormPackage.findById(packageId);
@@ -151,34 +259,54 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
       });
     }
 
+    if (!isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
+
     // Build query for attempts
     const query: any = { package: packageId };
 
-    if (startDate || endDate) {
+    if (start || end) {
       query.startedAt = {};
-      if (startDate) query.startedAt.$gte = new Date(startDate as string);
-      if (endDate) query.startedAt.$lte = new Date(endDate as string);
+      if (start) query.startedAt.$gte = start;
+      if (end) query.startedAt.$lte = end;
+    }
+
+    if (studentId) {
+      if (!mongoose.isValidObjectId(studentId as any)) {
+        throw new ValidationError('Invalid studentId');
+      }
+      query.student = studentId;
     }
 
     // Get all attempts for this package
     const attempts = await ScormAttempt.find(query)
-      .populate('student', 'firstName lastName email')
+      .populate('student', 'firstName lastName email program classLevels')
       .sort({ startedAt: -1 });
 
+    const filteredAttempts = attempts.filter((a) => {
+      const student = a.student as any;
+      if (program && student?.program?.toString() !== String(program)) return false;
+      if (classLevel && !student?.classLevels?.includes(String(classLevel))) return false;
+      return true;
+    });
+
     // Get unique students
-    const studentIds = [...new Set(attempts.map((a) => (a.student as any)._id.toString()))];
+    const studentIds = [...new Set(filteredAttempts.map((a) => (a.student as any)._id.toString()))];
     const totalStudents = studentIds.length;
     const studentsStarted = studentIds.length;
 
     // Calculate completion metrics
-    const completedAttempts = attempts.filter(isAttemptCompleted);
+    const completedAttempts = filteredAttempts.filter(isAttemptCompleted);
     const studentsCompleted = [
       ...new Set(completedAttempts.map((a) => (a.student as any)._id.toString())),
     ].length;
     const completionRate = calculateCompletionRate(studentsStarted, studentsCompleted);
 
     // Calculate score and time metrics
-    const attemptsWithScores = attempts.filter((a) => getAttemptScore(a) !== null);
+    const attemptsWithScores = filteredAttempts.filter((a) => getAttemptScore(a) !== null);
     const averageScore = calculateAverageScore(attemptsWithScores);
     const averageTimeSpent =
       attemptsWithScores.length > 0
@@ -186,7 +314,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
         : 0;
 
     // Calculate pass rate
-    const passedAttempts = attempts.filter((a) => isAttemptPassed(a, pkg));
+    const passedAttempts = filteredAttempts.filter((a) => isAttemptPassed(a, pkg));
     const passRate =
       attemptsWithScores.length > 0
         ? Math.round((passedAttempts.length / attemptsWithScores.length) * 100)
@@ -195,7 +323,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
     // Group by student
     const studentMap = new Map();
 
-    attempts.forEach((attempt) => {
+    filteredAttempts.forEach((attempt) => {
       const student = attempt.student as any;
       if (!student) return;
 
@@ -240,7 +368,9 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
 
     // Calculate distributions
     const scoreDistribution = aggregateScoreDistribution(attemptsWithScores);
-    const timeDistribution = aggregateTimeDistribution(attempts);
+    const timeDistribution = aggregateTimeDistribution(filteredAttempts);
+
+    const paged = applyPagination(students, req.query.page, req.query.limit);
 
     return res.status(200).json({
       success: true,
@@ -260,16 +390,18 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
           averageTimeSpent,
           passRate,
         },
-        students,
+        students: paged.data,
+        pagination: paged.pagination,
         scoreDistribution,
         timeDistribution,
       },
     });
   } catch (error: any) {
     console.error('Error getting package analytics:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get package analytics',
+      message: error.message || 'Failed to get package analytics',
       error: error.message,
     });
   }
@@ -282,6 +414,10 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
 export const getAttemptDetails = async (req: Request, res: Response) => {
   try {
     const { attemptId } = req.params;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     const attempt = await ScormAttempt.findOne({ attemptId })
       .populate('student', 'firstName lastName email')
@@ -296,6 +432,14 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
 
     const student = attempt.student as any;
     const pkg = attempt.package as any;
+
+    if (role === 'student' && student?._id?.toString() !== userId) {
+      throw new AuthorizationError('Access denied for this attempt');
+    }
+
+    if ((role === 'teacher' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
+    }
 
     return res.status(200).json({
       success: true,
@@ -322,9 +466,10 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting attempt details:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get attempt details',
+      message: error.message || 'Failed to get attempt details',
       error: error.message,
     });
   }
@@ -336,26 +481,56 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
  */
 export const exportTrackingData = async (req: Request, res: Response) => {
   try {
-    const { packageId, studentId, startDate, endDate, format = 'json' } = req.query;
+    const { packageId, studentId, startDate, endDate, format = 'json', program, classLevel } =
+      req.query;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
+
+    if (role !== 'teacher' && role !== 'admin') {
+      throw new AuthorizationError('Only teachers or admins can export tracking data');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
 
     // Build query
     const query: any = {};
-    if (packageId) query.package = packageId;
-    if (studentId) query.student = studentId;
-    if (startDate || endDate) {
+    if (packageId) {
+      if (!mongoose.isValidObjectId(packageId as any)) {
+        throw new ValidationError('Invalid packageId');
+      }
+      query.package = packageId;
+    }
+    if (studentId) {
+      if (!mongoose.isValidObjectId(studentId as any)) {
+        throw new ValidationError('Invalid studentId');
+      }
+      query.student = studentId;
+    }
+    if (start || end) {
       query.startedAt = {};
-      if (startDate) query.startedAt.$gte = new Date(startDate as string);
-      if (endDate) query.startedAt.$lte = new Date(endDate as string);
+      if (start) query.startedAt.$gte = start;
+      if (end) query.startedAt.$lte = end;
     }
 
     // Get attempts
     const attempts = await ScormAttempt.find(query)
-      .populate('student', 'firstName lastName email')
-      .populate('package', 'title version')
+      .populate('student', 'firstName lastName email program classLevels')
+      .populate('package', 'title version department uploadedBy isGlobal program classLevel')
       .sort({ startedAt: -1 });
 
+    const filteredAttempts = attempts.filter((attempt) => {
+      const pkg = attempt.package as any;
+      if (!isPackageAccessible(pkg, role, userId, scope)) return false;
+      const student = attempt.student as any;
+      if (program && student?.program?.toString() !== String(program)) return false;
+      if (classLevel && !student?.classLevels?.includes(String(classLevel))) return false;
+      return true;
+    });
+
     // Prepare export data
-    const exportData = attempts.map((attempt) => {
+    const exportData = filteredAttempts.map((attempt) => {
       const student = attempt.student as any;
       const pkg = attempt.package as any;
       const score = getAttemptScore(attempt);
@@ -375,47 +550,56 @@ export const exportTrackingData = async (req: Request, res: Response) => {
         lastAccessedAt: attempt.lastAccessedAt,
         status: attempt.status,
         score,
-        timeSpent: formatTimeForDisplay(timeSpent),
+        timeSpentSeconds: timeSpent,
+        timeSpentFormatted: formatTimeForDisplay(timeSpent),
         completionStatus: cmi.completion_status || cmi.lesson_status || 'unknown',
         successStatus:
           cmi.success_status || (cmi.lesson_status === 'passed' ? 'passed' : 'unknown'),
       };
     });
 
+    const paged = applyPagination(exportData, req.query.page, req.query.limit || 100);
+
     // Format output based on requested format
+    const filenameBase = `scorm-export-${Date.now()}`;
     if (format === 'csv') {
-      // CSV format
-      const csv = convertToCSV(exportData);
+      const csv = convertToCSV(paged.data);
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="scorm-export-${Date.now()}.csv"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.csv"`);
       return res.send(csv);
     } else if (format === 'xlsx') {
-      // Excel format - would need exceljs library
-      return res.status(501).json({
-        success: false,
-        message: 'Excel export not yet implemented. Use CSV or JSON format.',
-      });
+      const XLSX = await import('xlsx');
+      const worksheet = XLSX.utils.json_to_sheet(paged.data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Export');
+      const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.xlsx"`);
+      return res.send(buffer);
     } else {
-      // JSON format (default)
       const jsonExport = {
         exportDate: new Date().toISOString(),
-        filters: { packageId, studentId, startDate, endDate },
+        filters: { packageId, studentId, startDate, endDate, program, classLevel },
         totalRecords: exportData.length,
-        data: exportData,
+        page: paged.pagination.page,
+        pages: paged.pagination.pages,
+        limit: paged.pagination.limit,
+        data: paged.data,
       };
 
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="scorm-export-${Date.now()}.json"`
-      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.json"`);
       return res.json(jsonExport);
     }
   } catch (error: any) {
     console.error('Error exporting tracking data:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to export tracking data',
+      message: error.message || 'Failed to export tracking data',
       error: error.message,
     });
   }
@@ -430,6 +614,10 @@ export const getCompletionRates = async (req: Request, res: Response) => {
     const { packageId } = req.params;
     const { startDate, endDate } = req.query;
 
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
+
     const pkg = await ScormPackage.findById(packageId);
     if (!pkg) {
       return res.status(404).json({
@@ -438,12 +626,18 @@ export const getCompletionRates = async (req: Request, res: Response) => {
       });
     }
 
+    if (!isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
+
     // Build query
     const query: any = { package: packageId };
-    if (startDate || endDate) {
+    if (start || end) {
       query.startedAt = {};
-      if (startDate) query.startedAt.$gte = new Date(startDate as string);
-      if (endDate) query.startedAt.$lte = new Date(endDate as string);
+      if (start) query.startedAt.$gte = start;
+      if (end) query.startedAt.$lte = end;
     }
 
     const attempts = await ScormAttempt.find(query);
@@ -481,9 +675,10 @@ export const getCompletionRates = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting completion rates:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get completion rates',
+      message: error.message || 'Failed to get completion rates',
       error: error.message,
     });
   }
@@ -496,6 +691,11 @@ export const getCompletionRates = async (req: Request, res: Response) => {
 export const getScoreDistribution = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     const pkg = await ScormPackage.findById(packageId);
     if (!pkg) {
@@ -505,7 +705,20 @@ export const getScoreDistribution = async (req: Request, res: Response) => {
       });
     }
 
-    const attempts = await ScormAttempt.find({ package: packageId });
+    if (!isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
+
+    const attemptQuery: any = { package: packageId };
+    if (start || end) {
+      attemptQuery.startedAt = {};
+      if (start) attemptQuery.startedAt.$gte = start;
+      if (end) attemptQuery.startedAt.$lte = end;
+    }
+
+    const attempts = await ScormAttempt.find(attemptQuery);
     const attemptsWithScores = attempts.filter((a) => getAttemptScore(a) !== null);
 
     if (attemptsWithScores.length === 0) {
@@ -545,9 +758,10 @@ export const getScoreDistribution = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting score distribution:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get score distribution',
+      message: error.message || 'Failed to get score distribution',
       error: error.message,
     });
   }
@@ -560,6 +774,11 @@ export const getScoreDistribution = async (req: Request, res: Response) => {
 export const getTimeAnalytics = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     const pkg = await ScormPackage.findById(packageId);
     if (!pkg) {
@@ -569,7 +788,20 @@ export const getTimeAnalytics = async (req: Request, res: Response) => {
       });
     }
 
-    const attempts = await ScormAttempt.find({ package: packageId });
+    if (!isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
+    }
+
+    const { start, end } = parseDateRange(startDate as string, endDate as string);
+
+    const query: any = { package: packageId };
+    if (start || end) {
+      query.startedAt = {};
+      if (start) query.startedAt.$gte = start;
+      if (end) query.startedAt.$lte = end;
+    }
+
+    const attempts = await ScormAttempt.find(query);
 
     if (attempts.length === 0) {
       return res.status(200).json({
@@ -623,9 +855,10 @@ export const getTimeAnalytics = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting time analytics:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get time analytics',
+      message: error.message || 'Failed to get time analytics',
       error: error.message,
     });
   }
@@ -639,12 +872,28 @@ export const getInteractionData = async (req: Request, res: Response) => {
   try {
     const { attemptId } = req.params;
 
-    const attempt = await ScormAttempt.findOne({ attemptId });
+    const role = req.userAuth?.role;
+    const userId = req.userAuth?._id?.toString();
+    const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
+
+    const attempt = await ScormAttempt.findOne({ attemptId }).populate(
+      'package',
+      'department uploadedBy isGlobal'
+    );
     if (!attempt) {
       return res.status(404).json({
         success: false,
         message: 'Attempt not found',
       });
+    }
+
+    if (role === 'student' && attempt.student.toString() !== userId) {
+      throw new AuthorizationError('Access denied for this attempt');
+    }
+
+    const pkg = attempt.package as any;
+    if ((role === 'teacher' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+      throw new AuthorizationError('Access denied for this package');
     }
 
     const cmi = attempt.cmi as any;
@@ -676,9 +925,10 @@ export const getInteractionData = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting interaction data:', error);
-    return res.status(500).json({
+    const status = mapErrorToStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Failed to get interaction data',
+      message: error.message || 'Failed to get interaction data',
       error: error.message,
     });
   }

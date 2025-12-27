@@ -121,6 +121,19 @@ const globalErrHandler: ErrorRequestHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    err.statusCode = 413;
+    err.status = 'fail';
+    err.isOperational = true;
+    err.message = err.message || 'Uploaded file exceeds maximum allowed size';
+  }
+
+  if (err && err.message === 'Only ZIP files are allowed') {
+    err.statusCode = 400;
+    err.status = 'fail';
+    err.isOperational = true;
+  }
+
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 

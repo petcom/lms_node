@@ -44,7 +44,7 @@ scormPackageRouter.post(
   '/',
   isAuthenticated(),
   isTeacherOrAdmin,
-  upload.single('package'),
+  upload.single('file'),
   uploadPackage
 );
 

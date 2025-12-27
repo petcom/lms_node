@@ -5,7 +5,7 @@ import { PackageValidator } from '../../utils/scorm/packageValidator';
 import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
 import { v4 as uuidv4 } from 'uuid';
-import { NotFoundError } from '../../utils/errors';
+import { NotFoundError, ValidationError } from '../../utils/errors';
 
 /**
  * @desc    Upload a new SCORM package
@@ -15,20 +15,50 @@ import { NotFoundError } from '../../utils/errors';
 export const uploadPackage = asyncHandler(async (req: Request, res: Response) => {
   // Check if file was uploaded
   if (!req.file) {
-    res.status(400);
-    throw new Error('Please upload a SCORM package file');
+    throw new ValidationError('Please upload a SCORM package file');
   }
 
-  const { title, description, subjectId, programId, classLevelId } = req.body;
+  const maxUploadBytes = Number(process.env.SCORM_MAX_FILE_SIZE) || 500 * 1024 * 1024;
+  const { title, description, subject, subjectId, program, programId, classLevel, classLevelId, isGraded, maxScore, dueDate } = req.body as any;
   const { originalname, size } = req.file;
+
+  if (!title) {
+    throw new ValidationError('Title is required');
+  }
+
+  if (size > maxUploadBytes) {
+    const err = new ValidationError('Uploaded file exceeds maximum allowed size');
+    (err as any).statusCode = 413;
+    throw err;
+  }
 
   // Validate the package
   const validator = new PackageValidator();
   const validationResult = await validator.validatePackage(req.file.buffer);
 
   if (!validationResult.isValid) {
-    res.status(400);
-    throw new Error(`Invalid SCORM package: ${validationResult.errors.join(', ')}`);
+    const message = validationResult.errors.join(', ');
+    if (message.toLowerCase().includes('exceeds maximum allowed size')) {
+      const err = new ValidationError(message);
+      (err as any).statusCode = 413;
+      throw err;
+    }
+    throw new ValidationError(`Invalid SCORM package: ${message}`);
+  }
+
+  let parsedDueDate: Date | undefined;
+  if (dueDate) {
+    const parsed = new Date(dueDate);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new ValidationError('Invalid dueDate');
+    }
+    parsedDueDate = parsed;
+  }
+
+  const parsedIsGraded = typeof isGraded === 'string' ? isGraded.toLowerCase() !== 'false' : isGraded !== false;
+  const parsedMaxScore = maxScore !== undefined ? Number(maxScore) : undefined;
+  if (parsedMaxScore !== undefined && Number.isNaN(parsedMaxScore)) {
+    throw new ValidationError('Invalid maxScore');
   }
 
   // Generate unique package ID
@@ -101,9 +131,12 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       packageSize: validationResult.packageSize,
       uploadedBy: req.userAuth!._id,
       uploadedByModel,
-      subject: subjectId || null,
-      program: programId || null,
-      classLevel: classLevelId || null,
+      subject: subject || subjectId || null,
+      program: program || programId || null,
+      classLevel: classLevel || classLevelId || null,
+      isGraded: parsedIsGraded,
+      maxScore: parsedMaxScore !== undefined ? parsedMaxScore : 100,
+      dueDate: parsedDueDate,
       isPublished: false,
       storageProvider: process.env.SCORM_STORAGE_PROVIDER || 'local',
       storagePath: packageId,
@@ -112,7 +145,19 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
     res.status(201).json({
       success: true,
       message: 'SCORM package uploaded successfully',
-      data: scormPackage,
+      data: {
+        id: scormPackage._id?.toString?.(),
+        packageId: scormPackage.packageId,
+        title: scormPackage.title,
+        status: scormPackage.status,
+        isPublished: scormPackage.isPublished,
+        version: scormPackage.version,
+        launchUrl: scormPackage.launchUrl,
+        fileSize: scormPackage.fileSize,
+        updatedAt: scormPackage.updatedAt,
+        createdAt: scormPackage.createdAt,
+        uploadedBy: scormPackage.uploadedBy,
+      },
       warnings: validationResult.warnings,
     });
   } catch (error: any) {

@@ -40,6 +40,11 @@ const programSchema = new Schema<IProgram>(
       ref: 'Admin',
       required: true,
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      index: true,
+    },
     // Teachers that are in charge of the program
     teachers: [
       {

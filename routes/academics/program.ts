@@ -3,7 +3,8 @@ import { createProgram, getPrograms, getSingleProgram, updateProgram, deleteProg
 import advancedResults from "../../middlewares/advancedResults";
 import Program from "../../model/Academic/Program";
 import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
+import roleRestriction, { isTeacherOrAdmin } from "../../middlewares/roleRestriction";
+import departmentScope from "../../middlewares/departmentScope";
 
 const programRouter: Router = express.Router();
 
@@ -13,11 +14,23 @@ const programRouter: Router = express.Router();
 programRouter
   .route("/")
   .post(isAuthenticated(), roleRestriction("admin"), createProgram)
-  .get(isAuthenticated(), roleRestriction("admin"), advancedResults(Program), getPrograms);
+  .get(
+    isAuthenticated(),
+    departmentScope(),
+    isTeacherOrAdmin,
+    advancedResults(Program, undefined, (req) => {
+      const scope = req.departmentScope?.accessibleDepartmentIds;
+      if (scope && scope !== 'all') {
+        return { department: { $in: scope } } as any;
+      }
+      return {} as any;
+    }),
+    getPrograms
+  );
 
 programRouter
   .route("/:id")
-  .get(isAuthenticated(), roleRestriction("admin"), getSingleProgram)
+  .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getSingleProgram)
   .put(isAuthenticated(), roleRestriction("admin"), updateProgram)
   .delete(isAuthenticated(), roleRestriction("admin"), deleteProgram);
 

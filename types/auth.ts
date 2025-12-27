@@ -32,6 +32,7 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   role: UserRole;
+  department?: Types.ObjectId;
   [key: string]: any;
 }
 

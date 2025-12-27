@@ -150,6 +150,7 @@ export interface IScormPackage {
   program?: Types.ObjectId;
   classLevel?: Types.ObjectId;
   academicTerm?: Types.ObjectId;
+  department?: Types.ObjectId;
 
   // Assignment/Grading
   isGraded: boolean;
@@ -171,6 +172,7 @@ export interface IScormPackage {
   // Status
   status: PackageStatus;
   isPublished: boolean;
+  isGlobal?: boolean;
   publishedAt?: Date;
   publishedBy?: Types.ObjectId;
   publishedByModel?: 'Admin' | 'Teacher';

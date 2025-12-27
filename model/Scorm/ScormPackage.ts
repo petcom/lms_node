@@ -98,6 +98,11 @@ const scormPackageSchema = new Schema<IScormPackage>(
       type: Schema.Types.ObjectId,
       ref: 'ClassLevel',
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      index: true,
+    },
     academicTerm: {
       type: Schema.Types.ObjectId,
       ref: 'AcademicTerm',
@@ -171,6 +176,11 @@ const scormPackageSchema = new Schema<IScormPackage>(
       required: true,
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
+      index: true,
+    },
+    isGlobal: {
+      type: Boolean,
+      default: false,
       index: true,
     },
     isPublished: {

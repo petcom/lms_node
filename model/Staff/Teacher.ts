@@ -70,6 +70,10 @@ const teacherSchema = new Schema<ITeacher>(
     classLevel: {
       type: String,
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+    },
     academicYear: {
       type: String,
     },

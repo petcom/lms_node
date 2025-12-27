@@ -19,6 +19,10 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       required: true,
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+    },
     role: {
       type: String,
       default: 'admin',

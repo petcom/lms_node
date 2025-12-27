@@ -1,8 +1,12 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import ClassLevel from '../../model/Academic/ClassLevel';
 import { IClassLevel, IAdmin } from '../../types/models';
+import { AuthorizationError } from '../../utils/errors';
+
+const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
 
 // Request body interfaces
 interface CreateClassLevelBody {
@@ -33,7 +37,8 @@ export const createClassLevel = AsyncHandler(async (req: Request<{}, {}, CreateC
   const classLevelCreated = await ClassLevel.create({
     name,
     description,
-    createdBy: req.userAuth?._id
+    createdBy: req.userAuth?._id,
+    department: (req.userAuth as any)?.department || new mongoose.Types.ObjectId(MASTER_DEPARTMENT_ID),
   }) as IClassLevel;
   
   // push class into Admin
@@ -67,6 +72,14 @@ export const getClassLevels = AsyncHandler(async (_req: Request, res: Response):
 export const getClassLevel = AsyncHandler(async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   const oneClassLevel = await ClassLevel.findById(req.params.id) as IClassLevel | null;
 
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (scope && scope !== 'all') {
+    const dept = (oneClassLevel as any)?.department?.toString();
+    if (!dept || !scope.includes(dept)) {
+      throw new AuthorizationError('Access denied for this class level');
+    }
+  }
+
   res.status(201).json({
     status: "success",
     message: "Class Level fetched successfully",
@@ -85,6 +98,15 @@ export const updateClassLevel = AsyncHandler(async (req: Request<{ id: string },
   const classLevelFound = await ClassLevel.findOne({ name }) as IClassLevel | null;
   if (classLevelFound) {
     throw new Error("Academic term already exists");
+  }
+
+  const existing = await ClassLevel.findById(req.params.id);
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (scope && scope !== 'all') {
+    const dept = (existing as any)?.department?.toString();
+    if (!dept || !scope.includes(dept)) {
+      throw new AuthorizationError('Access denied for this class level');
+    }
   }
   
   const updatedClassLevel = await ClassLevel.findByIdAndUpdate(
@@ -112,6 +134,15 @@ export const updateClassLevel = AsyncHandler(async (req: Request<{ id: string },
  * @access Private
  */
 export const deleteClassLevel = AsyncHandler(async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  const existing = await ClassLevel.findById(req.params.id);
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (scope && scope !== 'all') {
+    const dept = (existing as any)?.department?.toString();
+    if (!dept || !scope.includes(dept)) {
+      throw new AuthorizationError('Access denied for this class level');
+    }
+  }
+
   await ClassLevel.findByIdAndDelete(req.params.id);
 
   res.status(201).json({

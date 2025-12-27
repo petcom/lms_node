@@ -26,6 +26,7 @@ const globalSetup = async (): Promise<void> => {
   // Use a deterministic, long secret to satisfy generateToken length checks during tests
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-integration-suite-32chars';
   process.env.BYPASS_AUTH_FOR_TESTS = 'true';
+  process.env.MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
   process.env.NODE_ENV = 'test';
 
   // Store the server instance globally for teardown

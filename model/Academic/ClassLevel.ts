@@ -19,6 +19,11 @@ const classLevelSchema = new Schema<IClassLevel>(
       ref: 'Admin',
       required: true,
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      index: true,
+    },
     // Students will be added to the class level when they are registered
     students: [
       {

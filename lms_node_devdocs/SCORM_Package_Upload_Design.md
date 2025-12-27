@@ -71,7 +71,44 @@
 - [x] Backend: ensure packages endpoint supports page/limit/search/status filters and returns pagination metadata
 - [ ] UI: add paging controls plus search/status inputs; store page/filter state, refetch on change, render total/pageSize
 
+### Listing Endpoint Contract (for UI)
+
+- `GET /api/v1/scorm/packages`
+- Query params: `page` (number, default 1), `limit` (number, default 10), `search` (matches title/description), `status` (e.g., draft/published), `subject`, `program`, `classLevel`, `isPublished` (true/false).
+- Response shape:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "packageId": "...",
+      "title": "...",
+      "status": "draft",
+      "isPublished": false,
+      "version": "scorm_1.2",
+      "launchUrl": "index.html",
+      "fileSize": 12345,
+      "createdAt": "...",
+      "uploadedBy": { "name": "...", "email": "...", "role": "Teacher" },
+      "subject": { "_id": "...", "name": "..." },
+      "program": { "_id": "...", "name": "..." },
+      "classLevel": { "_id": "...", "name": "..." }
+    }
+  ],
+  "pagination": { "page": 1, "limit": 10, "total": 25, "pages": 3 }
+}
+```
+
 ## Upload Form Fields (subject/program/classLevel)
 
 - [ ] Confirm backend field names/IDs and allowed values for subject, program, classLevel; fetch options if enumerated
 - [ ] Add form inputs (selects/text) and pass through upload payload; validate required fields and surface backend errors
+
+### Upload Field Names & Formats (for UI)
+
+- Fields accepted by `POST /api/v1/scorm/packages` body: `subject`, `subjectId`, `program`, `programId`, `classLevel`, `classLevelId` (string ObjectId values). Any of these may be provided; controller uses the first truthy value per field.
+- Preferred: send `subject`, `program`, `classLevel` as ObjectId strings; omit unused fields.
+- Other form fields: `title` (required string), `description` (optional string), `isGraded` (boolean string accepted, e.g., "true"/"false"), `maxScore` (number), `dueDate` (ISO string), plus `file` (zip, required).
+- Behavior: values are persisted on create and surfaced in listing responses with populated names where available.

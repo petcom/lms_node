@@ -6,6 +6,12 @@ declare global {
     interface Request {
       // User authentication data
       userAuth?: IAdmin | ITeacher | IStudent;
+
+      // Department scoping info
+      departmentScope?: {
+        userDepartmentId?: string;
+        accessibleDepartmentIds?: string[] | 'all';
+      };
       
       // User type for multi-tenant auth
       userType?: 'admin' | 'teacher' | 'student';

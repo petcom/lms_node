@@ -11,6 +11,7 @@ export interface IAdmin extends Document {
   email: string;
   password: string;
   role: 'admin';
+  department?: Types.ObjectId;
   academicYears?: Types.ObjectId[];
   academicTerms?: Types.ObjectId[];
   programs?: Types.ObjectId[];
@@ -40,6 +41,7 @@ export interface ITeacher extends Document {
   classLevel?: Types.ObjectId;
   academicYear?: Types.ObjectId;
   examsCreated?: Types.ObjectId[];
+  department?: Types.ObjectId;
   createdBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -114,6 +116,7 @@ export interface IClassLevel extends Document {
   name: string;
   description?: string;
   createdBy: Types.ObjectId;
+  department?: Types.ObjectId;
   students?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
   teachers?: Types.ObjectId[];
@@ -129,6 +132,7 @@ export interface IProgram extends Document {
   duration: string;
   code?: string;
   createdBy: Types.ObjectId;
+  department?: Types.ObjectId;
   teachers?: Types.ObjectId[];
   students?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
@@ -146,6 +150,19 @@ export interface ISubject extends Document {
   duration: string;
   program?: Types.ObjectId;
   teachers?: Types.ObjectId[];
+  department?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Department Interface
+export interface IDepartment extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  code?: string;
+  level: 'master' | 'top' | 'sub';
+  parent?: Types.ObjectId | null;
+  ancestors?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }

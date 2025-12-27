@@ -3,7 +3,8 @@ import { createClassLevel, getClassLevel, getClassLevels, updateClassLevel, dele
 import advancedResults from "../../middlewares/advancedResults";
 import AcademicTerm from "../../model/Academic/AcademicTerm";
 import isAuthenticated from "../../middlewares/isAuthenticated";
-import roleRestriction from "../../middlewares/roleRestriction";
+import roleRestriction, { isTeacherOrAdmin } from "../../middlewares/roleRestriction";
+import departmentScope from "../../middlewares/departmentScope";
 
 const classLevelRouter: Router = express.Router();
 
@@ -13,11 +14,23 @@ const classLevelRouter: Router = express.Router();
 classLevelRouter
   .route("/")
   .post(isAuthenticated(), roleRestriction("admin"), createClassLevel)
-  .get(isAuthenticated(), roleRestriction("admin"), advancedResults(AcademicTerm), getClassLevels);
+  .get(
+    isAuthenticated(),
+    departmentScope(),
+    isTeacherOrAdmin,
+    advancedResults(AcademicTerm, undefined, (req) => {
+      const scope = req.departmentScope?.accessibleDepartmentIds;
+      if (scope && scope !== 'all') {
+        return { department: { $in: scope } } as any;
+      }
+      return {} as any;
+    }),
+    getClassLevels
+  );
 
 classLevelRouter
   .route("/:id")
-  .get(isAuthenticated(), roleRestriction("admin"), getClassLevel)
+  .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getClassLevel)
   .put(isAuthenticated(), roleRestriction("admin"), updateClassLevel)
   .delete(isAuthenticated(), roleRestriction("admin"), deleteClassLevel);
 

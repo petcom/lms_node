@@ -5,8 +5,16 @@ import { PackageValidator } from '../../utils/scorm/packageValidator';
 import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
 import { v4 as uuidv4 } from 'uuid';
-import { NotFoundError, ValidationError } from '../../utils/errors';
+import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import mongoose from 'mongoose';
+
+const isPackageInScope = (pkg: any, scope: string[] | 'all' | undefined): boolean => {
+  if (pkg?.isGlobal) return true;
+  if (!scope || scope === 'all') return true;
+  const dept = pkg?.department?.toString?.();
+  return !!dept && scope.includes(dept);
+};
 
 /**
  * @desc    Upload a new SCORM package
@@ -20,7 +28,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const maxUploadBytes = Number(process.env.SCORM_MAX_FILE_SIZE) || 500 * 1024 * 1024;
-  const { title, description, subject, subjectId, program, programId, classLevel, classLevelId, isGraded, maxScore, dueDate } = req.body as any;
+  const { title, description, subject, subjectId, program, programId, classLevel, classLevelId, isGraded, maxScore, dueDate, department, isGlobal } = req.body as any;
   const { originalname, size } = req.file;
 
   if (!title) {
@@ -61,6 +69,10 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   if (parsedMaxScore !== undefined && Number.isNaN(parsedMaxScore)) {
     throw new ValidationError('Invalid maxScore');
   }
+
+  const parsedIsGlobal = req.userAuth?.role === 'admin'
+    ? Boolean(isGlobal === 'true' || isGlobal === true)
+    : false;
 
   // Generate unique package ID
   const packageId = uuidv4();
@@ -115,6 +127,12 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
     // const storageProvider = StorageFactory.getProvider();
     // const packagePath = `${packageId}/${launchUrl}`;
 
+    const masterDepartmentId = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
+    const chosenDepartment =
+      (req.userAuth?.role === 'admin' && department) ||
+      (req.userAuth as any)?.department ||
+      masterDepartmentId;
+
     // Create database record with required fields from schema
     const scormPackage = await ScormPackage.create({
       packageId,
@@ -135,9 +153,11 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       subject: subject || subjectId || null,
       program: program || programId || null,
       classLevel: classLevel || classLevelId || null,
+      department: chosenDepartment ? new mongoose.Types.ObjectId(chosenDepartment) : undefined,
       isGraded: parsedIsGraded,
       maxScore: parsedMaxScore !== undefined ? parsedMaxScore : 100,
       dueDate: parsedDueDate,
+      isGlobal: parsedIsGlobal,
       isPublished: false,
       storageProvider: process.env.SCORM_STORAGE_PROVIDER || 'local',
       storagePath: packageId,
@@ -158,6 +178,8 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
         updatedAt: scormPackage.updatedAt,
         createdAt: scormPackage.createdAt,
         uploadedBy: scormPackage.uploadedBy,
+        department: scormPackage.department,
+        isGlobal: scormPackage.isGlobal,
       },
       warnings: validationResult.warnings,
     });
@@ -201,6 +223,9 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
 
   const query: any = {};
 
+  // Department scoping
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+
   // Filter by subject
   if (subject) {
     query.subject = subject;
@@ -232,6 +257,11 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
       { title: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
     ];
+  }
+
+  if (scope && scope !== 'all') {
+    query.$and = query.$and || [];
+    query.$and.push({ $or: [{ department: { $in: scope } }, { isGlobal: true }] });
   }
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -281,6 +311,14 @@ export const getPackage = asyncHandler(async (req: Request, res: Response) => {
     throw new NotFoundError('SCORM package not found');
   }
 
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (scope && scope !== 'all') {
+    const pkgDept = scormPackage.department?.toString();
+    if (!scormPackage.isGlobal && (!pkgDept || !scope.includes(pkgDept))) {
+      throw new AuthorizationError('Access to this package is not permitted for your department');
+    }
+  }
+
   res.status(200).json({
     success: true,
     data: scormPackage,
@@ -310,6 +348,11 @@ export const updatePackage = asyncHandler(async (req: Request, res: Response) =>
   if (!scormPackage) {
     res.status(404);
     throw new Error('SCORM package not found');
+  }
+
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (!isPackageInScope(scormPackage, scope)) {
+    throw new AuthorizationError('Access to this package is not permitted for your department');
   }
 
   // Update fields
@@ -343,6 +386,11 @@ export const deletePackage = asyncHandler(async (req: Request, res: Response) =>
   if (!scormPackage) {
     res.status(404);
     throw new Error('SCORM package not found');
+  }
+
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (!isPackageInScope(scormPackage, scope)) {
+    throw new AuthorizationError('Access to this package is not permitted for your department');
   }
 
   // Delete from storage
@@ -475,6 +523,11 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response) =
     throw new NotFoundError('SCORM package not found');
   }
 
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (!isPackageInScope(scormPackage, scope)) {
+    throw new AuthorizationError('Access to this package is not permitted for your department');
+  }
+
   // Visibility/ownership check for teachers
   if (role === 'teacher' && scormPackage.uploadedBy?.toString() !== userId) {
     throw new NotFoundError('SCORM package not found');
@@ -509,6 +562,11 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
 
   if (!scormPackage) {
     throw new NotFoundError('SCORM package not found');
+  }
+
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  if (!isPackageInScope(scormPackage, scope)) {
+    throw new AuthorizationError('Access to this package is not permitted for your department');
   }
 
   // Visibility/ownership check for teachers

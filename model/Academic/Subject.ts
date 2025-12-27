@@ -30,6 +30,11 @@ const subjectSchema = new Schema<ISubject>(
       required: true,
       default: '3 months',
     },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      index: true,
+    },
     program: {
       type: Schema.Types.ObjectId,
       ref: 'Program',

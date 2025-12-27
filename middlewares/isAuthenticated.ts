@@ -24,6 +24,7 @@ const isAuthenticated = () => {
     try {
       const isTestEnv = process.env.NODE_ENV === 'test';
       const shouldBypassAuth = isTestEnv && process.env.BYPASS_AUTH_FOR_TESTS !== 'false';
+      const bypassDepartmentId = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
 
       const tokenHeader = req.headers?.authorization || '';
       const token = tokenHeader.startsWith('Bearer') ? tokenHeader.split(' ')[1] : tokenHeader;
@@ -43,6 +44,7 @@ const isAuthenticated = () => {
             name: `${role} test user`,
             email: `${role}@example.com`,
             role,
+            department: new mongoose.Types.ObjectId(bypassDepartmentId),
           } as any;
           req.token = token;
           return next();
@@ -71,18 +73,18 @@ const isAuthenticated = () => {
 
       // Try to find user in all user types
       user = (await Admin.findById(verifiedToken.id)
-        .select('name email role')
+        .select('name email role department')
         .lean()) as UserAuth | null;
 
       if (!user) {
         user = (await Teacher.findById(verifiedToken.id)
-          .select('name email role')
+          .select('name email role department')
           .lean()) as UserAuth | null;
       }
 
       if (!user) {
         user = (await Student.findById(verifiedToken.id)
-          .select('name email role')
+          .select('name email role department')
           .lean()) as UserAuth | null;
       }
 

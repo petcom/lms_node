@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+import ensureMasterDepartment from './ensureMasterDepartment';
 
 const dbConnect = async (): Promise<void> => {
   try {
@@ -13,6 +14,9 @@ const dbConnect = async (): Promise<void> => {
     logger.info('Database connected successfully');
     logger.info(`Database: ${mongoose.connection.name}`);
     logger.info(`Host: ${mongoose.connection.host}:${mongoose.connection.port}`);
+
+    // Seed master department for scoped access control
+    await ensureMasterDepartment();
   } catch (error) {
     const err = error as Error;
     logger.error('Database connection failed', {

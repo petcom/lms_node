@@ -2,9 +2,11 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
+import Department from '../../../model/Academic/Department';
 
 const teacherToken = 'test-teacher-token';
 const teacherId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+const masterDepartmentId = new mongoose.Types.ObjectId(process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00');
 
 const basePackage = (overrides: Partial<any> = {}) => ({
   packageId: new mongoose.Types.ObjectId().toString(),
@@ -27,6 +29,7 @@ const basePackage = (overrides: Partial<any> = {}) => ({
   uploadedByModel: 'Teacher',
   status: 'draft',
   isPublished: false,
+  department: masterDepartmentId,
   ...overrides,
 });
 
@@ -36,6 +39,14 @@ describe('SCORM packages listing filters', () => {
       const uri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/lms-test';
       await mongoose.connect(uri);
     }
+
+    await Department.deleteMany({});
+    await Department.create({
+      _id: masterDepartmentId,
+      name: 'Master Department',
+      code: 'MASTER',
+      level: 'master',
+    });
   });
 
   afterAll(async () => {

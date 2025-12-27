@@ -162,3 +162,71 @@ export const deleteProgram = AsyncHandler(
     });
   }
 );
+
+/**
+ * @description Archive Program
+ * @route PATCH /api/admins/programs/:id/archive
+ * @access Private
+ */
+export const archiveProgram = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const program = (await Program.findById(req.params.id)) as IProgram | null;
+    if (!program) {
+      throw new Error('Program not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = program.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this program');
+      }
+    }
+
+    if (!program.archived) {
+      program.archived = true;
+      program.archivedAt = new Date();
+      await program.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Program archived successfully',
+      data: program,
+    });
+  }
+);
+
+/**
+ * @description Unarchive Program
+ * @route PATCH /api/admins/programs/:id/unarchive
+ * @access Private
+ */
+export const unarchiveProgram = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const program = (await Program.findById(req.params.id)) as IProgram | null;
+    if (!program) {
+      throw new Error('Program not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = program.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this program');
+      }
+    }
+
+    if (program.archived) {
+      program.archived = false;
+      program.archivedAt = undefined;
+      await program.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Program unarchived successfully',
+      data: program,
+    });
+  }
+);

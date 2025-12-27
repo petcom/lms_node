@@ -43,6 +43,14 @@ const classLevelSchema = new Schema<IClassLevel>(
         ref: 'Teacher',
       },
     ],
+    archived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

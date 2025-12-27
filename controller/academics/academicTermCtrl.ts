@@ -139,3 +139,55 @@ export const deleteAcademicTerm = AsyncHandler(
     });
   }
 );
+
+/**
+ * @description Archive Academic Term
+ * @route PATCH /api/admins/academic-terms/:id/archive
+ * @access Private
+ */
+export const archiveAcademicTerm = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const term = (await AcademicTerm.findById(req.params.id)) as IAcademicTerm | null;
+    if (!term) {
+      throw new Error('Academic term not found');
+    }
+
+    if (!term.archived) {
+      term.archived = true;
+      term.archivedAt = new Date();
+      await term.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Academic term archived successfully',
+      data: term,
+    });
+  }
+);
+
+/**
+ * @description Unarchive Academic Term
+ * @route PATCH /api/admins/academic-terms/:id/unarchive
+ * @access Private
+ */
+export const unarchiveAcademicTerm = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const term = (await AcademicTerm.findById(req.params.id)) as IAcademicTerm | null;
+    if (!term) {
+      throw new Error('Academic term not found');
+    }
+
+    if (term.archived) {
+      term.archived = false;
+      term.archivedAt = undefined;
+      await term.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Academic term unarchived successfully',
+      data: term,
+    });
+  }
+);

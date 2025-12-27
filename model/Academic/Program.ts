@@ -67,6 +67,14 @@ const programSchema = new Schema<IProgram>(
         default: [],
       },
     ],
+    archived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

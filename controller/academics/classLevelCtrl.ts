@@ -162,3 +162,71 @@ export const deleteClassLevel = AsyncHandler(
     });
   }
 );
+
+/**
+ * @description Archive Class Level
+ * @route PATCH /api/admins/class-levels/:id/archive
+ * @access Private
+ */
+export const archiveClassLevel = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const classLevel = (await ClassLevel.findById(req.params.id)) as IClassLevel | null;
+    if (!classLevel) {
+      throw new Error('Class Level not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = (classLevel as any)?.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this class level');
+      }
+    }
+
+    if (!classLevel.archived) {
+      classLevel.archived = true;
+      classLevel.archivedAt = new Date();
+      await classLevel.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Class Level archived successfully',
+      data: classLevel,
+    });
+  }
+);
+
+/**
+ * @description Unarchive Class Level
+ * @route PATCH /api/admins/class-levels/:id/unarchive
+ * @access Private
+ */
+export const unarchiveClassLevel = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const classLevel = (await ClassLevel.findById(req.params.id)) as IClassLevel | null;
+    if (!classLevel) {
+      throw new Error('Class Level not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = (classLevel as any)?.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this class level');
+      }
+    }
+
+    if (classLevel.archived) {
+      classLevel.archived = false;
+      classLevel.archivedAt = undefined;
+      await classLevel.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Class Level unarchived successfully',
+      data: classLevel,
+    });
+  }
+);

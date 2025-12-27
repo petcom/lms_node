@@ -25,6 +25,14 @@ const academicTermSchema = new Schema<IAcademicTerm>(
       ref: 'Admin',
       required: true,
     },
+    archived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

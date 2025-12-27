@@ -247,7 +247,6 @@ adminRouter.put(
   '/suspend/teacher/:id',
   isAuthenticated(),
   roleRestriction('admin'),
-  validate(staffAction),
   adminSuspendTeacherCtrl
 );
 
@@ -280,7 +279,6 @@ adminRouter.put(
   '/unsuspend/teacher/:id',
   isAuthenticated(),
   roleRestriction('admin'),
-  validate(staffAction),
   adminUnsuspendteacherCtrl
 );
 
@@ -313,7 +311,6 @@ adminRouter.put(
   '/withdraw/teacher/:id',
   isAuthenticated(),
   roleRestriction('admin'),
-  validate(staffAction),
   adminWithdrawTeacherCtrl
 );
 
@@ -346,7 +343,6 @@ adminRouter.put(
   '/unwithdraw/teacher/:id',
   isAuthenticated(),
   roleRestriction('admin'),
-  validate(staffAction),
   adminUnwithdrawTeacherCtrl
 );
 

@@ -6,6 +6,8 @@ import {
   getSingleProgram,
   updateProgram,
   deleteProgram,
+  archiveProgram,
+  unarchiveProgram,
 } from '../../controller/academics/programsCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import Program from '../../model/Academic/Program';
@@ -29,16 +31,21 @@ programRouter
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const requestedDept =
         typeof req.query.department === 'string' ? req.query.department : undefined;
+      const includeArchived = req.query.includeArchived === 'true';
+      const archivedFilter = includeArchived ? {} : { archived: false };
 
       if (scope === 'all' && requestedDept && mongoose.isValidObjectId(requestedDept)) {
-        return { department: new mongoose.Types.ObjectId(requestedDept) } as any;
+        return {
+          ...archivedFilter,
+          department: new mongoose.Types.ObjectId(requestedDept),
+        } as any;
       }
 
       if (scope && scope !== 'all') {
-        return { department: { $in: scope } } as any;
+        return { ...archivedFilter, department: { $in: scope } } as any;
       }
 
-      return {} as any;
+      return archivedFilter as any;
     }),
     getPrograms
   );
@@ -48,5 +55,21 @@ programRouter
   .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getSingleProgram)
   .put(isAuthenticated(), roleRestriction('admin'), updateProgram)
   .delete(isAuthenticated(), roleRestriction('admin'), deleteProgram);
+
+programRouter.patch(
+  '/:id/archive',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('admin'),
+  archiveProgram
+);
+
+programRouter.patch(
+  '/:id/unarchive',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('admin'),
+  unarchiveProgram
+);
 
 export default programRouter;

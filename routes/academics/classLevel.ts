@@ -6,6 +6,8 @@ import {
   getClassLevels,
   updateClassLevel,
   deleteClassLevel,
+  archiveClassLevel,
+  unarchiveClassLevel,
 } from '../../controller/academics/classLevelCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import ClassLevel from '../../model/Academic/ClassLevel';
@@ -29,16 +31,21 @@ classLevelRouter
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const requestedDept =
         typeof req.query.department === 'string' ? req.query.department : undefined;
+      const includeArchived = req.query.includeArchived === 'true';
+      const archivedFilter = includeArchived ? {} : { archived: false };
 
       if (scope === 'all' && requestedDept && mongoose.isValidObjectId(requestedDept)) {
-        return { department: new mongoose.Types.ObjectId(requestedDept) } as any;
+        return {
+          ...archivedFilter,
+          department: new mongoose.Types.ObjectId(requestedDept),
+        } as any;
       }
 
       if (scope && scope !== 'all') {
-        return { department: { $in: scope } } as any;
+        return { ...archivedFilter, department: { $in: scope } } as any;
       }
 
-      return {} as any;
+      return archivedFilter as any;
     }),
     getClassLevels
   );
@@ -48,5 +55,21 @@ classLevelRouter
   .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getClassLevel)
   .put(isAuthenticated(), roleRestriction('admin'), updateClassLevel)
   .delete(isAuthenticated(), roleRestriction('admin'), deleteClassLevel);
+
+classLevelRouter.patch(
+  '/:id/archive',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('admin'),
+  archiveClassLevel
+);
+
+classLevelRouter.patch(
+  '/:id/unarchive',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('admin'),
+  unarchiveClassLevel
+);
 
 export default classLevelRouter;

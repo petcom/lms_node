@@ -106,6 +106,8 @@ export interface IAcademicTerm extends Document {
   duration: string;
   academicYear: Types.ObjectId;
   createdBy: Types.ObjectId;
+  archived: boolean;
+  archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,6 +122,8 @@ export interface IClassLevel extends Document {
   students?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
   teachers?: Types.ObjectId[];
+  archived: boolean;
+  archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -136,6 +140,8 @@ export interface IProgram extends Document {
   teachers?: Types.ObjectId[];
   students?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
+  archived: boolean;
+  archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -151,6 +157,8 @@ export interface ISubject extends Document {
   program?: Types.ObjectId;
   teachers?: Types.ObjectId[];
   department?: Types.ObjectId;
+  archived: boolean;
+  archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

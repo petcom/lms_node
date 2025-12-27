@@ -5,6 +5,8 @@ import {
   deleteAcademicTerm,
   getAcademicTerms,
   updateAcademicTerms,
+  archiveAcademicTerm,
+  unarchiveAcademicTerm,
 } from '../../controller/academics/academicTermCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import AcademicTerm from '../../model/Academic/AcademicTerm';
@@ -22,7 +24,10 @@ academicTermRouter
   .get(
     isAuthenticated(),
     roleRestriction('admin'),
-    advancedResults(AcademicTerm),
+    advancedResults(AcademicTerm, undefined, (req) => {
+      const includeArchived = req.query.includeArchived === 'true';
+      return includeArchived ? ({} as any) : ({ archived: false } as any);
+    }),
     getAcademicTerms
   );
 
@@ -31,5 +36,19 @@ academicTermRouter
   .get(isAuthenticated(), roleRestriction('admin'), getAcademicTerm)
   .put(isAuthenticated(), roleRestriction('admin'), updateAcademicTerms)
   .delete(isAuthenticated(), roleRestriction('admin'), deleteAcademicTerm);
+
+academicTermRouter.patch(
+  '/:id/archive',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  archiveAcademicTerm
+);
+
+academicTermRouter.patch(
+  '/:id/unarchive',
+  isAuthenticated(),
+  roleRestriction('admin'),
+  unarchiveAcademicTerm
+);
 
 export default academicTermRouter;

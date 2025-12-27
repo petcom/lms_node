@@ -170,3 +170,71 @@ export const deleteSubject = AsyncHandler(
     });
   }
 );
+
+/**
+ * @description Archive Subject
+ * @route PATCH /api/admins/subjects/:id/archive
+ * @access Private
+ */
+export const archiveSubject = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const subject = (await Subject.findById(req.params.id)) as ISubject | null;
+    if (!subject) {
+      throw new Error('Subject not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = (subject as any)?.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this subject');
+      }
+    }
+
+    if (!subject.archived) {
+      subject.archived = true;
+      subject.archivedAt = new Date();
+      await subject.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Subject archived successfully',
+      data: subject,
+    });
+  }
+);
+
+/**
+ * @description Unarchive Subject
+ * @route PATCH /api/admins/subjects/:id/unarchive
+ * @access Private
+ */
+export const unarchiveSubject = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const subject = (await Subject.findById(req.params.id)) as ISubject | null;
+    if (!subject) {
+      throw new Error('Subject not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = (subject as any)?.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this subject');
+      }
+    }
+
+    if (subject.archived) {
+      subject.archived = false;
+      subject.archivedAt = undefined;
+      await subject.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Subject unarchived successfully',
+      data: subject,
+    });
+  }
+);

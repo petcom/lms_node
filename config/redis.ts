@@ -6,6 +6,7 @@
 import Redis from 'ioredis';
 
 const isTestEnv = process.env.NODE_ENV === 'test';
+const useMemoryStore = process.env.SCORM_SESSION_DRIVER === 'memory';
 
 /**
  * Redis connection configuration
@@ -16,8 +17,8 @@ const redisConfig = {
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || '0'),
   maxRetriesPerRequest: 3,
-  enableReadyCheck: !isTestEnv,
-  lazyConnect: isTestEnv,
+  enableReadyCheck: !(isTestEnv || useMemoryStore),
+  lazyConnect: isTestEnv || useMemoryStore,
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     console.log(`Redis connection retry attempt ${times}, waiting ${delay}ms`);
@@ -33,7 +34,7 @@ export const redisClient = new Redis(redisConfig);
 /**
  * Redis event handlers
  */
-if (!isTestEnv) {
+if (!isTestEnv && !useMemoryStore) {
   redisClient.on('connect', () => {
     console.log('✓ Redis client connected');
   });

@@ -6,7 +6,12 @@
 import rateLimit, { Options } from 'express-rate-limit';
 import { Request, Response, RequestHandler } from 'express';
 
-const isTestEnv = process.env.NODE_ENV === 'test';
+const rateLimitEnv = process.env.RATE_LIMIT_ENABLED?.toLowerCase();
+const rateLimitEnabled =
+  rateLimitEnv === undefined
+    ? !(process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development')
+    : !['false', '0', 'no', 'off'].includes(rateLimitEnv);
+const isRateLimitDisabled = !rateLimitEnabled;
 const passthrough: RequestHandler = (_req, _res, next) => next();
 
 /**
@@ -19,7 +24,7 @@ const SCORM_RATE_LIMIT_EXEMPT_PREFIXES = [
   '/api/v1/scorm/content',
 ];
 
-const apiLimiter = isTestEnv
+const apiLimiter = isRateLimitDisabled
   ? passthrough
   : rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -45,7 +50,7 @@ const apiLimiter = isTestEnv
  * Auth rate limiter (stricter)
  * Applies to login and registration endpoints
  */
-const authLimiter = isTestEnv
+const authLimiter = isRateLimitDisabled
   ? passthrough
   : rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -67,7 +72,7 @@ const authLimiter = isTestEnv
  * Registration rate limiter (very strict)
  * Prevents spam account creation
  */
-const registerLimiter = isTestEnv
+const registerLimiter = isRateLimitDisabled
   ? passthrough
   : rateLimit({
       windowMs: 60 * 60 * 1000, // 1 hour
@@ -88,7 +93,7 @@ const registerLimiter = isTestEnv
  * Password reset rate limiter
  * Prevents password reset spam
  */
-const passwordResetLimiter = isTestEnv
+const passwordResetLimiter = isRateLimitDisabled
   ? passthrough
   : rateLimit({
       windowMs: 60 * 60 * 1000, // 1 hour

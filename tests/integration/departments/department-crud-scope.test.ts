@@ -111,12 +111,12 @@ describe('Departments API (scope + CRUD)', () => {
       .set('Authorization', `Bearer ${topAdminToken}`);
 
     expect(res.status).toBe(200);
-    const names = res.body.data.map((d: any) => d.name);
+    const names = res.body.items.map((d: any) => d.name);
     expect(names).toContain('Top Alpha');
     expect(names).toContain('Sub Alpha');
     expect(names).not.toContain('Top Beta');
 
-    const alpha = res.body.data.find((d: any) => d._id === topDepartmentId.toString());
+    const alpha = res.body.items.find((d: any) => d.id === topDepartmentId.toString());
     expect(alpha.counts.programCount).toBe(1);
     expect(alpha.counts.staffCount).toBe(0);
   });

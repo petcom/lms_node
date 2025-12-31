@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import {
   createDepartment,
   getDepartments,
+  getDepartmentHierarchy,
   getDepartment,
   updateDepartment,
   deleteDepartment,
@@ -32,6 +33,14 @@ departmentRouter
     advancedResults(Department, undefined, scopedFilter),
     getDepartments
   );
+
+departmentRouter.get(
+  '/hierarchy',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('admin'),
+  getDepartmentHierarchy
+);
 
 departmentRouter
   .route('/:id')

@@ -41,6 +41,16 @@ type DepartmentWithCounts = IDepartment & {
   };
 };
 
+type DepartmentItem = {
+  id: string;
+  name: string;
+  code: string | null;
+  parentId: string | null;
+  level: number;
+  counts?: DepartmentWithCounts['counts'];
+  children?: DepartmentItem[];
+};
+
 const buildCounts = async (
   departmentId: mongoose.Types.ObjectId
 ): Promise<DepartmentWithCounts['counts']> => {
@@ -70,6 +80,36 @@ const buildCounts = async (
     packageCount,
     globalPackageCount,
   };
+};
+
+const getLevelNumber = (level: IDepartment['level']): number => {
+  if (level === 'master') return 0;
+  if (level === 'top') return 1;
+  return 2;
+};
+
+const toDepartmentItem = (
+  dept: IDepartment,
+  counts?: DepartmentWithCounts['counts'],
+  includeChildren: boolean = false
+): DepartmentItem => {
+  const item: DepartmentItem = {
+    id: dept._id.toString(),
+    name: dept.name,
+    code: dept.code ?? null,
+    parentId: dept.parent ? dept.parent.toString() : null,
+    level: getLevelNumber(dept.level),
+  };
+
+  if (counts) {
+    item.counts = counts;
+  }
+
+  if (includeChildren) {
+    item.children = [];
+  }
+
+  return item;
 };
 
 const ensureScope = (req: Request, departmentId: string): void => {
@@ -166,24 +206,60 @@ export const getDepartments = AsyncHandler(async (_req: Request, res: Response):
   const departmentsToProcess =
     departments.length > 0 ? departments : await Department.find({}).lean();
 
-  const enriched = await Promise.all(
-    departmentsToProcess.map(async (dept) => ({
-      ...(dept.toObject ? dept.toObject() : dept),
-      counts: await buildCounts(dept._id as mongoose.Types.ObjectId),
-    }))
+  const items = await Promise.all(
+    departmentsToProcess.map(async (dept) => {
+      const raw = (dept.toObject ? dept.toObject() : dept) as IDepartment;
+      const counts = await buildCounts(raw._id as mongoose.Types.ObjectId);
+      return toDepartmentItem(raw, counts);
+    })
   );
 
   if (base) {
-    res.status(200).json({ ...base, data: enriched });
+    const { data: _data, ...rest } = base as any;
+    res.status(200).json({ ...rest, items });
     return;
   }
 
   res.status(200).json({
     status: 'success',
     message: 'Departments fetched successfully',
-    data: enriched,
+    items,
   });
 });
+
+export const getDepartmentHierarchy = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const query =
+      scope && scope !== 'all' ? ({ _id: { $in: scope } } as const) : ({} as const);
+
+    const departments = (await Department.find(query).lean()) as IDepartment[];
+    const nodes = new Map<string, DepartmentItem>();
+
+    await Promise.all(
+      departments.map(async (dept) => {
+        const counts = await buildCounts(dept._id as mongoose.Types.ObjectId);
+        nodes.set(dept._id.toString(), toDepartmentItem(dept, counts, true));
+      })
+    );
+
+    const roots: DepartmentItem[] = [];
+    nodes.forEach((node) => {
+      const parentId = node.parentId;
+      if (parentId && nodes.has(parentId)) {
+        nodes.get(parentId)!.children!.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Department hierarchy fetched successfully',
+      items: roots,
+    });
+  }
+);
 
 export const getDepartment = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {

@@ -159,6 +159,7 @@ Scripts (migration/data seeding):
 - Add: `scripts/migrate-classlevel-to-programlevel.js`
 - Add: `scripts/migrate-content-to-coursecontent.js`
 - Add: `scripts/migrate-scormattempt-to-contentattempt.js`
+- Add: `scripts/migrate-teacherid-to-instructorid.js`
 
 ## Phase 2: Schema/Model Migration
 Implement Mongoose schemas to match the new types:

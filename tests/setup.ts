@@ -51,6 +51,17 @@ const globalSetup = async (): Promise<void> => {
     console.log('✓ MongoDB Memory Server started');
     console.log(`  URI: ${mongoUri}`);
   }
+
+  if (process.env.MONGO_TEST_URI) {
+    await mongoose.connect(process.env.MONGO_TEST_URI);
+    const staffCollection = mongoose.connection.collection('staffs');
+    const indexes = await staffCollection.indexes();
+    const legacyIndex = indexes.find((index) => index.name === 'teacherId_1');
+    if (legacyIndex) {
+      await staffCollection.dropIndex('teacherId_1');
+    }
+    await mongoose.disconnect();
+  }
 };
 
 export default globalSetup;

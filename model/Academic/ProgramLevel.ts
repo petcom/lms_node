@@ -1,0 +1,55 @@
+import mongoose, { Schema } from 'mongoose';
+import { IProgramLevel } from '../../types/models';
+
+/**
+ * Program Level Schema
+ * Represents a sub-program level within a program.
+ */
+const programLevelSchema = new Schema<IProgramLevel>(
+  {
+    program: {
+      type: Schema.Types.ObjectId,
+      ref: 'Program',
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    order: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      index: true,
+    },
+    archived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    archivedAt: {
+      type: Date,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Admin',
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+programLevelSchema.index({ program: 1, order: 1 }, { unique: true });
+programLevelSchema.index({ program: 1, archived: 1 });
+
+const ProgramLevel = mongoose.model<IProgramLevel>('ProgramLevel', programLevelSchema);
+
+export default ProgramLevel;

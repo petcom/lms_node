@@ -246,6 +246,9 @@ Example Response:
 - Role references updated to `global-admin` and staff subtypes.
 - Department summaries include `passingStyleScore`.
 
+## Changes (Phase 2)
+- No contract changes in this phase.
+
 ## Normalized Progress + Attempts
 These shapes are used to normalize SCORM and custom progress data into a shared reporting model.
 

@@ -364,3 +364,6 @@ Body:
 - Role values updated to `global-admin | staff` with staff subtypes in `roles`.
 - Staff users list supports subtype filters (`instructor`, `department-admin`, `content-admin`, `billing-admin`).
 - Department summaries now include `passingStyleScore`.
+
+## Changes (Phase 2)
+- No contract changes in this phase.

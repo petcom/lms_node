@@ -81,3 +81,6 @@ Notes:
 
 ## Changes (Phase 1)
 - Updated role references to `global-admin`.
+
+## Changes (Phase 2)
+- No contract changes in this phase.

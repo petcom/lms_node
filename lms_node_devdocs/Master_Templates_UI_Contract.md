@@ -218,3 +218,6 @@ Response: `MasterCSS`
 
 ## Changes (Phase 1)
 - Role references updated to `global-admin` and staff subtypes.
+
+## Changes (Phase 2)
+- No contract changes in this phase.

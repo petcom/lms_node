@@ -62,8 +62,8 @@ Phase 6 focuses on integration, performance optimization, comprehensive testing,
 ### Documentation
 - [ ] API documentation (Swagger/OpenAPI)
 - [ ] Administrator deployment guide
-- [ ] Teacher user guide
-- [ ] Student user guide
+- [ ] Instructor user guide
+- [ ] Learner user guide
 - [ ] Developer guide
 - [ ] Troubleshooting guide
 
@@ -153,7 +153,7 @@ scorm:error:{attemptId}       - Error state
 #### 1. Query Optimization
 ```typescript
 // Add indexes for common queries
-ScormAttempt.index({ student: 1, package: 1 });
+ScormAttempt.index({ learner: 1, package: 1 });
 ScormAttempt.index({ package: 1, status: 1 });
 ScormPackage.index({ status: 1, createdAt: -1 });
 ```
@@ -164,7 +164,7 @@ ScormPackage.index({ status: 1, createdAt: -1 });
 import { cachePublic } from '../../middlewares/caching';
 router.get('/package/:packageId/analytics', 
   isAuthenticated, 
-  isTeacher, 
+  isInstructor, 
   cachePublic(300),  // 5 minutes
   getPackageAnalytics
 );
@@ -173,11 +173,11 @@ router.get('/package/:packageId/analytics',
 #### 3. Pagination
 ```typescript
 // Add pagination to large result sets
-export const getStudentProgress = async (req: Request, res: Response) => {
+export const getLearnerProgress = async (req: Request, res: Response) => {
   const { page = 1, limit = 10 } = req.query;
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
   
-  const attempts = await ScormAttempt.find({ student: studentId })
+  const attempts = await ScormAttempt.find({ learner: learnerId })
     .skip(skip)
     .limit(parseInt(limit as string))
     .populate('package');
@@ -196,10 +196,10 @@ describe('SCORM End-to-End Workflow', () => {
   it('should complete full lifecycle: upload → assign → launch → complete', async () => {
     // 1. Upload package (admin)
     // 2. Publish package
-    // 3. Assign to students
-    // 4. Student launches player
+    // 3. Assign to learners
+    // 4. Learner launches player
     // 5. SCORM content initializes
-    // 6. Student completes course
+    // 6. Learner completes course
     // 7. Data is saved correctly
     // 8. Reports show completion
   });
@@ -210,7 +210,7 @@ describe('SCORM End-to-End Workflow', () => {
 ```typescript
 describe('SCORM Multi-User Scenarios', () => {
   it('should handle concurrent users on same package', async () => {
-    // Multiple students launch same package
+    // Multiple learners launch same package
     // Verify sessions are isolated
     // Verify data doesn't cross-contaminate
   });
@@ -267,8 +267,8 @@ export default function () {
 
 ### Authentication & Authorization
 - [ ] All SCORM endpoints require authentication
-- [ ] Student routes verify student ownership
-- [ ] Teacher routes verify teacher role
+- [ ] Learner routes verify learner ownership
+- [ ] Instructor routes verify instructor role
 - [ ] Admin routes verify admin role
 - [ ] No sensitive data in error messages
 - [ ] Tokens properly validated
@@ -288,8 +288,8 @@ export default function () {
 
 ### Data Protection
 - [ ] CMI data encrypted in transit (HTTPS)
-- [ ] Sensitive student data protected
-- [ ] Attempt data isolated per student
+- [ ] Sensitive learner data protected
+- [ ] Attempt data isolated per learner
 - [ ] Admin-only access to raw data
 
 ---
@@ -369,21 +369,21 @@ Already integrated in `/api-docs`
 **Topics:**
 - Installation and setup
 - SCORM package upload
-- Student assignment
+- Learner assignment
 - Package management
 - Monitoring and troubleshooting
 - Backup and restore
 
-### 3. Teacher Guide
+### 3. Instructor Guide
 **Topics:**
 - Creating SCORM content
 - Uploading packages
-- Assigning to students
+- Assigning to learners
 - Viewing analytics
 - Interpreting reports
 - Exporting data
 
-### 4. Student Guide
+### 4. Learner Guide
 **Topics:**
 - Launching SCORM courses
 - Navigating the player
@@ -430,7 +430,7 @@ logger.info('SCORM package uploaded', {
 logger.info('SCORM session started', {
   attemptId,
   packageId,
-  studentId,
+  learnerId,
 });
 
 logger.warn('SCORM session timeout', {

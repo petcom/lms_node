@@ -8,7 +8,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
 import {
   calculateBestScore,
@@ -38,7 +38,7 @@ const isPackageAccessible = (
   if (pkg.isGlobal) return true;
 
   const pkgDept = pkg.department?.toString();
-  if (role === 'admin') {
+  if (role === 'global-admin') {
     if (!scope || scope === 'all') return true;
     return !!pkgDept && scope.includes(pkgDept);
   }
@@ -94,25 +94,25 @@ const mapErrorToStatus = (error: any): number => {
 };
 
 /**
- * Get student progress across all SCORM packages
- * GET /api/v1/scorm/reports/student/:studentId
+ * Get learner progress across all SCORM packages
+ * GET /api/v1/scorm/reports/learner/:learnerId
  */
-export const getStudentProgress = async (req: Request, res: Response) => {
+export const getLearnerProgress = async (req: Request, res: Response) => {
   try {
-    const { studentId } = req.params;
+    const { learnerId } = req.params;
     const { startDate, endDate, packageId, program, classLevel } = req.query;
 
     const role = req.userAuth?.role;
     const userId = req.userAuth?._id?.toString();
     const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
-    if (role === 'student' && userId !== studentId) {
-      throw new AuthorizationError('Students can only view their own progress');
+    if (role === 'learner' && userId !== learnerId) {
+      throw new AuthorizationError('Learners can only view their own progress');
     }
 
     const { start, end } = parseDateRange(startDate as string, endDate as string);
 
-    const query: any = { student: studentId };
+    const query: any = { learner: learnerId };
     if (start || end) {
       query.startedAt = {};
       if (start) query.startedAt.$gte = start;
@@ -126,18 +126,18 @@ export const getStudentProgress = async (req: Request, res: Response) => {
       query.package = packageId;
     }
 
-    // Get all attempts for this student
+    // Get all attempts for this learner
     const attempts = await ScormAttempt.find(query)
       .populate('package')
       .sort({ startedAt: -1 });
 
-    // Get student info
-    const student = await Student.findById(studentId).select('firstName lastName email');
+    // Get learner info
+    const learner = await Learner.findById(learnerId).select('firstName lastName email');
 
-    if (!student) {
+    if (!learner) {
       return res.status(404).json({
         success: false,
-        message: 'Student not found',
+        message: 'Learner not found',
       });
     }
 
@@ -213,9 +213,9 @@ export const getStudentProgress = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: {
-        studentId: student._id,
-        studentName: `${(student as any).firstName} ${(student as any).lastName}`,
-        studentEmail: (student as any).email,
+        learnerId: learner._id,
+        learnerName: `${(learner as any).firstName} ${(learner as any).lastName}`,
+        learnerEmail: (learner as any).email,
         packages: paged.data,
         pagination: paged.pagination,
         summary: {
@@ -227,11 +227,11 @@ export const getStudentProgress = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('Error getting student progress:', error);
+    console.error('Error getting learner progress:', error);
     const status = mapErrorToStatus(error);
     return res.status(status).json({
       success: false,
-      message: error.message || 'Failed to get student progress',
+      message: error.message || 'Failed to get learner progress',
       error: error.message,
     });
   }
@@ -244,7 +244,7 @@ export const getStudentProgress = async (req: Request, res: Response) => {
 export const getPackageAnalytics = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
-    const { startDate, endDate, studentId, program, classLevel } = req.query;
+    const { startDate, endDate, learnerId, program, classLevel } = req.query;
 
     const role = req.userAuth?.role;
     const userId = req.userAuth?._id?.toString();
@@ -274,36 +274,36 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
       if (end) query.startedAt.$lte = end;
     }
 
-    if (studentId) {
-      if (!mongoose.isValidObjectId(studentId as any)) {
-        throw new ValidationError('Invalid studentId');
+    if (learnerId) {
+      if (!mongoose.isValidObjectId(learnerId as any)) {
+        throw new ValidationError('Invalid learnerId');
       }
-      query.student = studentId;
+      query.learner = learnerId;
     }
 
     // Get all attempts for this package
     const attempts = await ScormAttempt.find(query)
-      .populate('student', 'firstName lastName email program classLevels')
+      .populate('learner', 'firstName lastName email program classLevels')
       .sort({ startedAt: -1 });
 
     const filteredAttempts = attempts.filter((a) => {
-      const student = a.student as any;
-      if (program && student?.program?.toString() !== String(program)) return false;
-      if (classLevel && !student?.classLevels?.includes(String(classLevel))) return false;
+      const learner = a.learner as any;
+      if (program && learner?.program?.toString() !== String(program)) return false;
+      if (classLevel && !learner?.classLevels?.includes(String(classLevel))) return false;
       return true;
     });
 
-    // Get unique students
-    const studentIds = [...new Set(filteredAttempts.map((a) => (a.student as any)._id.toString()))];
-    const totalStudents = studentIds.length;
-    const studentsStarted = studentIds.length;
+    // Get unique learners
+    const learnerIds = [...new Set(filteredAttempts.map((a) => (a.learner as any)._id.toString()))];
+    const totalLearners = learnerIds.length;
+    const learnersStarted = learnerIds.length;
 
     // Calculate completion metrics
     const completedAttempts = filteredAttempts.filter(isAttemptCompleted);
-    const studentsCompleted = [
-      ...new Set(completedAttempts.map((a) => (a.student as any)._id.toString())),
+    const learnersCompleted = [
+      ...new Set(completedAttempts.map((a) => (a.learner as any)._id.toString())),
     ].length;
-    const completionRate = calculateCompletionRate(studentsStarted, studentsCompleted);
+    const completionRate = calculateCompletionRate(learnersStarted, learnersCompleted);
 
     // Calculate score and time metrics
     const attemptsWithScores = filteredAttempts.filter((a) => getAttemptScore(a) !== null);
@@ -320,43 +320,43 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
         ? Math.round((passedAttempts.length / attemptsWithScores.length) * 100)
         : 0;
 
-    // Group by student
-    const studentMap = new Map();
+    // Group by learner
+    const learnerMap = new Map();
 
     filteredAttempts.forEach((attempt) => {
-      const student = attempt.student as any;
-      if (!student) return;
+      const learner = attempt.learner as any;
+      if (!learner) return;
 
-      const studentId = student._id.toString();
+      const learnerId = learner._id.toString();
 
-      if (!studentMap.has(studentId)) {
-        studentMap.set(studentId, {
-          studentId: student._id,
-          studentName: `${student.firstName} ${student.lastName}`,
-          studentEmail: student.email,
+      if (!learnerMap.has(learnerId)) {
+        learnerMap.set(learnerId, {
+          learnerId: learner._id,
+          learnerName: `${learner.firstName} ${learner.lastName}`,
+          learnerEmail: learner.email,
           attempts: [],
         });
       }
 
-      studentMap.get(studentId).attempts.push(attempt);
+      learnerMap.get(learnerId).attempts.push(attempt);
     });
 
-    // Calculate per-student metrics
-    const students = Array.from(studentMap.values()).map((student) => {
-      const studentAttempts = student.attempts;
-      const bestScore = calculateBestScore(studentAttempts);
-      const avgScore = calculateAverageScore(studentAttempts);
-      const timeSpent = calculateTotalTimeSpent(studentAttempts);
-      const completed = studentAttempts.some(isAttemptCompleted);
+    // Calculate per-learner metrics
+    const learners = Array.from(learnerMap.values()).map((learner) => {
+      const learnerAttempts = learner.attempts;
+      const bestScore = calculateBestScore(learnerAttempts);
+      const avgScore = calculateAverageScore(learnerAttempts);
+      const timeSpent = calculateTotalTimeSpent(learnerAttempts);
+      const completed = learnerAttempts.some(isAttemptCompleted);
       const status = completed ? 'completed' : 'in_progress';
-      const lastAccessed = studentAttempts[0]?.lastAccessedAt;
-      const firstAccessed = studentAttempts[studentAttempts.length - 1]?.startedAt;
+      const lastAccessed = learnerAttempts[0]?.lastAccessedAt;
+      const firstAccessed = learnerAttempts[learnerAttempts.length - 1]?.startedAt;
 
       return {
-        studentId: student.studentId,
-        studentName: student.studentName,
-        studentEmail: student.studentEmail,
-        attempts: studentAttempts.length,
+        learnerId: learner.learnerId,
+        learnerName: learner.learnerName,
+        learnerEmail: learner.learnerEmail,
+        attempts: learnerAttempts.length,
         bestScore,
         averageScore: avgScore,
         status,
@@ -370,7 +370,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
     const scoreDistribution = aggregateScoreDistribution(attemptsWithScores);
     const timeDistribution = aggregateTimeDistribution(filteredAttempts);
 
-    const paged = applyPagination(students, req.query.page, req.query.limit);
+    const paged = applyPagination(learners, req.query.page, req.query.limit);
 
     return res.status(200).json({
       success: true,
@@ -382,15 +382,15 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
           end: endDate || null,
         },
         summary: {
-          totalStudents,
-          studentsStarted,
-          studentsCompleted,
+          totalLearners,
+          learnersStarted,
+          learnersCompleted,
           completionRate,
           averageScore,
           averageTimeSpent,
           passRate,
         },
-        students: paged.data,
+        learners: paged.data,
         pagination: paged.pagination,
         scoreDistribution,
         timeDistribution,
@@ -420,7 +420,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
     const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     const attempt = await ScormAttempt.findOne({ attemptId })
-      .populate('student', 'firstName lastName email')
+      .populate('learner', 'firstName lastName email')
       .populate('package', 'title version manifest');
 
     if (!attempt) {
@@ -430,14 +430,14 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
       });
     }
 
-    const student = attempt.student as any;
+    const learner = attempt.learner as any;
     const pkg = attempt.package as any;
 
-    if (role === 'student' && student?._id?.toString() !== userId) {
+    if (role === 'learner' && learner?._id?.toString() !== userId) {
       throw new AuthorizationError('Access denied for this attempt');
     }
 
-    if ((role === 'staff' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+    if ((role === 'staff' || role === 'global-admin') && !isPackageAccessible(pkg, role, userId, scope)) {
       throw new AuthorizationError('Access denied for this package');
     }
 
@@ -445,10 +445,10 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
       success: true,
       data: {
         attemptId: attempt.attemptId,
-        student: {
-          id: student._id,
-          name: `${student.firstName} ${student.lastName}`,
-          email: student.email,
+        learner: {
+          id: learner._id,
+          name: `${learner.firstName} ${learner.lastName}`,
+          email: learner.email,
         },
         package: {
           id: pkg._id,
@@ -481,14 +481,14 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
  */
 export const exportTrackingData = async (req: Request, res: Response) => {
   try {
-    const { packageId, studentId, startDate, endDate, format = 'json', program, classLevel } =
+    const { packageId, learnerId, startDate, endDate, format = 'json', program, classLevel } =
       req.query;
 
     const role = req.userAuth?.role;
     const userId = req.userAuth?._id?.toString();
     const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
-    if (role !== 'staff' && role !== 'admin') {
+    if (role !== 'staff' && role !== 'global-admin') {
       throw new AuthorizationError('Only staff or admins can export tracking data');
     }
 
@@ -502,11 +502,11 @@ export const exportTrackingData = async (req: Request, res: Response) => {
       }
       query.package = packageId;
     }
-    if (studentId) {
-      if (!mongoose.isValidObjectId(studentId as any)) {
-        throw new ValidationError('Invalid studentId');
+    if (learnerId) {
+      if (!mongoose.isValidObjectId(learnerId as any)) {
+        throw new ValidationError('Invalid learnerId');
       }
-      query.student = studentId;
+      query.learner = learnerId;
     }
     if (start || end) {
       query.startedAt = {};
@@ -516,31 +516,31 @@ export const exportTrackingData = async (req: Request, res: Response) => {
 
     // Get attempts
     const attempts = await ScormAttempt.find(query)
-      .populate('student', 'firstName lastName email program classLevels')
+      .populate('learner', 'firstName lastName email program classLevels')
       .populate('package', 'title version department uploadedBy isGlobal program classLevel')
       .sort({ startedAt: -1 });
 
     const filteredAttempts = attempts.filter((attempt) => {
       const pkg = attempt.package as any;
       if (!isPackageAccessible(pkg, role, userId, scope)) return false;
-      const student = attempt.student as any;
-      if (program && student?.program?.toString() !== String(program)) return false;
-      if (classLevel && !student?.classLevels?.includes(String(classLevel))) return false;
+      const learner = attempt.learner as any;
+      if (program && learner?.program?.toString() !== String(program)) return false;
+      if (classLevel && !learner?.classLevels?.includes(String(classLevel))) return false;
       return true;
     });
 
     // Prepare export data
     const exportData = filteredAttempts.map((attempt) => {
-      const student = attempt.student as any;
+      const learner = attempt.learner as any;
       const pkg = attempt.package as any;
       const score = getAttemptScore(attempt);
       const timeSpent = calculateTotalTimeSpent([attempt]);
       const cmi = attempt.cmi as any;
 
       return {
-        studentId: student._id,
-        studentName: `${student.firstName} ${student.lastName}`,
-        studentEmail: student.email,
+        learnerId: learner._id,
+        learnerName: `${learner.firstName} ${learner.lastName}`,
+        learnerEmail: learner.email,
         packageId: pkg._id,
         packageTitle: pkg.title,
         packageVersion: pkg.version,
@@ -582,7 +582,7 @@ export const exportTrackingData = async (req: Request, res: Response) => {
     } else {
       const jsonExport = {
         exportDate: new Date().toISOString(),
-        filters: { packageId, studentId, startDate, endDate, program, classLevel },
+        filters: { packageId, learnerId, startDate, endDate, program, classLevel },
         totalRecords: exportData.length,
         page: paged.pagination.page,
         pages: paged.pagination.pages,
@@ -643,23 +643,23 @@ export const getCompletionRates = async (req: Request, res: Response) => {
     const attempts = await ScormAttempt.find(query);
 
     // Calculate overall metrics
-    const uniqueStudents = [...new Set(attempts.map((a) => a.student.toString()))];
-    const completedStudents = [
-      ...new Set(attempts.filter(isAttemptCompleted).map((a) => a.student.toString())),
+    const uniqueLearners = [...new Set(attempts.map((a) => a.learner.toString()))];
+    const completedLearners = [
+      ...new Set(attempts.filter(isAttemptCompleted).map((a) => a.learner.toString())),
     ];
 
     const overall = {
-      totalStudents: uniqueStudents.length,
-      completedStudents: completedStudents.length,
-      completionRate: calculateCompletionRate(uniqueStudents.length, completedStudents.length),
+      totalLearners: uniqueLearners.length,
+      completedLearners: completedLearners.length,
+      completionRate: calculateCompletionRate(uniqueLearners.length, completedLearners.length),
     };
 
     // Group by time period (simplified - just return overall for now)
     const timeline = [
       {
         period: 'overall',
-        started: uniqueStudents.length,
-        completed: completedStudents.length,
+        started: uniqueLearners.length,
+        completed: completedLearners.length,
         completionRate: overall.completionRate,
       },
     ];
@@ -887,12 +887,12 @@ export const getInteractionData = async (req: Request, res: Response) => {
       });
     }
 
-    if (role === 'student' && attempt.student.toString() !== userId) {
+    if (role === 'learner' && attempt.learner.toString() !== userId) {
       throw new AuthorizationError('Access denied for this attempt');
     }
 
     const pkg = attempt.package as any;
-    if ((role === 'staff' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+    if ((role === 'staff' || role === 'global-admin') && !isPackageAccessible(pkg, role, userId, scope)) {
       throw new AuthorizationError('Access denied for this package');
     }
 

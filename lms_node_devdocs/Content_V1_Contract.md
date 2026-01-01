@@ -4,8 +4,8 @@ Base URL: `/api/v1/content`
 
 ## Auth
 - Requires `Authorization: Bearer <token>`
-- Roles: system admin or department admin for admin operations
-- Learners/instructors can access assigned content via player/runtime endpoints
+- Roles: `global-admin` or `staff` with `department-admin` subtype for admin operations
+- Learners/staff can access assigned content via player/runtime endpoints
 
 ## Content Catalog (Unified)
 GET `/`
@@ -13,7 +13,7 @@ GET `/`
 Query:
 - `type=scorm|custom` (optional)
 - `customType=exam|quiz|practice|other` (optional)
-- `departmentId=<ObjectId>` (optional; system admin only)
+- `departmentId=<ObjectId>` (optional; `global-admin` only)
 - `page`, `limit` (optional)
 
 Response:
@@ -32,7 +32,8 @@ Response:
         "name": "Department Name",
         "code": "DEPT",
         "parentId": "parent-id" | null,
-        "level": 0 | 1 | 2
+        "level": 0 | 1 | 2,
+        "passingStyleScore": 80
       } | null
     }
   ]
@@ -157,7 +158,7 @@ Response:
 ```
 
 POST `/courses/:id/render`
-- Forces a re-render (admin only).
+- Forces a re-render (`global-admin` only).
 
 ## Event Ingestion (Custom + SCORM)
 ### Custom Events
@@ -240,6 +241,10 @@ Example Response:
   ]
 }
 ```
+
+## Changes (Phase 1)
+- Role references updated to `global-admin` and staff subtypes.
+- Department summaries include `passingStyleScore`.
 
 ## Normalized Progress + Attempts
 These shapes are used to normalize SCORM and custom progress data into a shared reporting model.

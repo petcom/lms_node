@@ -28,13 +28,13 @@ const academicYearSchema = new Schema<IAcademicYear>(
       ref: 'Admin',
       required: true,
     },
-    students: [
+    learners: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Student',
+        ref: 'Learner',
       },
     ],
-    teachers: [
+    instructors: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Staff',

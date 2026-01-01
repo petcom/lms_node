@@ -146,14 +146,14 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     uploadedByModel: {
       type: String,
-      enum: ['Admin', 'Staff', 'Teacher', 'Student'],
+      enum: ['Admin', 'Staff', 'Instructor', 'Learner'],
       default: 'Staff',
     },
     assignedTo: {
-      students: [
+      learners: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'Student',
+          ref: 'Learner',
         },
       ],
       classLevels: [
@@ -198,7 +198,7 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     publishedByModel: {
       type: String,
-      enum: ['Admin', 'Staff', 'Teacher'],
+      enum: ['Admin', 'Staff', 'Instructor'],
       default: 'Staff',
     },
     unpublishedAt: {
@@ -210,7 +210,7 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     unpublishedByModel: {
       type: String,
-      enum: ['Admin', 'Staff', 'Teacher'],
+      enum: ['Admin', 'Staff', 'Instructor'],
       default: 'Staff',
     },
     isActive: {
@@ -281,7 +281,7 @@ const scormPackageSchema = new Schema<IScormPackage>(
 );
 
 // Indexes for performance
-scormPackageSchema.index({ 'assignedTo.students': 1 });
+scormPackageSchema.index({ 'assignedTo.learners': 1 });
 scormPackageSchema.index({ 'assignedTo.classLevels': 1 });
 scormPackageSchema.index({ 'assignedTo.programs': 1 });
 scormPackageSchema.index({ subject: 1, program: 1 });
@@ -296,20 +296,20 @@ scormPackageSchema.virtual('completionRate').get(function (this: IScormPackage) 
   return (this.stats.completedAttempts / this.stats.totalAttempts) * 100;
 });
 
-// Static method to find packages assigned to a student
-scormPackageSchema.statics.findAssignedToStudent = async function (
-  studentId: mongoose.Types.ObjectId
+// Static method to find packages assigned to a learner
+scormPackageSchema.statics.findAssignedToLearner = async function (
+  learnerId: mongoose.Types.ObjectId
 ) {
-  const student = await mongoose.model('Student').findById(studentId).lean();
+  const learner = await mongoose.model('Learner').findById(learnerId).lean();
 
-  const orConditions: any[] = [{ 'assignedTo.students': studentId }];
+  const orConditions: any[] = [{ 'assignedTo.learners': learnerId }];
 
-  if (student?.program) {
-    orConditions.push({ 'assignedTo.programs': student.program });
+  if (learner?.program) {
+    orConditions.push({ 'assignedTo.programs': learner.program });
   }
 
-  const validClassLevels = Array.isArray(student?.classLevels)
-    ? (student!.classLevels as any[]).filter((lvl) => mongoose.Types.ObjectId.isValid(lvl))
+  const validClassLevels = Array.isArray(learner?.classLevels)
+    ? (learner!.classLevels as any[]).filter((lvl) => mongoose.Types.ObjectId.isValid(lvl))
     : [];
 
   if (validClassLevels.length > 0) {
@@ -370,13 +370,13 @@ scormPackageSchema.statics.updateStats = async function (
 
 // Model type with statics
 interface IScormPackageModel extends Model<IScormPackage> {
-  findAssignedToStudent(studentId: mongoose.Types.ObjectId): Promise<IScormPackage[]>;
+  findAssignedToLearner(learnerId: mongoose.Types.ObjectId): Promise<IScormPackage[]>;
   updateStats(packageId: string, packageObjectId: mongoose.Types.ObjectId): Promise<void>;
 }
 
 // Create compound indexes for common queries
 scormPackageSchema.index({ status: 1, createdAt: -1 }); // List packages by status and date
-scormPackageSchema.index({ 'assignedTo.students': 1, status: 1 }); // Find packages for student
+scormPackageSchema.index({ 'assignedTo.learners': 1, status: 1 }); // Find packages for learner
 scormPackageSchema.index({ subject: 1, status: 1 }); // Filter by subject
 scormPackageSchema.index({ createdBy: 1, status: 1 }); // Staff packages
 

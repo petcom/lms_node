@@ -189,9 +189,9 @@
  *       200:
  *         description: Package published successfully
  *
- * /api/v1/scorm/packages/{id}/students:
+ * /api/v1/scorm/packages/{id}/learners:
  *   post:
- *     summary: Assign students to SCORM package
+ *     summary: Assign learners to SCORM package
  *     tags: [SCORM - Packages]
  *     security:
  *       - bearerAuth: []
@@ -207,14 +207,14 @@
  *           schema:
  *             type: object
  *             properties:
- *               students:
+ *               learners:
  *                 type: array
  *                 items:
  *                   type: string
  *                 example: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012']
  *     responses:
  *       200:
- *         description: Students assigned successfully
+ *         description: Learners assigned successfully
  *
  * /api/v1/scorm/runtime/{attemptId}/initialize:
  *   post:
@@ -370,21 +370,21 @@
  *             schema:
  *               type: string
  *
- * /api/v1/scorm/reports/student/{studentId}:
+ * /api/v1/scorm/reports/learner/{learnerId}:
  *   get:
- *     summary: Get student progress across all SCORM packages
+ *     summary: Get learner progress across all SCORM packages
  *     tags: [SCORM - Reports]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: studentId
+ *         name: learnerId
  *         required: true
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Student progress data
+ *         description: Learner progress data
  *         content:
  *           application/json:
  *             schema:
@@ -396,7 +396,7 @@
  *                 data:
  *                   type: object
  *                   properties:
- *                     studentId:
+ *                     learnerId:
  *                       type: string
  *                     packages:
  *                       type: array
@@ -460,7 +460,7 @@
  *         schema:
  *           type: string
  *       - in: query
- *         name: studentId
+ *         name: learnerId
  *         schema:
  *           type: string
  *     responses:
@@ -489,7 +489,7 @@
  *             properties:
  *               packageId:
  *                 type: string
- *               studentId:
+ *               learnerId:
  *                 type: string
  *     responses:
  *       201:

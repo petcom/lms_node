@@ -4,7 +4,7 @@ Base URL: `/api/v1/templates`
 
 ## Auth
 - Requires `Authorization: Bearer <token>`
-- Roles: system admin or department admin for create/update (global templates require system admin)
+- Roles: `global-admin` or `staff` with `department-admin` subtype for create/update (global templates require `global-admin`)
 - Staff: read-only
 
 ## Data Shapes
@@ -134,7 +134,7 @@ Body:
 ```
 Notes:
 - `departmentId` is required when `isGlobal` is false or omitted.
-- `isGlobal=true` requires system admin.
+- `isGlobal=true` requires `global-admin`.
 
 Response:
 ```
@@ -214,4 +214,7 @@ Response: `MasterCSS`
 
 ## Approval Flow
 - Template CSS inherits master-css by default.
-- Overrides require system admin approval (UI should show approval status).
+- Overrides require `global-admin` approval (UI should show approval status).
+
+## Changes (Phase 1)
+- Role references updated to `global-admin` and staff subtypes.

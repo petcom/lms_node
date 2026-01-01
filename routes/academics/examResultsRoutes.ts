@@ -9,13 +9,13 @@ import roleRestriction from '../../middlewares/roleRestriction';
 
 const examResultRouter: Router = express.Router();
 
-examResultRouter.get('/:id/check', isAuthenticated(), roleRestriction('student'), checkExamResults);
-examResultRouter.get('/', isAuthenticated(), roleRestriction('student'), getExamResults);
+examResultRouter.get('/:id/check', isAuthenticated(), roleRestriction('learner'), checkExamResults);
+examResultRouter.get('/', isAuthenticated(), roleRestriction('learner'), getExamResults);
 
 examResultRouter.put(
   '/:id/admin-toggle-publish',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   adminToggleExamResult
 );
 

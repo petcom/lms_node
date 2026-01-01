@@ -41,11 +41,11 @@ const makePackageData = (pkgId: string, title: string, uploaderId: string) => ({
 
 describe('SCORM Phase 2: Package Management API', () => {
   let adminToken: string;
-  let teacherToken: string;
-  let studentToken: string;
+  let instructorToken: string;
+  let learnerToken: string;
   const adminId = '0000000000000000000000a1';
-  const teacherId = '0000000000000000000000b1';
-  const studentId = '0000000000000000000000c1';
+  const instructorId = '0000000000000000000000b1';
+  const learnerId = '0000000000000000000000c1';
   let packageId: string;
   let attemptId: string;
 
@@ -57,11 +57,11 @@ describe('SCORM Phase 2: Package Management API', () => {
       await mongoose.connect(uri);
     }
     // Seed a staff user so uploadedBy populate returns data
-    await Staff.deleteMany({ email: 'teacher@example.com' });
-    const teacher = await Staff.create({
-      _id: new mongoose.Types.ObjectId(teacherId),
+    await Staff.deleteMany({ email: 'instructor@example.com' });
+    const instructor = await Staff.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
       name: 'Test Staff',
-      email: 'teacher@example.com',
+      email: 'instructor@example.com',
       password: 'password123',
       role: 'staff',
     });
@@ -85,18 +85,18 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should create admin user and get token', async () => {
       // This is a placeholder - adapt to your auth system
       // In real tests, you'd create a user and login
-      adminToken = 'test-admin-token';
+      adminToken = 'test-global-admin-token';
       expect(adminToken).toBeDefined();
     });
 
     it('should create staff user and get token', async () => {
-      teacherToken = 'test-teacher-token';
-      expect(teacherToken).toBeDefined();
+      instructorToken = 'test-instructor-token';
+      expect(instructorToken).toBeDefined();
     });
 
-    it('should create student user and get token', async () => {
-      studentToken = 'test-student-token';
-      expect(studentToken).toBeDefined();
+    it('should create learner user and get token', async () => {
+      learnerToken = 'test-learner-token';
+      expect(learnerToken).toBeDefined();
     });
   });
 
@@ -112,7 +112,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should reject non-ZIP files', async () => {
       const res = await request(app)
         .post('/api/v1/scorm/packages')
-        .set('Authorization', `Bearer ${teacherToken}`)
+        .set('Authorization', `Bearer ${instructorToken}`)
         .attach('package', Buffer.from('not-a-zip'), 'test.txt');
 
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -123,7 +123,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       // This test verifies the endpoint exists and requires auth
       const res = await request(app)
         .post('/api/v1/scorm/packages')
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       // Without file, should get 400 or similar
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -134,40 +134,40 @@ describe('SCORM Phase 2: Package Management API', () => {
     beforeEach(async () => {
       // Create a test package directly in database
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-001', 'Test SCORM Package', teacherId)
+        makePackageData('test-pkg-001', 'Test SCORM Package', instructorId)
       );
       packageId = pkg._id.toString();
     });
 
-    it('should get all packages (teacher/admin)', async () => {
+    it('should get all packages (instructor/admin)', async () => {
       const res = await request(app)
         .get('/api/v1/scorm/packages')
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toBeInstanceOf(Array);
       expect(res.body.data.length).toBeGreaterThan(0);
-      expect(res.body.data[0].uploadedBy._id).toBe(teacherId);
+      expect(res.body.data[0].uploadedBy._id).toBe(instructorId);
       expect(res.body.data[0].uploadedByModel).toBe('Staff');
     });
 
     it('should get single package by ID', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/packages/${packageId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Test SCORM Package');
-      expect(res.body.data.uploadedBy._id).toBe(teacherId);
+      expect(res.body.data.uploadedBy._id).toBe(instructorId);
       expect(res.body.data.uploadedByModel).toBe('Staff');
     });
 
-    it('should update package (teacher/admin)', async () => {
+    it('should update package (instructor/admin)', async () => {
       const res = await request(app)
         .put(`/api/v1/scorm/packages/${packageId}`)
-        .set('Authorization', `Bearer ${teacherToken}`)
+        .set('Authorization', `Bearer ${instructorToken}`)
         .send({
           title: 'Updated Test Package',
           description: 'Updated description',
@@ -178,10 +178,10 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.body.data.title).toBe('Updated Test Package');
     });
 
-    it('should delete package (teacher/admin)', async () => {
+    it('should delete package (instructor/admin)', async () => {
       const res = await request(app)
         .delete(`/api/v1/scorm/packages/${packageId}`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -195,51 +195,51 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('3. Package Assignments', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-002', 'Assignment Test Package', teacherId)
+        makePackageData('test-pkg-002', 'Assignment Test Package', instructorId)
       );
       packageId = pkg._id.toString();
     });
 
-    it('should assign package to students', async () => {
+    it('should assign package to learners', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${packageId}/assign`)
-        .set('Authorization', `Bearer ${teacherToken}`)
+        .set('Authorization', `Bearer ${instructorToken}`)
         .send({
-          studentIds: [studentId],
+          learnerIds: [learnerId],
         });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
-    it('should unassign package from students', async () => {
+    it('should unassign package from learners', async () => {
       // First assign
       await request(app)
         .post(`/api/v1/scorm/packages/${packageId}/assign`)
-        .set('Authorization', `Bearer ${teacherToken}`)
-        .send({ studentIds: [studentId] });
+        .set('Authorization', `Bearer ${instructorToken}`)
+        .send({ learnerIds: [learnerId] });
 
       // Then unassign
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${packageId}/unassign`)
-        .set('Authorization', `Bearer ${teacherToken}`)
-        .send({ studentIds: [studentId] });
+        .set('Authorization', `Bearer ${instructorToken}`)
+        .send({ learnerIds: [learnerId] });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
-    it('should get student assignments', async () => {
+    it('should get learner assignments', async () => {
       // Assign package
       await request(app)
         .post(`/api/v1/scorm/packages/${packageId}/assign`)
-        .set('Authorization', `Bearer ${teacherToken}`)
-        .send({ studentIds: [studentId] });
+        .set('Authorization', `Bearer ${instructorToken}`)
+        .send({ learnerIds: [learnerId] });
 
       // Get assignments
       const res = await request(app)
         .get('/api/v1/scorm/packages/my-assignments')
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -252,24 +252,24 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     beforeEach(async () => {
       const draftPkg = await ScormPackage.create({
-        ...makePackageData('test-pkg-003', 'Publishable Package', teacherId),
+        ...makePackageData('test-pkg-003', 'Publishable Package', instructorId),
         isPublished: false,
         status: 'draft',
       });
       publishPackageId = draftPkg._id.toString();
 
       const publishedPkg = await ScormPackage.create({
-        ...makePackageData('test-pkg-004', 'Unpublishable Package', teacherId),
+        ...makePackageData('test-pkg-004', 'Unpublishable Package', instructorId),
         isPublished: true,
         status: 'published',
       });
       unpublishPackageId = publishedPkg._id.toString();
     });
 
-    it('should publish a draft package (teacher/admin)', async () => {
+    it('should publish a draft package (instructor/admin)', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -280,7 +280,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should be idempotent when publishing an already published package', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       // publish once
       expect(res.status).toBe(200);
@@ -288,17 +288,17 @@ describe('SCORM Phase 2: Package Management API', () => {
       // publish again
       const second = await request(app)
         .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(second.status).toBe(200);
       expect(second.body.data.isPublished).toBe(true);
       expect(second.body.data.status).toBe('published');
     });
 
-    it('should unpublish a published package (teacher/admin)', async () => {
+    it('should unpublish a published package (instructor/admin)', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -309,7 +309,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should be idempotent when unpublishing an already draft package', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       // unpublish once
       expect(res.status).toBe(200);
@@ -317,7 +317,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       // unpublish again
       const second = await request(app)
         .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(second.status).toBe(200);
       expect(second.body.data.isPublished).toBe(false);
@@ -328,24 +328,24 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('4. Content Delivery', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-003', 'Content Delivery Test', teacherId)
+        makePackageData('test-pkg-003', 'Content Delivery Test', instructorId)
       );
       packageId = pkg._id.toString();
     });
 
-    it('should launch package for student', async () => {
+    it('should launch package for learner', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/content/${packageId}/launch`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       // May fail without actual content files, but endpoint should exist
       expect([200, 403, 404]).toContain(res.status);
     });
 
-    it('should get manifest (admin/teacher)', async () => {
+    it('should get manifest (admin/instructor)', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/content/${packageId}/manifest`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       // May fail without actual manifest, but endpoint should exist
       expect([200, 404]).toContain(res.status);
@@ -355,12 +355,12 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('5. Attempt Tracking', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-004', 'Attempt Tracking Test', teacherId)
+        makePackageData('test-pkg-004', 'Attempt Tracking Test', instructorId)
       );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-001',
-        student: new mongoose.Types.ObjectId(studentId),
+        learner: new mongoose.Types.ObjectId(learnerId),
         package: pkg._id,
         attemptNumber: 1,
         status: 'incomplete',
@@ -378,7 +378,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should get attempts by package', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/attempts/package/${packageId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -388,17 +388,17 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should get single attempt', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/attempts/${attemptId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.attemptId).toBe('attempt-001');
     });
 
-    it('should get all attempts (admin/teacher)', async () => {
+    it('should get all attempts (admin/instructor)', async () => {
       const res = await request(app)
         .get('/api/v1/scorm/attempts')
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -408,12 +408,12 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('6. CMI Data Management', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-005', 'CMI Data Test', teacherId)
+        makePackageData('test-pkg-005', 'CMI Data Test', instructorId)
       );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-002',
-        student: new mongoose.Types.ObjectId(studentId),
+        learner: new mongoose.Types.ObjectId(learnerId),
         package: pkg._id,
         attemptNumber: 1,
         status: 'incomplete',
@@ -431,7 +431,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should update CMI data', async () => {
       const res = await request(app)
         .put(`/api/v1/scorm/attempts/${attemptId}/cmi`)
-        .set('Authorization', `Bearer ${studentToken}`)
+        .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           element: 'cmi.core.score.raw',
           value: '85',
@@ -444,7 +444,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should get CMI element value', async () => {
       const res = await request(app)
         .get(`/api/v1/scorm/attempts/${attemptId}/cmi/cmi.core.lesson_status`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -453,7 +453,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should complete attempt', async () => {
       const res = await request(app)
         .post(`/api/v1/scorm/attempts/${attemptId}/complete`)
-        .set('Authorization', `Bearer ${studentToken}`)
+        .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           score: { raw: 95, min: 0, max: 100 },
           status: 'passed',
@@ -463,10 +463,10 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.body.success).toBe(true);
     });
 
-    it('should get student progress summary', async () => {
+    it('should get learner progress summary', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/student/${studentId}/summary`)
-        .set('Authorization', `Bearer ${teacherToken}`);
+        .get(`/api/v1/scorm/attempts/learner/${learnerId}/summary`)
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -477,7 +477,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('7. Authorization & Security', () => {
     beforeEach(async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-006', 'Security Test', teacherId)
+        makePackageData('test-pkg-006', 'Security Test', instructorId)
       );
       packageId = pkg._id.toString();
     });
@@ -488,19 +488,19 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should reject student upload', async () => {
+    it('should reject learner upload', async () => {
       const res = await request(app)
         .post('/api/v1/scorm/packages')
-        .set('Authorization', `Bearer ${studentToken}`)
+        .set('Authorization', `Bearer ${learnerToken}`)
         .attach('package', Buffer.from('fake'), 'test.zip');
 
       expect(res.status).toBe(403);
     });
 
-    it('should reject student delete', async () => {
+    it('should reject learner delete', async () => {
       const res = await request(app)
         .delete(`/api/v1/scorm/packages/${packageId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(403);
     });
@@ -511,7 +511,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
         .get(`/api/v1/scorm/packages/${fakeId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(404);
     });
@@ -520,19 +520,19 @@ describe('SCORM Phase 2: Package Management API', () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
         .get(`/api/v1/scorm/attempts/${fakeId}`)
-        .set('Authorization', `Bearer ${studentToken}`);
+        .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should validate CMI element paths', async () => {
       const pkg = await ScormPackage.create(
-        makePackageData('test-pkg-007', 'Validation Test', teacherId)
+        makePackageData('test-pkg-007', 'Validation Test', instructorId)
       );
 
       const attempt = await ScormAttempt.create({
         attemptId: 'attempt-003',
-        student: new mongoose.Types.ObjectId(studentId),
+        learner: new mongoose.Types.ObjectId(learnerId),
         package: pkg._id,
         attemptNumber: 1,
         status: 'incomplete',
@@ -541,7 +541,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
       const res = await request(app)
         .put(`/api/v1/scorm/attempts/${attempt._id}/cmi`)
-        .set('Authorization', `Bearer ${studentToken}`)
+        .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           element: 'invalid.cmi.path',
           value: 'test',

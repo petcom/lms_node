@@ -24,11 +24,11 @@ const classLevelSchema = new Schema<IClassLevel>(
       ref: 'Department',
       index: true,
     },
-    // Students will be added to the class level when they are registered
-    students: [
+    // Learners will be added to the class level when they are registered
+    learners: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Student',
+        ref: 'Learner',
       },
     ],
     subjects: [
@@ -37,7 +37,7 @@ const classLevelSchema = new Schema<IClassLevel>(
         ref: 'Subject',
       },
     ],
-    teachers: [
+    instructors: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Staff',

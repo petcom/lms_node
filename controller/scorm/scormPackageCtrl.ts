@@ -19,7 +19,7 @@ const isPackageInScope = (pkg: any, scope: string[] | 'all' | undefined): boolea
 /**
  * @desc    Upload a new SCORM package
  * @route   POST /api/scorm/packages
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const uploadPackage = asyncHandler(async (req: Request, res: Response) => {
   // Check if file was uploaded
@@ -86,15 +86,15 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const parsedIsGlobal =
-    req.userAuth?.role === 'admin' ? Boolean(isGlobal === 'true' || isGlobal === true) : false;
+    req.userAuth?.role === 'global-admin' ? Boolean(isGlobal === 'true' || isGlobal === true) : false;
 
   // Generate unique package ID
   const packageId = uuidv4();
 
-  const roleModelMap: Record<string, 'Admin' | 'Staff' | 'Student'> = {
-    admin: 'Admin',
+  const roleModelMap: Record<string, 'Admin' | 'Staff' | 'Learner'> = {
+    'global-admin': 'Admin',
     staff: 'Staff',
-    student: 'Student',
+    learner: 'Learner',
   };
   const uploadedByModel = roleModelMap[req.userAuth?.role || 'staff'] || 'Staff';
 
@@ -143,7 +143,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
 
     const masterDepartmentId = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
     const chosenDepartment =
-      (req.userAuth?.role === 'admin' && department) ||
+      (req.userAuth?.role === 'global-admin' && department) ||
       (req.userAuth as any)?.department ||
       masterDepartmentId;
 
@@ -221,7 +221,7 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
 /**
  * @desc    Get all SCORM packages
  * @route   GET /api/scorm/packages
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const getAllPackages = asyncHandler(async (req: Request, res: Response) => {
   const {
@@ -319,7 +319,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')
-    .populate('assignedTo.students', 'name email')
+    .populate('assignedTo.learners', 'name email')
     .populate('assignedTo.classLevels', 'name')
     .populate('assignedTo.programs', 'name')
     .sort({ createdAt: -1 })
@@ -351,7 +351,7 @@ export const getPackage = asyncHandler(async (req: Request, res: Response) => {
     .populate('subject', 'name')
     .populate('program', 'name')
     .populate('classLevel', 'name')
-    .populate('assignedTo.students', 'name email')
+    .populate('assignedTo.learners', 'name email')
     .populate('assignedTo.classLevels', 'name')
     .populate('assignedTo.programs', 'name');
 
@@ -376,7 +376,7 @@ export const getPackage = asyncHandler(async (req: Request, res: Response) => {
 /**
  * @desc    Update SCORM package
  * @route   PUT /api/scorm/packages/:id
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const updatePackage = asyncHandler(async (req: Request, res: Response) => {
   const {
@@ -426,7 +426,7 @@ export const updatePackage = asyncHandler(async (req: Request, res: Response) =>
 /**
  * @desc    Delete SCORM package
  * @route   DELETE /api/scorm/packages/:id
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const deletePackage = asyncHandler(async (req: Request, res: Response) => {
   const scormPackage = await ScormPackage.findById(req.params.id);
@@ -465,7 +465,7 @@ export const deletePackage = asyncHandler(async (req: Request, res: Response) =>
  */
 export const clonePackage = asyncHandler(
   async (req: Request<{ id: string }, {}, { department?: string }>, res: Response) => {
-    if (req.userAuth?.role !== 'admin') {
+    if (req.userAuth?.role !== 'global-admin') {
       throw new AuthorizationError('Only admins can clone packages');
     }
 
@@ -521,7 +521,7 @@ export const clonePackage = asyncHandler(
       requiredScore: (source as any).requiredScore,
       maxAttempts: (source as any).maxAttempts,
       assignedTo: {
-        students: [],
+        learners: [],
         classLevels: [],
         programs: [],
       },
@@ -542,12 +542,12 @@ export const clonePackage = asyncHandler(
 );
 
 /**
- * @desc    Assign package to students
+ * @desc    Assign package to learners
  * @route   POST /api/scorm/packages/:id/assign
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const assignPackage = asyncHandler(async (req: Request, res: Response) => {
-  const { studentIds, classIds, programIds } = req.body;
+  const { learnerIds, classIds, programIds } = req.body;
 
   const scormPackage = await ScormPackage.findById(req.params.id);
 
@@ -556,13 +556,13 @@ export const assignPackage = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('SCORM package not found');
   }
 
-  const assignedTo = scormPackage.assignedTo || { students: [], classLevels: [], programs: [] };
+  const assignedTo = scormPackage.assignedTo || { learners: [], classLevels: [], programs: [] };
 
-  // Add students
-  if (studentIds && Array.isArray(studentIds)) {
-    const current = assignedTo.students?.map(String) || [];
-    const merged = Array.from(new Set([...current, ...studentIds.map(String)]));
-    assignedTo.students = merged as any;
+  // Add learners
+  if (learnerIds && Array.isArray(learnerIds)) {
+    const current = assignedTo.learners?.map(String) || [];
+    const merged = Array.from(new Set([...current, ...learnerIds.map(String)]));
+    assignedTo.learners = merged as any;
   }
 
   // Add class levels
@@ -591,12 +591,12 @@ export const assignPackage = asyncHandler(async (req: Request, res: Response) =>
 });
 
 /**
- * @desc    Unassign package from students
+ * @desc    Unassign package from learners
  * @route   POST /api/scorm/packages/:id/unassign
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const unassignPackage = asyncHandler(async (req: Request, res: Response) => {
-  const { studentIds, classIds, programIds } = req.body;
+  const { learnerIds, classIds, programIds } = req.body;
 
   const scormPackage = await ScormPackage.findById(req.params.id);
 
@@ -605,12 +605,12 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
     throw new Error('SCORM package not found');
   }
 
-  const assignedTo = scormPackage.assignedTo || { students: [], classLevels: [], programs: [] };
+  const assignedTo = scormPackage.assignedTo || { learners: [], classLevels: [], programs: [] };
 
-  // Remove students
-  if (studentIds && Array.isArray(studentIds)) {
-    assignedTo.students = (assignedTo.students || []).filter(
-      (id: any) => !studentIds.map(String).includes(id.toString())
+  // Remove learners
+  if (learnerIds && Array.isArray(learnerIds)) {
+    assignedTo.learners = (assignedTo.learners || []).filter(
+      (id: any) => !learnerIds.map(String).includes(id.toString())
     );
   }
 
@@ -642,7 +642,7 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
 /**
  * @desc    Publish SCORM package
  * @route   POST /api/scorm/packages/:id/publish
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const publishPackage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const userId = req.userAuth!._id?.toString();
@@ -674,7 +674,7 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response): 
   (scormPackage as any).status = 'published';
   (scormPackage as any).publishedAt = new Date();
   (scormPackage as any).publishedBy = req.userAuth!._id;
-  (scormPackage as any).publishedByModel = role === 'admin' ? 'Admin' : 'Staff';
+  (scormPackage as any).publishedByModel = role === 'global-admin' ? 'Admin' : 'Staff';
 
   await scormPackage.save();
 
@@ -684,7 +684,7 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response): 
 /**
  * @desc    Unpublish SCORM package
  * @route   POST /api/scorm/packages/:id/unpublish
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const unpublishPackage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const userId = req.userAuth!._id?.toString();
@@ -716,7 +716,7 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
   (scormPackage as any).status = 'draft';
   (scormPackage as any).unpublishedAt = new Date();
   (scormPackage as any).unpublishedBy = req.userAuth!._id;
-  (scormPackage as any).unpublishedByModel = role === 'admin' ? 'Admin' : 'Staff';
+  (scormPackage as any).unpublishedByModel = role === 'global-admin' ? 'Admin' : 'Staff';
 
   await scormPackage.save();
 
@@ -724,15 +724,15 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
 });
 
 /**
- * @desc    Get packages assigned to current student
+ * @desc    Get packages assigned to current learner
  * @route   GET /api/scorm/packages/my-assignments
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getMyAssignments = asyncHandler(async (req: Request, res: Response) => {
-  const studentId = req.userAuth!._id;
+  const learnerId = req.userAuth!._id;
 
   // Find packages assigned directly or through class/program
-  const packages = await ScormPackage.findAssignedToStudent(studentId);
+  const packages = await ScormPackage.findAssignedToLearner(learnerId);
 
   res.status(200).json({
     success: true,

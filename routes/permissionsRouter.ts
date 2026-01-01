@@ -5,6 +5,6 @@ import roleRestriction from '../middlewares/roleRestriction';
 
 const permissionsRouter: Router = express.Router();
 
-permissionsRouter.get('/matrix', isAuthenticated(), roleRestriction('admin'), getPermissionsMatrix);
+permissionsRouter.get('/matrix', isAuthenticated(), roleRestriction('global-admin'), getPermissionsMatrix);
 
 export default permissionsRouter;

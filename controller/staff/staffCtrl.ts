@@ -38,7 +38,7 @@ interface AdminUpdateStaffBody {
 
 /**
  * @description Admin Register Staff
- * @route       POST /api/staff/admins/register
+ * @route       POST /api/v1/staff/admin/register
  * @access      Private
  */
 export const adminRegisterStaff = expressAsyncHandler(
@@ -81,7 +81,7 @@ export const adminRegisterStaff = expressAsyncHandler(
     });
 
     // push staff into admin
-    adminFound.teachers?.push(staffCreated._id);
+    adminFound.instructors?.push(staffCreated._id);
     await adminFound.save();
 
     // send response
@@ -95,7 +95,7 @@ export const adminRegisterStaff = expressAsyncHandler(
 
 /**
  * @description Login a Staff member
- * @route       POST /api/staff/login
+ * @route       POST /api/v1/staff/login
  * @access      Public
  */
 export const loginStaff = expressAsyncHandler(
@@ -131,8 +131,8 @@ export const loginStaff = expressAsyncHandler(
 
 /**
  * @description Get All Staff
- * @route       GET /api/v1/admin/staff
- * @access      Private admin only
+ * @route       GET /api/v1/staff/admin
+ * @access      Private global-admin only
  */
 export const getAllStaffAdmin = expressAsyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
@@ -142,8 +142,8 @@ export const getAllStaffAdmin = expressAsyncHandler(
 
 /**
  * @description Get Single Staff member
- * @route       GET /api/staff/:staffID/admin
- * @access      Private admin only
+ * @route       GET /api/v1/staff/:staffID/admin
+ * @access      Private global-admin only
  */
 export const getStaffByAdmin = expressAsyncHandler(
   async (req: Request<{ staffID: string }>, res: Response): Promise<void> => {
@@ -180,7 +180,7 @@ export const getStaffByAdmin = expressAsyncHandler(
 
 /**
  * @description Staff Profile
- * @route       GET /api/staff/profile
+ * @route       GET /api/v1/staff/profile
  * @access      Private staff only
  */
 export const getStaffProfile = expressAsyncHandler(

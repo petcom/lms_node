@@ -9,8 +9,8 @@ import { Types } from 'mongoose';
 export interface ScormEventContext {
   packageId?: string;
   attemptId?: string;
-  studentId?: string | Types.ObjectId;
-  teacherId?: string | Types.ObjectId;
+  learnerId?: string | Types.ObjectId;
+  instructorId?: string | Types.ObjectId;
   action?: string;
   sessionId?: string;
   ipAddress?: string;
@@ -32,7 +32,7 @@ export class ScormLogger {
       fileName: context.fileName,
       fileSize: context.fileSize,
       version: context.version,
-      uploadedBy: context.teacherId || context.studentId,
+      uploadedBy: context.instructorId || context.learnerId,
       ipAddress: context.ipAddress,
       timestamp: new Date().toISOString(),
     });
@@ -61,11 +61,11 @@ export class ScormLogger {
    * Log package assignment
    */
   static logPackageAssignment(context: ScormEventContext): void {
-    logger.info('SCORM package assigned to students', {
+    logger.info('SCORM package assigned to learners', {
       event: 'scorm.package.assignment',
       packageId: context.packageId,
-      studentCount: context.studentCount,
-      assignedBy: context.teacherId,
+      learnerCount: context.learnerCount,
+      assignedBy: context.instructorId,
       timestamp: new Date().toISOString(),
     });
   }
@@ -78,7 +78,7 @@ export class ScormLogger {
       event: 'scorm.attempt.start',
       attemptId: context.attemptId,
       packageId: context.packageId,
-      studentId: context.studentId,
+      learnerId: context.learnerId,
       attemptNumber: context.attemptNumber,
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -94,7 +94,7 @@ export class ScormLogger {
       event: 'scorm.attempt.complete',
       attemptId: context.attemptId,
       packageId: context.packageId,
-      studentId: context.studentId,
+      learnerId: context.learnerId,
       score: context.score,
       completionStatus: context.completionStatus,
       timeSpent: context.timeSpent,
@@ -124,7 +124,7 @@ export class ScormLogger {
       event: 'scorm.session.timeout',
       attemptId: context.attemptId,
       packageId: context.packageId,
-      studentId: context.studentId,
+      learnerId: context.learnerId,
       sessionDuration: context.sessionDuration,
       timestamp: new Date().toISOString(),
     });
@@ -137,7 +137,7 @@ export class ScormLogger {
     logger.info('SCORM player launched', {
       event: 'scorm.player.launch',
       packageId: context.packageId,
-      studentId: context.studentId,
+      learnerId: context.learnerId,
       attemptId: context.attemptId,
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -153,8 +153,8 @@ export class ScormLogger {
       event: 'scorm.report.export',
       format: context.format,
       packageId: context.packageId,
-      studentId: context.studentId,
-      exportedBy: context.teacherId,
+      learnerId: context.learnerId,
+      exportedBy: context.instructorId,
       recordCount: context.recordCount,
       timestamp: new Date().toISOString(),
     });
@@ -171,7 +171,7 @@ export class ScormLogger {
       errorStack: error.stack,
       packageId: context.packageId,
       attemptId: context.attemptId,
-      studentId: context.studentId,
+      learnerId: context.learnerId,
       action: context.action,
       timestamp: new Date().toISOString(),
     });
@@ -185,7 +185,7 @@ export class ScormLogger {
       event: 'scorm.analytics.access',
       packageId: context.packageId,
       reportType: context.reportType,
-      accessedBy: context.teacherId,
+      accessedBy: context.instructorId,
       timestamp: new Date().toISOString(),
     });
   }
@@ -198,7 +198,7 @@ export class ScormLogger {
       event: 'scorm.package.delete',
       packageId: context.packageId,
       title: context.title,
-      deletedBy: context.teacherId,
+      deletedBy: context.instructorId,
       timestamp: new Date().toISOString(),
     });
   }

@@ -3,7 +3,7 @@ import { IScormAttempt } from '../../types/scorm';
 
 /**
  * SCORM Attempt Schema
- * Tracks individual student attempts at SCORM content
+ * Tracks individual learner attempts at SCORM content
  */
 const scormAttemptSchema = new Schema<IScormAttempt>(
   {
@@ -16,9 +16,9 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
     },
 
     // Relationships
-    student: {
+    learner: {
       type: Schema.Types.ObjectId,
-      ref: 'Student',
+      ref: 'Learner',
       required: true,
       index: true,
     },
@@ -61,8 +61,8 @@ const scormAttemptSchema = new Schema<IScormAttempt>(
     // CMI Data Model
     cmi: {
       // SCORM 1.2 Core Data
-      student_id: String,
-      student_name: String,
+      learner_id: String,
+      learner_name: String,
       lesson_location: String,
       lesson_status: {
         type: String,
@@ -345,14 +345,14 @@ scormAttemptSchema.methods.calculateCompletion = function () {
 
 // Static method to get or create attempt
 scormAttemptSchema.statics.getOrCreateAttempt = async function (
-  studentId: mongoose.Types.ObjectId,
+  learnerId: mongoose.Types.ObjectId,
   packageId: mongoose.Types.ObjectId,
   attemptNumber?: number
 ) {
   if (attemptNumber) {
     // Resume existing attempt
     return await this.findOne({
-      student: studentId,
+      learner: learnerId,
       package: packageId,
       attemptNumber,
     });
@@ -360,18 +360,18 @@ scormAttemptSchema.statics.getOrCreateAttempt = async function (
 
   // Find last attempt number
   const lastAttempt = await this.findOne({
-    student: studentId,
+    learner: learnerId,
     package: packageId,
   }).sort({ attemptNumber: -1 });
 
   const newAttemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
 
   // Create new attempt
-  const attemptId = `${packageId}-${studentId}-${newAttemptNumber}-${Date.now()}`;
+  const attemptId = `${packageId}-${learnerId}-${newAttemptNumber}-${Date.now()}`;
 
   return await this.create({
     attemptId,
-    student: studentId,
+    learner: learnerId,
     package: packageId,
     attemptNumber: newAttemptNumber,
     status: 'not_started',
@@ -386,17 +386,17 @@ scormAttemptSchema.statics.getOrCreateAttempt = async function (
 // Model type with statics
 interface IScormAttemptModel extends Model<IScormAttempt> {
   getOrCreateAttempt(
-    studentId: mongoose.Types.ObjectId,
+    learnerId: mongoose.Types.ObjectId,
     packageId: mongoose.Types.ObjectId,
     attemptNumber?: number
   ): Promise<IScormAttempt>;
 }
 
-// Create compound indexes for common queries (avoid duplicate coverage of student/package)
+// Create compound indexes for common queries (avoid duplicate coverage of learner/package)
 scormAttemptSchema.index({ package: 1, status: 1 }); // Find all attempts by status for analytics
-scormAttemptSchema.index({ student: 1, startedAt: -1 }); // Student's recent attempts
+scormAttemptSchema.index({ learner: 1, startedAt: -1 }); // Learner's recent attempts
 scormAttemptSchema.index({ 'cmi.completion_status': 1, package: 1 }); // Completion tracking
-scormAttemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique: true }); // Prevent duplicate attempts
+scormAttemptSchema.index({ learner: 1, package: 1, attemptNumber: 1 }, { unique: true }); // Prevent duplicate attempts
 
 const ScormAttempt = mongoose.model<IScormAttempt, IScormAttemptModel>(
   'ScormAttempt',

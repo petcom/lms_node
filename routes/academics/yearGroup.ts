@@ -18,13 +18,13 @@ const yearGroupRouter: Router = express.Router();
  */
 yearGroupRouter
   .route('/')
-  .post(isAuthenticated(), roleRestriction('admin'), createYearGroup)
-  .get(isAuthenticated(), roleRestriction('admin'), advancedResults(YearGroup), getYearGroups);
+  .post(isAuthenticated(), roleRestriction('global-admin'), createYearGroup)
+  .get(isAuthenticated(), roleRestriction('global-admin'), advancedResults(YearGroup), getYearGroups);
 
 yearGroupRouter
   .route('/:id')
-  .get(isAuthenticated(), roleRestriction('admin'), getYearGroup)
-  .put(isAuthenticated(), roleRestriction('admin'), updateYearGroup)
-  .delete(isAuthenticated(), roleRestriction('admin'), deleteYearGroup);
+  .get(isAuthenticated(), roleRestriction('global-admin'), getYearGroup)
+  .put(isAuthenticated(), roleRestriction('global-admin'), updateYearGroup)
+  .delete(isAuthenticated(), roleRestriction('global-admin'), deleteYearGroup);
 
 export default yearGroupRouter;

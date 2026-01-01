@@ -10,15 +10,15 @@ import {
   adminUpdateStaff,
 } from '../../controller/staff/staffCtrl';
 import {
-  publishTeacherPackage,
-  unpublishTeacherPackage,
-  listTeacherPackages,
-  assignTeacherPackage,
-  listTeacherClasses,
-  teacherDashboard,
-  listTeacherAttempts,
-  listTeacherAssignments,
-} from '../../controller/teachers/teacherPackageCtrl';
+  publishInstructorPackage,
+  unpublishInstructorPackage,
+  listInstructorPackages,
+  assignInstructorPackage,
+  listInstructorClasses,
+  instructorDashboard,
+  listInstructorAttempts,
+  listInstructorAssignments,
+} from '../../controller/instructors/instructorPackageCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import Staff from '../../model/Staff/Staff';
 import isAuthenticated from '../../middlewares/isAuthenticated';
@@ -31,57 +31,57 @@ const staffRouter: Router = express.Router();
 staffRouter.post(
   '/packages/:id/publish',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  publishTeacherPackage
+  roleRestriction('staff', 'global-admin'),
+  publishInstructorPackage
 );
 
 staffRouter.post(
   '/packages/:id/unpublish',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  unpublishTeacherPackage
+  roleRestriction('staff', 'global-admin'),
+  unpublishInstructorPackage
 );
 
 staffRouter.get(
   '/packages',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  listTeacherPackages
+  roleRestriction('staff', 'global-admin'),
+  listInstructorPackages
 );
 
 staffRouter.post(
   '/assignments/assign',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  assignTeacherPackage
+  roleRestriction('staff', 'global-admin'),
+  assignInstructorPackage
 );
 
 staffRouter.get(
   '/classes',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  listTeacherClasses
+  roleRestriction('staff', 'global-admin'),
+  listInstructorClasses
 );
 
 staffRouter.get(
   '/dashboard',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  teacherDashboard
+  roleRestriction('staff', 'global-admin'),
+  instructorDashboard
 );
 
 staffRouter.get(
   '/attempts',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  listTeacherAttempts
+  roleRestriction('staff', 'global-admin'),
+  listInstructorAttempts
 );
 
 staffRouter.get(
   '/assignments',
   isAuthenticated(),
-  roleRestriction('staff', 'admin'),
-  listTeacherAssignments
+  roleRestriction('staff', 'global-admin'),
+  listInstructorAssignments
 );
 
 /**
@@ -123,7 +123,7 @@ staffRouter.post(
   '/admin/register',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   adminRegisterStaff
 );
 
@@ -177,7 +177,7 @@ staffRouter.post('/login', loginStaff);
 staffRouter.get(
   '/admin',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   advancedResults(Staff, {
     path: 'examsCreated',
     populate: {
@@ -206,7 +206,7 @@ staffRouter.get('/profile', isAuthenticated(), roleRestriction('staff'), getStaf
 staffRouter.get(
   '/:staffID/admin',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   getStaffByAdmin
 );
 staffRouter.put(
@@ -220,7 +220,7 @@ staffRouter.put(
   '/:staffID/update/admin',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   adminUpdateStaff
 );
 

@@ -1,11 +1,11 @@
 // Express type augmentation for custom properties
-import { IAdmin, IStaff, IStudent } from './models';
+import { IAdmin, IStaff, ILearner } from './models';
 
 declare global {
   namespace Express {
     interface Request {
       // User authentication data
-      userAuth?: IAdmin | IStaff | IStudent;
+      userAuth?: IAdmin | IStaff | ILearner;
 
       // Department scoping info
       departmentScope?: {
@@ -14,7 +14,7 @@ declare global {
       };
 
       // User type for multi-tenant auth
-      userType?: 'admin' | 'staff' | 'student';
+      userType?: 'global-admin' | 'staff' | 'learner';
 
       // JWT token from authorization header
       token?: string;

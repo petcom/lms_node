@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import ExamResult from '../../model/Academic/ExamResults';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 
 interface TogglePublishBody {
   publish: boolean;
@@ -10,18 +10,18 @@ interface TogglePublishBody {
 /**
  * @description Exam results check
  * @route       POST /api/v1/exam-results/:id/check
- * @access      Private Students Only
+ * @access      Private Learners Only
  */
 export const checkExamResults = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-    // find the student with request object
-    const studentFound = await Student.findById(req.userAuth?._id);
-    if (!studentFound) {
-      throw new Error('No student found');
+    // find the learner with request object
+    const learnerFound = await Learner.findById(req.userAuth?._id);
+    if (!learnerFound) {
+      throw new Error('No learner found');
     }
-    // get exam result from database using params id and student's _id
+    // get exam result from database using params id and learner's _id
     const examResult = await ExamResult.findOne({
-      studentID: studentFound.studentId,
+      learnerID: learnerFound.learnerId,
       _id: req.params.id,
     })
       .populate('exam')
@@ -39,7 +39,7 @@ export const checkExamResults = AsyncHandler(
       status: 'success',
       message: 'Exam Results',
       data: examResult,
-      student: studentFound,
+      learner: learnerFound,
     });
   }
 );
@@ -47,7 +47,7 @@ export const checkExamResults = AsyncHandler(
 /**
  * @description Get all exam results (name, id)
  * @route       POST /api/v1/exam-results
- * @access      Private Students Only
+ * @access      Private Learners Only
  */
 export const getExamResults = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
   const results = await ExamResult.find().select('exam').populate('exam');
@@ -61,7 +61,7 @@ export const getExamResults = AsyncHandler(async (_req: Request, res: Response):
 /**
  * @description Admin publish exam results
  * @route       PUT /api/v1/exam-results/:id/admin-toggle-publish
- * @access      Private Students Only
+ * @access      Private Learners Only
  */
 export const adminToggleExamResult = AsyncHandler(
   async (req: Request<{ id: string }, any, TogglePublishBody>, res: Response): Promise<void> => {

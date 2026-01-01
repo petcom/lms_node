@@ -10,9 +10,9 @@ describe('Auth role propagation', () => {
   });
 
   it('embeds role in generated token payload', () => {
-    const token = generateToken('user-123', 'admin');
+    const token = generateToken('user-123', 'global-admin');
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as jwt.JwtPayload;
-    expect(decoded).toMatchObject({ id: 'user-123', role: 'admin' });
+    expect(decoded).toMatchObject({ id: 'user-123', role: 'global-admin' });
   });
 
   it('returns role from token-info endpoint', async () => {

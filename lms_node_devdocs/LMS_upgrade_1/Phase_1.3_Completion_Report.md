@@ -37,7 +37,7 @@ Successfully implemented comprehensive password security system with strength va
 - ✅ Old password verification for changes
 - ✅ Time-limited reset tokens (15 minutes)
 - ✅ Automatic token blacklisting on password change
-- ✅ Multi-user type support (admin/teacher/student)
+- ✅ Multi-user type support (admin/instructor/learner)
 
 ---
 

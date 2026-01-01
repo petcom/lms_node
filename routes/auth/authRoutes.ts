@@ -116,7 +116,7 @@ authRouter.post('/logout-all', isAuthenticated(), logoutAll);
  *                       type: string
  *                     role:
  *                       type: string
- *                       enum: [admin, staff, student]
+ *                       enum: [global-admin, staff, learner]
  *                     issuedAt:
  *                       type: string
  *                       format: date-time

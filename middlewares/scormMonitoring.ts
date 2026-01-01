@@ -202,7 +202,7 @@ export const scormOperationTracker = (operation: string) => {
     const context = {
       packageId: req.params.packageId || req.params.id,
       attemptId: req.params.attemptId,
-      studentId: (req as any).user?.id,
+      learnerId: (req as any).user?.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     };

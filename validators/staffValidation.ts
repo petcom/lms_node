@@ -55,11 +55,11 @@ export const publishResults = {
 };
 
 /**
- * Promote student validation
+ * Promote learner validation
  */
-export const promoteStudent = {
+export const promoteLearner = {
   params: Joi.object({
-    studentId: objectId.required(),
+    learnerId: objectId.required(),
   }),
   body: Joi.object({
     classLevel: objectId.required(),

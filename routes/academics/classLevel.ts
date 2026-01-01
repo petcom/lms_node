@@ -12,7 +12,7 @@ import {
 import advancedResults from '../../middlewares/advancedResults';
 import ClassLevel from '../../model/Academic/ClassLevel';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import roleRestriction, { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
+import roleRestriction, { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 
 const classLevelRouter: Router = express.Router();
@@ -22,11 +22,11 @@ const classLevelRouter: Router = express.Router();
  */
 classLevelRouter
   .route('/')
-  .post(isAuthenticated(), roleRestriction('admin'), createClassLevel)
+  .post(isAuthenticated(), roleRestriction('global-admin'), createClassLevel)
   .get(
     isAuthenticated(),
     departmentScope(),
-    isTeacherOrAdmin,
+    isInstructorOrAdmin,
     advancedResults(ClassLevel, undefined, (req) => {
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const requestedDept =
@@ -52,15 +52,15 @@ classLevelRouter
 
 classLevelRouter
   .route('/:id')
-  .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getClassLevel)
-  .put(isAuthenticated(), roleRestriction('admin'), updateClassLevel)
-  .delete(isAuthenticated(), roleRestriction('admin'), deleteClassLevel);
+  .get(isAuthenticated(), departmentScope(), isInstructorOrAdmin, getClassLevel)
+  .put(isAuthenticated(), roleRestriction('global-admin'), updateClassLevel)
+  .delete(isAuthenticated(), roleRestriction('global-admin'), deleteClassLevel);
 
 classLevelRouter.patch(
   '/:id/archive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   archiveClassLevel
 );
 
@@ -68,7 +68,7 @@ classLevelRouter.patch(
   '/:id/unarchive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   unarchiveClassLevel
 );
 

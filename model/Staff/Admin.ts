@@ -25,7 +25,7 @@ const adminSchema = new Schema<IAdmin>(
     },
     role: {
       type: String,
-      default: 'admin',
+      default: 'global-admin',
     },
     academicTerms: [
       {
@@ -57,16 +57,16 @@ const adminSchema = new Schema<IAdmin>(
         ref: 'ClassLevel',
       },
     ],
-    teachers: [
+    instructors: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Staff',
       },
     ],
-    students: [
+    learners: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Student',
+        ref: 'Learner',
       },
     ],
   },

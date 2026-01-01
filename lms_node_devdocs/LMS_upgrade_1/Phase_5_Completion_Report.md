@@ -26,13 +26,13 @@ Successfully completed Phase 5: Code Quality Improvements, implementing standard
 **Findings:**
 - Password utilities (`hashPassword`, `isPassMatched`) already exist in `utils/helpers.js`
 - Both utilities include proper validation and async implementation
-- ID generation implemented in model default functions (Student, Teacher)
+- ID generation implemented in model default functions (Learner, Instructor)
 - All controllers consistently use shared utilities
 
 **Files Verified:**
 - `utils/helpers.js` - Password hashing and verification
-- `model/Academic/Student.js` - Student ID generation
-- `model/Staff/Teacher.js` - Teacher ID generation
+- `model/Academic/Learner.js` - Learner ID generation
+- `model/Staff/Instructor.js` - Instructor ID generation
 
 **Benefits:**
 - ✅ Single source of truth for password operations
@@ -127,10 +127,10 @@ Added **50+ indexes** across **6 models** for improved query performance.
 - Efficient user registration duplicate checks
 - Fast role-based filtering
 
-### Student Model (model/Academic/Student.js)
+### Learner Model (model/Academic/Learner.js)
 **Single Field Indexes:**
 - `email` (unique) - Authentication and duplicate prevention
-- `studentId` (unique) - Student lookup
+- `learnerId` (unique) - Learner lookup
 - `currentClassLevel` - Class-based queries
 - `academicYear` - Year-based filtering
 - `program` - Program enrollment queries
@@ -139,19 +139,19 @@ Added **50+ indexes** across **6 models** for improved query performance.
 - `createdAt` (descending) - Chronological sorting
 
 **Compound Indexes:**
-- `academicYear + currentClassLevel` - Students in specific year/class
+- `academicYear + currentClassLevel` - Learners in specific year/class
 - `program + currentClassLevel` - Program enrollment by class
 
 **Performance Impact:**
-- Fast student searches by ID or email
+- Fast learner searches by ID or email
 - Efficient class roster queries
 - Optimized program enrollment reports
 - Quick status-based filtering
 
-### Teacher Model (model/Staff/Teacher.js)
+### Instructor Model (model/Staff/Instructor.js)
 **Single Field Indexes:**
 - `email` (unique) - Authentication
-- `teacherId` (unique) - Teacher lookup
+- `instructorId` (unique) - Instructor lookup
 - `subject` - Subject-based queries
 - `classLevel` - Class assignment queries
 - `applicationStatus` - Application filtering
@@ -160,11 +160,11 @@ Added **50+ indexes** across **6 models** for improved query performance.
 - `createdAt` (descending) - Sorting
 
 **Compound Indexes:**
-- `subject + classLevel` - Teachers by subject and class
+- `subject + classLevel` - Instructors by subject and class
 - `applicationStatus + createdAt` - Pending applications sorted
 
 **Performance Impact:**
-- Fast teacher assignment lookups
+- Fast instructor assignment lookups
 - Efficient subject-based queries
 - Optimized application processing
 - Quick status filtering
@@ -178,7 +178,7 @@ Added **50+ indexes** across **6 models** for improved query performance.
 - `academicYear` - Year-based queries
 - `examStatus` - Status filtering (pending/live)
 - `examDate` (descending) - Date sorting
-- `createdBy` - Teacher's exams
+- `createdBy` - Instructor's exams
 
 **Compound Indexes:**
 - `subject + classLevel + academicTerm` - Specific exam lookups
@@ -188,12 +188,12 @@ Added **50+ indexes** across **6 models** for improved query performance.
 **Performance Impact:**
 - Fast exam schedule queries
 - Efficient upcoming exam lookups
-- Optimized teacher exam lists
+- Optimized instructor exam lists
 - Quick exam availability checks
 
 ### ExamResult Model (model/Academic/ExamResults.js)
 **Single Field Indexes:**
-- `studentID` - Student results lookup
+- `learnerID` - Learner results lookup
 - `exam` - Exam results retrieval
 - `academicYear` - Year-based filtering
 - `academicTerm` - Term-based filtering
@@ -203,14 +203,14 @@ Added **50+ indexes** across **6 models** for improved query performance.
 - `createdAt` (descending) - Result sorting
 
 **Compound Indexes:**
-- `studentID + academicYear` - Student's yearly results
-- `studentID + exam` (unique) - Prevents duplicate submissions
+- `learnerID + academicYear` - Learner's yearly results
+- `learnerID + exam` (unique) - Prevents duplicate submissions
 - `exam + status` - Exam pass/fail statistics
 - `academicYear + academicTerm + classLevel` - Class results
 - `isPublished + createdAt` - Recent published results
 
 **Performance Impact:**
-- Instant student result lookups
+- Instant learner result lookups
 - Prevents duplicate exam submissions
 - Fast exam statistics calculations
 - Efficient class performance reports
@@ -267,7 +267,7 @@ Added **50+ indexes** across **6 models** for improved query performance.
 
 **Example Improvements:**
 - Email lookup: 1000x faster on 100k users
-- Student results: 100x faster with compound index
+- Learner results: 100x faster with compound index
 - Exam scheduling: 50x faster with date indexes
 - Class rosters: 200x faster with compound indexes
 
@@ -285,7 +285,7 @@ All key middleware and utilities have comprehensive JSDoc documentation.
 ```javascript
 /**
  * Unified authentication middleware
- * Authenticates users from any user type (Admin, Teacher, Student)
+ * Authenticates users from any user type (Admin, Instructor, Learner)
  * @param {Object} options - Optional configuration
  * @param {Model} options.model - Specific model to use
  * @returns {Function} Express middleware function
@@ -392,11 +392,11 @@ All key middleware and utilities have comprehensive JSDoc documentation.
 
 **5.3 - Database Indexes (9 tests):**
 - ✅ Admin model has email index
-- ✅ Student model has email and studentId indexes
-- ✅ Teacher model has email and teacherId indexes
+- ✅ Learner model has email and learnerId indexes
+- ✅ Instructor model has email and instructorId indexes
 - ✅ Exam model has subject index
-- ✅ ExamResult model has studentID index
-- ✅ ExamResult model has compound index (studentID + exam)
+- ✅ ExamResult model has learnerID index
+- ✅ ExamResult model has compound index (learnerID + exam)
 - ✅ AcademicYear model has name index
 
 **5.4 - Documentation (8 tests):**
@@ -426,8 +426,8 @@ All key middleware and utilities have comprehensive JSDoc documentation.
 
 ### Modified Files (7)
 1. `model/Staff/Admin.js` - Added 3 indexes
-2. `model/Academic/Student.js` - Added 10 indexes (8 single + 2 compound)
-3. `model/Staff/Teacher.js` - Added 10 indexes (8 single + 2 compound)
+2. `model/Academic/Learner.js` - Added 10 indexes (8 single + 2 compound)
+3. `model/Staff/Instructor.js` - Added 10 indexes (8 single + 2 compound)
 4. `model/Academic/Exam.js` - Added 11 indexes (8 single + 3 compound)
 5. `model/Academic/ExamResults.js` - Added 14 indexes (8 single + 5 compound)
 6. `model/Academic/AcademicYear.js` - Added 6 indexes (5 single + 1 compound)

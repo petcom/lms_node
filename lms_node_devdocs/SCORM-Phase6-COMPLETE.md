@@ -44,22 +44,22 @@ await redisClient.setex(
 **ScormPackage Model** (`model/SCORM/ScormPackage.ts`):
 ```typescript
 scormPackageSchema.index({ status: 1, createdAt: -1 }); 
-scormPackageSchema.index({ 'assignedTo.students': 1, status: 1 });
+scormPackageSchema.index({ 'assignedTo.learners': 1, status: 1 });
 scormPackageSchema.index({ subject: 1, status: 1 });
 scormPackageSchema.index({ createdBy: 1, status: 1 });
 ```
 
 **ScormAttempt Model** (`model/SCORM/ScormAttempt.ts`):
 ```typescript
-scormAttemptSchema.index({ student: 1, package: 1 });
+scormAttemptSchema.index({ learner: 1, package: 1 });
 scormAttemptSchema.index({ package: 1, status: 1 });
-scormAttemptSchema.index({ student: 1, startedAt: -1 });
+scormAttemptSchema.index({ learner: 1, startedAt: -1 });
 scormAttemptSchema.index({ 'cmi.completion_status': 1, package: 1 });
-scormAttemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique: true });
+scormAttemptSchema.index({ learner: 1, package: 1, attemptNumber: 1 }, { unique: true });
 ```
 
 **Impact**:
-- Faster student progress queries
+- Faster learner progress queries
 - Improved analytics performance
 - Efficient filtering by status and date
 - Prevention of duplicate attempts
@@ -69,7 +69,7 @@ scormAttemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique:
 
 **Caching Strategy**:
 ```typescript
-// Student progress: 2 minutes (changes frequently)
+// Learner progress: 2 minutes (changes frequently)
 cachePrivate(120)
 
 // Analytics endpoints: 5 minutes (slower to change)
@@ -367,7 +367,7 @@ Recommended tools for production:
 
 ### Analytics
 - [ ] Real-time analytics dashboard
-- [ ] Predictive analytics (student success prediction)
+- [ ] Predictive analytics (learner success prediction)
 - [ ] Advanced reporting (custom queries)
 
 ### Scalability
@@ -386,21 +386,21 @@ Recommended tools for production:
 
 ### Academic System Integration
 SCORM is now fully integrated with:
-- **Student Model**: Attempts linked to student accounts
+- **Learner Model**: Attempts linked to learner accounts
 - **Subject Model**: Packages can be assigned to subjects
 - **Program Model**: Packages can be assigned to programs
 - **ClassLevel Model**: Packages can be assigned to class levels
 
 ### Grading System
 - SCORM scores can be used in grade calculation
-- Completion status affects student progress
+- Completion status affects learner progress
 - Configurable weights for SCORM assignments
 
 ### Authentication
 - All SCORM endpoints require authentication
-- Role-based access control (Student, Teacher, Admin)
-- Students can only view their own data
-- Teachers can view all student data
+- Role-based access control (Learner, Instructor, Admin)
+- Learners can only view their own data
+- Instructors can view all learner data
 
 ---
 

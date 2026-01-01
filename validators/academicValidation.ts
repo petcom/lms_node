@@ -119,7 +119,7 @@ export const updateSubject = {
     academicTerm: objectId,
     code: Joi.string().trim().uppercase(),
     duration: Joi.string().trim(),
-    teacher: objectId,
+    instructor: objectId,
   }).min(1),
 };
 

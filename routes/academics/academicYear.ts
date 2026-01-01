@@ -92,13 +92,13 @@ academicYearRouter
   .route('/')
   .post(
     isAuthenticated(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     validate(createAcademicYearValidation),
     createAcademicYear
   )
   .get(
     isAuthenticated(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     cachePrivate(120),
     advancedResults(AcademicYear),
     getAcademicYears
@@ -185,17 +185,17 @@ academicYearRouter
   .route('/:id')
   .get(
     isAuthenticated(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     cachePrivate(120),
     validate(idParam),
     getAcademicYear
   )
   .put(
     isAuthenticated(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     validate(updateAcademicYearValidation),
     updateAcademicYear
   )
-  .delete(isAuthenticated(), roleRestriction('admin'), validate(idParam), deleteAcademicYear);
+  .delete(isAuthenticated(), roleRestriction('global-admin'), validate(idParam), deleteAcademicYear);
 
 export default academicYearRouter;

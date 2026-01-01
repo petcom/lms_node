@@ -5,7 +5,7 @@
 **Completed**: December 19, 2025
 
 ## Overview
-Phase 4 implements the SCORM Content Player - the user interface that delivers SCORM content to students in an iframe-based player with controls, progress tracking, and session management.
+Phase 4 implements the SCORM Content Player - the user interface that delivers SCORM content to learners in an iframe-based player with controls, progress tracking, and session management.
 
 ## Phase 4 Goals (from SCORM_Implementation_Plan.md)
 
@@ -32,7 +32,7 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
   - [x] Max attempts enforcement
   - [x] Time limit support
   - [x] Package status checks (published vs draft)
-  - [x] Student assignment verification
+  - [x] Learner assignment verification
 
 ### Player Routes
 - [x] Create `routes/scorm/scormPlayerRoutes.ts`
@@ -92,7 +92,7 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 - [x] Proper middleware ordering
 
 ### Security Features
-- [x] Student access verification (hasStudentAccess)
+- [x] Learner access verification (hasLearnerAccess)
 - [x] Max attempts enforcement
 - [x] Published package check
 - [x] Path traversal prevention
@@ -126,14 +126,14 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 2. Get authenticated user (userId, role)
 3. Fetch ScormPackage from database
 4. Verify package exists (404 if not)
-5. Check if published (403 for students if draft)
-6. For students:
-   - Verify assignment via hasStudentAccess()
+5. Check if published (403 for learners if draft)
+6. For learners:
+   - Verify assignment via hasLearnerAccess()
    - Check max attempts limit
    - Block if limit reached
 7. Find existing suspended/running attempt or create new:
    - Count existing attempts for attempt number
-   - Initialize CMI with student_id, student_name
+   - Initialize CMI with learner_id, learner_name
    - Set status to 'not_started'
    - Set entry to 'ab-initio'
 8. Update package statistics
@@ -147,8 +147,8 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 
 **Security Checks**:
 - Authentication required
-- Published status for students
-- Student assignment verification
+- Published status for learners
+- Learner assignment verification
 - Max attempts enforcement
 
 **Error Handling**:
@@ -163,7 +163,7 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 **Implementation**:
 1. Extract packageId and file path from params
 2. Verify package exists
-3. Check user has access (students must be assigned)
+3. Check user has access (learners must be assigned)
 4. Construct file path: scorm-content/packages/{packageId}/{filePath}
 5. Normalize path to prevent traversal
 6. Verify path is within package directory
@@ -173,7 +173,7 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 
 **Security Checks**:
 - Package existence
-- Student access verification
+- Learner access verification
 - Path normalization
 - Directory containment check
 - No parent directory escape
@@ -197,7 +197,7 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 2. Get authenticated user
 3. Fetch ScormAttempt from database
 4. Verify attempt exists (404 if not)
-5. Verify student ownership (403 if mismatch)
+5. Verify learner ownership (403 if mismatch)
 6. Extract final statistics from CMI:
    - Score (check both core.score.raw and score.raw)
    - Completion status (check lesson_status and completion_status)
@@ -295,13 +295,13 @@ Phase 4 implements the SCORM Content Player - the user interface that delivers S
 
 3. **POST /:attemptId/exit**
    - Handler: exitPlayer
-   - Middleware: isAuthenticated, isStudent
+   - Middleware: isAuthenticated, isLearner
    - Purpose: Exit and get stats
    - Returns: JSON with final attempt data
 
 **Security**:
 - All routes require authentication
-- Exit route requires student role
+- Exit route requires learner role
 - Access verification in controllers
 
 ---
@@ -347,8 +347,8 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 
 ## Player Workflow
 
-### Student Launch Sequence:
-1. Student clicks "Launch" on package → `GET /api/v1/scorm/player/:packageId/launch`
+### Learner Launch Sequence:
+1. Learner clicks "Launch" on package → `GET /api/v1/scorm/player/:packageId/launch`
 2. Backend verifies access and creates/retrieves attempt
 3. Player HTML generated with attemptId embedded
 4. Browser receives and renders player HTML
@@ -358,25 +358,25 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 8. API found in parent window
 9. Content calls Initialize/LMSInitialize
 10. Runtime API creates session → `POST /api/v1/scorm/runtime/:attemptId/initialize`
-11. Student interacts with content
+11. Learner interacts with content
 12. Content calls SetValue for CMI updates (buffered locally)
 13. Auto-commit every 2 seconds → `POST /api/v1/scorm/runtime/:attemptId/commit`
 14. Heartbeat every 5 minutes → `POST /api/v1/scorm/runtime/:attemptId/heartbeat`
-15. Student clicks Exit or content calls Terminate
+15. Learner clicks Exit or content calls Terminate
 16. Final commit → `POST /api/v1/scorm/runtime/:attemptId/commit`
 17. Session terminates → `POST /api/v1/scorm/runtime/:attemptId/terminate`
 18. Player calls exit → `POST /api/v1/scorm/player/:attemptId/exit`
 19. Browser navigates back to dashboard
 
 ### Suspend & Resume:
-1. Student clicks "Suspend & Save"
+1. Learner clicks "Suspend & Save"
 2. Player calls Commit → `POST /api/v1/scorm/runtime/:attemptId/commit`
 3. Session remains active (status: 'suspended')
-4. Student can close browser
+4. Learner can close browser
 5. On return, launch detects suspended attempt
 6. Resume with same attemptId
 7. CMI data restored from database
-8. Student continues from last position
+8. Learner continues from last position
 
 ---
 
@@ -408,7 +408,7 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 ### Decision 3: Static Serving vs Dynamic Routes
 **Choice**: Dynamic routes with security checks
 **Rationale**:
-- Access control per student
+- Access control per learner
 - Audit trail
 - Resume detection
 - Package assignment verification
@@ -441,7 +441,7 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 ### Decision 6: Time Limit Implementation
 **Choice**: Client-side timer with warnings
 **Rationale**:
-- Real-time feedback to student
+- Real-time feedback to learner
 - Warning system (10min, 5min)
 - Visual indicators
 - Graceful termination
@@ -480,7 +480,7 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 - [ ] Suspend and resume flow
 
 ### E2E Tests
-- [ ] Complete student workflow
+- [ ] Complete learner workflow
 - [ ] SCORM 1.2 content playback
 - [ ] SCORM 2004 content playback
 - [ ] Multi-attempt handling
@@ -541,7 +541,7 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 
 ### Implemented Security:
 - ✅ Authentication required (all routes)
-- ✅ Student access verification (hasStudentAccess)
+- ✅ Learner access verification (hasLearnerAccess)
 - ✅ Path traversal prevention (normalization)
 - ✅ Directory escape protection
 - ✅ XSS prevention (HTML escaping)
@@ -579,7 +579,7 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 
 **POST /api/v1/scorm/player/:attemptId/exit**
 - **Purpose**: Exit player and get stats
-- **Auth**: Required (student)
+- **Auth**: Required (learner)
 - **Response**: JSON with attempt statistics
 - **Status Codes**: 200, 401, 403, 404, 500
 
@@ -633,8 +633,8 @@ app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 All deliverables implemented and tested. Player is production-ready and fully integrated with Phase 3 Runtime API.
 
 **Next Phase**: Phase 5 - Tracking & Reporting
-- Student progress dashboard
-- Teacher analytics
+- Learner progress dashboard
+- Instructor analytics
 - Completion tracking
 - Export functionality
 - Charts and visualizations

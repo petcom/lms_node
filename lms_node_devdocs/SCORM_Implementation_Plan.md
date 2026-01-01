@@ -60,7 +60,7 @@ SCORM is an e-learning standard that defines:
 │                     Client Layer                             │
 │  - SCORM Content Player (iframe-based)                      │
 │  - Admin Upload Interface                                    │
-│  - Student Learning Dashboard                                │
+│  - Learner Learning Dashboard                                │
 └─────────────────────────────────────────────────────────────┘
                             ↕
 ┌─────────────────────────────────────────────────────────────┐
@@ -95,7 +95,7 @@ lms_node/
 ├── model/
 │   └── Scorm/
 │       ├── ScormPackage.ts       # SCORM package metadata
-│       ├── ScormAttempt.ts       # Student attempts/sessions
+│       ├── ScormAttempt.ts       # Learner attempts/sessions
 │       └── ScormCMI.ts            # CMI data store
 ├── controller/
 │   └── scorm/
@@ -198,9 +198,9 @@ interface IScormPackage {
   dueDate?: Date;                       // Assignment due date
   
   // Access Control
-  createdBy: mongoose.Types.ObjectId;   // Admin/Teacher who uploaded
+  createdBy: mongoose.Types.ObjectId;   // Admin/Instructor who uploaded
   assignedTo: {
-    students?: mongoose.Types.ObjectId[]; // Specific students
+    learners?: mongoose.Types.ObjectId[]; // Specific learners
     classLevels?: mongoose.Types.ObjectId[]; // Or entire classes
     programs?: mongoose.Types.ObjectId[]; // Or programs
   };
@@ -232,7 +232,7 @@ interface IScormPackage {
 
 ### 2. ScormAttempt Model
 
-**Purpose**: Track individual student attempts/sessions
+**Purpose**: Track individual learner attempts/sessions
 
 ```typescript
 interface IScormAttempt {
@@ -240,7 +240,7 @@ interface IScormAttempt {
   attemptId: string;                    // Unique attempt ID
   
   // Relationships
-  student: mongoose.Types.ObjectId;     // Student reference
+  learner: mongoose.Types.ObjectId;     // Learner reference
   package: mongoose.Types.ObjectId;     // ScormPackage reference
   
   // Attempt Information
@@ -345,13 +345,13 @@ interface IScormAttempt {
 }
 ```
 
-### 3. Student Model Updates
+### 3. Learner Model Updates
 
-**Purpose**: Add SCORM tracking to existing Student model
+**Purpose**: Add SCORM tracking to existing Learner model
 
 ```typescript
-// Add to existing IStudent interface
-interface IStudent {
+// Add to existing ILearner interface
+interface ILearner {
   // ... existing fields
   
   scormProgress: {
@@ -371,17 +371,17 @@ interface IStudent {
 packageSchema.index({ packageId: 1 }, { unique: true });
 packageSchema.index({ createdBy: 1 });
 packageSchema.index({ status: 1, isActive: 1 });
-packageSchema.index({ 'assignedTo.students': 1 });
+packageSchema.index({ 'assignedTo.learners': 1 });
 packageSchema.index({ 'assignedTo.classLevels': 1 });
 packageSchema.index({ subject: 1, program: 1 });
 
 // ScormAttempt indexes
 attemptSchema.index({ attemptId: 1 }, { unique: true });
-attemptSchema.index({ student: 1, package: 1 });
-attemptSchema.index({ student: 1, status: 1 });
+attemptSchema.index({ learner: 1, package: 1 });
+attemptSchema.index({ learner: 1, status: 1 });
 attemptSchema.index({ package: 1, status: 1 });
 attemptSchema.index({ startedAt: -1 });
-attemptSchema.index({ student: 1, package: 1, attemptNumber: 1 }, { unique: true });
+attemptSchema.index({ learner: 1, package: 1, attemptNumber: 1 }, { unique: true });
 ```
 
 ---
@@ -401,7 +401,7 @@ Request Body:
 - description?: string
 - subject?: ObjectId
 - program?: ObjectId
-- assignedTo?: {students?, classLevels?, programs?}
+- assignedTo?: {learners?, classLevels?, programs?}
 - isGraded: boolean
 - passingScore?: number
 - trackingOptions: object
@@ -601,15 +601,15 @@ Response:
 
 ### 4. Tracking & Reporting Endpoints
 
-#### Get Student Progress
+#### Get Learner Progress
 ```
-GET /api/v1/scorm/tracking/student/:studentId
+GET /api/v1/scorm/tracking/learner/:learnerId
 
 Response:
 {
   success: true,
   data: {
-    student: ObjectId,
+    learner: ObjectId,
     packages: Array<{
       package: ScormPackage,
       attempts: ScormAttempt[],
@@ -629,13 +629,13 @@ Response:
 {
   success: true,
   data: {
-    totalStudents: number,
-    completedStudents: number,
+    totalLearners: number,
+    completedLearners: number,
     averageScore: number,
     averageTimeSpent: number,
     passRate: number,
-    studentProgress: Array<{
-      student: Student,
+    learnerProgress: Array<{
+      learner: Learner,
       attempts: number,
       bestScore: number,
       status: string,
@@ -645,7 +645,7 @@ Response:
 }
 ```
 
-#### Get Student Attempt Details
+#### Get Learner Attempt Details
 ```
 GET /api/v1/scorm/tracking/attempts/:attemptId
 
@@ -661,7 +661,7 @@ Response:
 GET /api/v1/scorm/tracking/export
 Query Params:
 - packageId?: ObjectId
-- studentId?: ObjectId
+- learnerId?: ObjectId
 - startDate?: Date
 - endDate?: Date
 - format: 'json' | 'csv' | 'xlsx'
@@ -1070,18 +1070,18 @@ interface ValidationResult {
 
 ## Integration Points
 
-### 1. Student Dashboard
+### 1. Learner Dashboard
 
 **Display enrolled SCORM packages**
 ```
-/student/dashboard
+/learner/dashboard
 - List of assigned SCORM packages
 - Progress indicators (% complete, score, time spent)
 - Launch buttons
 - Resume from last position
 ```
 
-### 2. Teacher/Admin Interface
+### 2. Instructor/Admin Interface
 
 **Package Management**
 ```
@@ -1089,15 +1089,15 @@ interface ValidationResult {
 - Upload new packages
 - View all packages
 - Edit package settings
-- Assign to students/classes
+- Assign to learners/classes
 - View analytics
 ```
 
 **Grading Integration**
 ```
-/teacher/grades
+/instructor/grades
 - SCORM scores integrated into gradebook
-- View student attempts
+- View learner attempts
 - Override scores if needed
 - Export tracking data
 ```
@@ -1110,7 +1110,7 @@ interface ValidationResult {
 - Package completion rates
 - Average scores by package
 - Time spent analysis
-- Student progress tracking
+- Learner progress tracking
 - Interaction data visualization
 ```
 
@@ -1220,12 +1220,12 @@ describe('SCORM Runtime API', () => {
 ### 3. E2E Tests
 
 ```typescript
-// Test complete student workflow
-describe('Student SCORM Workflow', () => {
-  it('should allow student to launch, complete, and get scored', async () => {
-    // 1. Student launches package
+// Test complete learner workflow
+describe('Learner SCORM Workflow', () => {
+  it('should allow learner to launch, complete, and get scored', async () => {
+    // 1. Learner launches package
     // 2. SCORM content initializes
-    // 3. Student completes content
+    // 3. Learner completes content
     // 4. Score is recorded
     // 5. Completion status updated
     // 6. Grade reflected in gradebook
@@ -1271,7 +1271,7 @@ describe('Student SCORM Workflow', () => {
 - [ ] Package CRUD operations
 - [ ] Content delivery endpoints
 - [ ] Admin interface for package management
-- [ ] Package assignment to students
+- [ ] Package assignment to learners
 
 **Tasks:**
 1. Create `controller/scorm/scormPackageCtrl.ts`
@@ -1332,8 +1332,8 @@ describe('Student SCORM Workflow', () => {
 ### Phase 5: Tracking & Reporting (Week 9-10)
 
 **Deliverables:**
-- [ ] Student progress dashboard
-- [ ] Teacher analytics dashboard
+- [ ] Learner progress dashboard
+- [ ] Instructor analytics dashboard
 - [ ] Completion tracking
 - [ ] Score tracking and grading integration
 - [ ] Time tracking
@@ -1342,12 +1342,12 @@ describe('Student SCORM Workflow', () => {
 **Tasks:**
 1. Create `controller/scorm/scormReportCtrl.ts`
 2. Create `routes/scorm/scormReportRoutes.ts`
-3. Implement student progress endpoint
+3. Implement learner progress endpoint
 4. Implement package analytics endpoint
 5. Create `utils/scorm/completionCalculator.ts`
 6. Integrate SCORM scores into grade calculation
-7. Build student dashboard UI
-8. Build teacher analytics UI
+7. Build learner dashboard UI
+8. Build instructor analytics UI
 9. Implement data export (CSV, JSON, Excel)
 10. Create charts/visualizations
 11. Write reporting tests
@@ -1355,7 +1355,7 @@ describe('Student SCORM Workflow', () => {
 ### Phase 6: Integration & Polish (Week 11-12)
 
 **Deliverables:**
-- [ ] Integration with existing Student model
+- [ ] Integration with existing Learner model
 - [ ] Integration with Subject/Program/ClassLevel
 - [ ] Integration with grading system
 - [ ] Role-based access control
@@ -1363,7 +1363,7 @@ describe('Student SCORM Workflow', () => {
 - [ ] Performance optimization
 
 **Tasks:**
-1. Update Student model with scormProgress field
+1. Update Learner model with scormProgress field
 2. Link SCORM packages to academic entities
 3. Integrate into main navigation
 4. Implement RBAC for SCORM features
@@ -1392,8 +1392,8 @@ describe('Student SCORM Workflow', () => {
 5. Implement log aggregation for SCORM events
 6. Create backup script for SCORM content
 7. Train administrators
-8. Train teachers
-9. Create student help documentation
+8. Train instructors
+9. Create learner help documentation
 10. Go live with pilot group
 
 ---
@@ -1445,7 +1445,7 @@ const upload = multer({
 
 **Mitigations:**
 - Authenticate all content requests
-- Verify student is assigned to package
+- Verify learner is assigned to package
 - Serve SCORM content with restrictive CSP headers
 - Use SameSite cookies
 - Implement CSRF tokens for runtime API
@@ -1460,7 +1460,7 @@ export const authorizeScormContent = async (
   next: NextFunction
 ) => {
   const { packageId } = req.params;
-  const studentId = req.userAuth._id;
+  const learnerId = req.userAuth._id;
   
   const pkg = await ScormPackage.findOne({ packageId });
   
@@ -1468,8 +1468,8 @@ export const authorizeScormContent = async (
     return res.status(404).json({ error: 'Package not found' });
   }
   
-  // Check if student is assigned
-  const isAssigned = await checkAssignment(pkg, studentId);
+  // Check if learner is assigned
+  const isAssigned = await checkAssignment(pkg, learnerId);
   
   if (!isAssigned) {
     return res.status(403).json({ error: 'Access denied' });
@@ -1526,8 +1526,8 @@ function validateCmiValue(element: string, value: any): boolean {
 
 **Roles & Permissions:**
 - **Admin**: Upload, delete, assign packages
-- **Teacher**: Upload, assign to their classes, view analytics
-- **Student**: Launch assigned packages, view own progress
+- **Instructor**: Upload, assign to their classes, view analytics
+- **Learner**: Launch assigned packages, view own progress
 
 **Implementation:**
 ```typescript
@@ -1537,15 +1537,15 @@ import { roleRestriction } from '../../middlewares/roleRestriction';
 router.post(
   '/packages',
   isAuthenticated,
-  roleRestriction('admin', 'teacher'),
+  roleRestriction('admin', 'instructor'),
   uploadPackage
 );
 
 router.get(
-  '/tracking/student/:studentId',
+  '/tracking/learner/:learnerId',
   isAuthenticated,
-  checkStudentAccess, // Students can only view own data
-  getStudentProgress
+  checkLearnerAccess, // Learners can only view own data
+  getLearnerProgress
 );
 ```
 
@@ -1653,16 +1653,16 @@ const analytics = await ScormAttempt.aggregate([
 
 **Admin Guide:**
 - How to upload SCORM packages
-- How to assign packages to students
+- How to assign packages to learners
 - How to view analytics
 - Troubleshooting common issues
 
-**Teacher Guide:**
+**Instructor Guide:**
 - How to integrate SCORM in curriculum
-- How to view student progress
+- How to view learner progress
 - How to grade SCORM activities
 
-**Student Guide:**
+**Learner Guide:**
 - How to launch SCORM content
 - How to track own progress
 - How to resume suspended content
@@ -1683,10 +1683,10 @@ const analytics = await ScormAttempt.aggregate([
 
 ### Business Metrics
 
-- [ ] Student completion rate > 70%
+- [ ] Learner completion rate > 70%
 - [ ] Average score improvement
 - [ ] Time-on-task tracking accuracy
-- [ ] Teacher satisfaction with analytics
+- [ ] Instructor satisfaction with analytics
 - [ ] Reduction in manual grading time
 
 ---
@@ -1773,8 +1773,8 @@ This implementation plan provides a comprehensive roadmap for adding SCORM compa
 ### C. CMI Data Model Reference
 
 **SCORM 1.2 Core Elements:**
-- `cmi.core.student_id`
-- `cmi.core.student_name`
+- `cmi.core.learner_id`
+- `cmi.core.learner_name`
 - `cmi.core.lesson_location`
 - `cmi.core.lesson_status`
 - `cmi.core.score.raw`

@@ -99,16 +99,16 @@ test('Admin model has email index', () => {
   return indexes.some(idx => idx[0].email !== undefined);
 });
 
-test('Student model has email index', () => {
-  const Student = require('../model/Academic/Student');
-  const indexes = Student.schema.indexes();
+test('Learner model has email index', () => {
+  const Learner = require('../model/Academic/Learner');
+  const indexes = Learner.schema.indexes();
   return indexes.some(idx => idx[0].email !== undefined);
 });
 
-test('Student model has studentId index', () => {
-  const Student = require('../model/Academic/Student');
-  const indexes = Student.schema.indexes();
-  return indexes.some(idx => idx[0].studentId !== undefined);
+test('Learner model has learnerId index', () => {
+  const Learner = require('../model/Academic/Learner');
+  const indexes = Learner.schema.indexes();
+  return indexes.some(idx => idx[0].learnerId !== undefined);
 });
 
 test('Staff model has email index', () => {
@@ -117,10 +117,10 @@ test('Staff model has email index', () => {
   return indexes.some(idx => idx[0].email !== undefined);
 });
 
-test('Staff model has teacherId index', () => {
+test('Staff model has instructorId index', () => {
   const Staff = require('../model/Staff/Staff');
   const indexes = Staff.schema.indexes();
-  return indexes.some(idx => idx[0].teacherId !== undefined);
+  return indexes.some(idx => idx[0].instructorId !== undefined);
 });
 
 test('Exam model has subject index', () => {
@@ -129,16 +129,16 @@ test('Exam model has subject index', () => {
   return indexes.some(idx => idx[0].subject !== undefined);
 });
 
-test('ExamResult model has studentID index', () => {
+test('ExamResult model has learnerID index', () => {
   const ExamResult = require('../model/Academic/ExamResults');
   const indexes = ExamResult.schema.indexes();
-  return indexes.some(idx => idx[0].studentID !== undefined);
+  return indexes.some(idx => idx[0].learnerID !== undefined);
 });
 
-test('ExamResult model has compound index (studentID + exam)', () => {
+test('ExamResult model has compound index (learnerID + exam)', () => {
   const ExamResult = require('../model/Academic/ExamResults');
   const indexes = ExamResult.schema.indexes();
-  return indexes.some(idx => idx[0].studentID !== undefined && idx[0].exam !== undefined);
+  return indexes.some(idx => idx[0].learnerID !== undefined && idx[0].exam !== undefined);
 });
 
 test('AcademicYear model has name index', () => {
@@ -206,29 +206,29 @@ test('Response utilities use consistent structure', () => {
 });
 
 test('Models have timestamps enabled', () => {
-  const Student = require('../model/Academic/Student');
+  const Learner = require('../model/Academic/Learner');
   const Staff = require('../model/Staff/Staff');
   const Admin = require('../model/Staff/Admin');
-  return Student.schema.options.timestamps && 
+  return Learner.schema.options.timestamps && 
          Staff.schema.options.timestamps && 
          Admin.schema.options.timestamps;
 });
 
 test('Compound indexes for common query patterns', () => {
-  const Student = require('../model/Academic/Student');
+  const Learner = require('../model/Academic/Learner');
   const ExamResult = require('../model/Academic/ExamResults');
-  const studentIndexes = Student.schema.indexes();
+  const learnerIndexes = Learner.schema.indexes();
   const examResultIndexes = ExamResult.schema.indexes();
   
   // Check for compound indexes
-  const hasCompoundStudent = studentIndexes.some(idx => 
+  const hasCompoundLearner = learnerIndexes.some(idx => 
     Object.keys(idx[0]).length > 1
   );
   const hasCompoundExamResult = examResultIndexes.some(idx => 
     Object.keys(idx[0]).length > 1
   );
   
-  return hasCompoundStudent && hasCompoundExamResult;
+  return hasCompoundLearner && hasCompoundExamResult;
 });
 
 // Summary

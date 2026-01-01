@@ -1,9 +1,9 @@
-# Teacher Publish/Unpublish – Phased Implementation Plan
+# Instructor Publish/Unpublish – Phased Implementation Plan
 
 ## Phase 1: API wiring and contracts
-- Add publish/unpublish routes (`POST /api/v1/scorm/packages/:id/publish`, `/api/v1/scorm/packages/:id/unpublish`) behind `isAuthenticated` + `isTeacherOrAdmin`.
+- Add publish/unpublish routes (`POST /api/v1/scorm/packages/:id/publish`, `/api/v1/scorm/packages/:id/unpublish`) behind `isAuthenticated` + `isInstructorOrAdmin`.
 - Implement controller handlers that:
-  - Load package by id; 404 if missing or not visible to requesting teacher (admin bypasses visibility check).
+  - Load package by id; 404 if missing or not visible to requesting instructor (admin bypasses visibility check).
   - Idempotent state flip: set `isPublished`/`status` to desired state; if already in that state, return 200 with current doc.
   - Update audit fields (`updatedAt`; optional `publishedBy`, `publishedAt`, `unpublishedBy`, `unpublishedAt`).
   - Return 200 with projected fields: `_id`, `packageId`, `title`, `status`, `isPublished`, `version`, `updatedAt`, `publishedAt`, `publishedBy`, `uploadedBy`.
@@ -31,5 +31,5 @@
 
 ## Phase 5: Documentation and UI alignment
 - Update Swagger/OpenAPI to document publish/unpublish endpoints, auth, responses, and error codes (400/401/403/404/409).
-- Align teacher/admin UI to use the new endpoints and reflect idempotent responses.
+- Align instructor/admin UI to use the new endpoints and reflect idempotent responses.
 - Add release notes and operational checklist (e.g., run backfill, review indexes, deploy).

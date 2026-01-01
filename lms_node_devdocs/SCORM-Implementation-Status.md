@@ -60,7 +60,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS p
 - Content download & metadata (2 endpoints)
 - Attempt tracking (4 endpoints)
 - File upload with Multer
-- Student assignment system
+- Learner assignment system
 - Publish/unpublish workflow
 - Integration tests (28 tests)
 
@@ -74,8 +74,8 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS p
 - DELETE `/api/v1/scorm/packages/:id` - Delete package
 - POST `/api/v1/scorm/packages/:id/publish` - Publish package
 - POST `/api/v1/scorm/packages/:id/unpublish` - Unpublish package
-- POST `/api/v1/scorm/packages/:id/students` - Assign students
-- DELETE `/api/v1/scorm/packages/:id/students` - Unassign students
+- POST `/api/v1/scorm/packages/:id/learners` - Assign learners
+- DELETE `/api/v1/scorm/packages/:id/learners` - Unassign learners
 
 **Content Delivery** (2):
 - GET `/api/v1/scorm/content/:packageId/download` - Download package
@@ -83,7 +83,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS p
 
 **Attempt Tracking** (4):
 - POST `/api/v1/scorm/attempts` - Create attempt
-- GET `/api/v1/scorm/attempts/student/:studentId` - Get student attempts
+- GET `/api/v1/scorm/attempts/learner/:learnerId` - Get learner attempts
 - GET `/api/v1/scorm/attempts/:id` - Get attempt details
 - GET `/api/v1/scorm/attempts/package/:packageId` - Get package attempts
 
@@ -213,7 +213,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS p
 
 **Security**:
 - Authentication required
-- Student assignment verification
+- Learner assignment verification
 - Max attempts enforcement
 - Published package checks
 - Directory escape protection
@@ -341,8 +341,8 @@ Status: Clean compilation ✅
 
 ### Authentication & Authorization ✅
 - JWT token verification (all routes)
-- Role-based access control (isStudent, isTeacher, isAdmin)
-- Student ownership verification
+- Role-based access control (isLearner, isInstructor, isAdmin)
+- Learner ownership verification
 - Package assignment checks
 - Published status enforcement
 
@@ -452,7 +452,7 @@ c25a7b6 - feat: SCORM Phase 2 - Package Management API complete
 
 1. **In-Memory Sessions**
    - **Issue**: Lost on server restart
-   - **Impact**: Students must re-initialize
+   - **Impact**: Learners must re-initialize
    - **Mitigation**: Auto-commit minimizes data loss
    - **Solution**: Redis migration (Phase 6)
 
@@ -496,7 +496,7 @@ c25a7b6 - feat: SCORM Phase 2 - Package Management API complete
 - `Development_Progress-SCORM-Phase5.md` - Planning document (513 lines)
 
 **API Endpoints** (8 reporting):
-- GET `/api/v1/scorm/reports/student/:studentId` - Student progress dashboard
+- GET `/api/v1/scorm/reports/learner/:learnerId` - Learner progress dashboard
 - GET `/api/v1/scorm/reports/package/:packageId/analytics` - Package analytics
 - GET `/api/v1/scorm/reports/attempts/:attemptId` - Detailed attempt info
 - GET `/api/v1/scorm/reports/export` - Export data (JSON/CSV/XLSX)
@@ -567,7 +567,7 @@ c25a7b6 - feat: SCORM Phase 2 - Package Management API complete
 - Optimized for common queries
 
 **Response Caching**:
-- Student progress: 2 minutes
+- Learner progress: 2 minutes
 - Analytics endpoints: 5 minutes
 - Attempt details: 1 minute
 - Export: No caching (always fresh)
@@ -598,7 +598,7 @@ c25a7b6 - feat: SCORM Phase 2 - Package Management API complete
 
 **Production-Ready Features**:
 - ✅ SCORM package upload and management (Phase 2)
-- ✅ Content delivery to students (Phase 2)
+- ✅ Content delivery to learners (Phase 2)
 - ✅ SCORM 1.2 runtime communication (Phase 3)
 - ✅ SCORM 2004 runtime communication (Phase 3)
 - ✅ Interactive HTML5 player (Phase 4)

@@ -27,27 +27,27 @@
 
 ### Authentication & Authorization
 - ✅ JWT-based authentication with refresh tokens
-- ✅ Role-based access control (Admin, Teacher, Student)
+- ✅ Role-based access control (Admin, Instructor, Learner)
 - ✅ Secure password hashing with bcrypt
 - ✅ Password reset functionality
 - ✅ Token blacklisting for logout
 - ✅ Session management across devices
 
 ### Admin Dashboard
-- ✅ Staff management (Teachers)
-- ✅ Student enrollment and management
+- ✅ Staff management (Instructors)
+- ✅ Learner enrollment and management
 - ✅ Academic year/term configuration
 - ✅ Program and subject management
 - ✅ Exam result publishing controls
 - ✅ Staff suspension/withdrawal
 
-### Teacher Capabilities
+### Instructor Capabilities
 - ✅ Create and manage exams
 - ✅ Add questions to exams
-- ✅ View student results
+- ✅ View learner results
 - ✅ Profile management
 
-### Student Features
+### Learner Features
 - ✅ Take online exams
 - ✅ View exam results
 - ✅ Multiple exam attempts (configurable)
@@ -62,7 +62,7 @@
 - ✅ Class level management
 - ✅ Subject assignment
 - ✅ Program management
-- ✅ Student promotion system
+- ✅ Learner promotion system
 
 ### 🎓 SCORM LMS Integration (NEW)
 - ✅ **SCORM 1.2 & 2004 Compliance** - Full standard support
@@ -70,7 +70,7 @@
 - ✅ **Interactive Player** - HTML5 player with real-time tracking
 - ✅ **Runtime API** - Complete SCORM API implementation
 - ✅ **Progress Tracking** - Completion status, scores, time spent
-- ✅ **Analytics & Reporting** - Teacher dashboards and student progress
+- ✅ **Analytics & Reporting** - Instructor dashboards and learner progress
 - ✅ **Data Export** - CSV/JSON export for analysis
 - ✅ **Redis Sessions** - Scalable session management
 - ✅ **Multi-Attempt Support** - Configurable attempt limits
@@ -204,21 +204,21 @@ Once the server is running, access the interactive Swagger UI documentation:
 
 #### Authentication
 ```http
-POST   /api/v1/admins/register     # Register new admin
-POST   /api/v1/admins/login        # Admin login
-POST   /api/v1/teachers/login      # Teacher login  
-POST   /api/v1/students/login      # Student login
+POST   /api/v1/staff/admins/register     # Register new admin
+POST   /api/v1/staff/admins/login        # Admin login
+POST   /api/v1/instructors/login      # Instructor login  
+POST   /api/v1/learners/login      # Learner login
 POST   /api/v1/auth/refresh        # Refresh access token
 POST   /api/v1/auth/logout         # Logout current session
 ```
 
 #### Admin Endpoints
 ```http
-GET    /api/v1/admins              # Get all admins (paginated)
-GET    /api/v1/admins/profile      # Get admin profile
-PUT    /api/v1/admins              # Update admin profile
-PUT    /api/v1/admins/suspend/teacher/:id    # Suspend teacher
-PUT    /api/v1/admins/publish/exam/:id       # Publish exam results
+GET    /api/v1/staff/admins              # Get all admins (paginated)
+GET    /api/v1/staff/admins/profile      # Get admin profile
+PUT    /api/v1/staff/admins              # Update admin profile
+PUT    /api/v1/staff/admins/suspend/instructor/:id    # Suspend instructor
+PUT    /api/v1/staff/admins/publish/exam/:id       # Publish exam results
 ```
 
 #### Academic Management
@@ -289,7 +289,7 @@ lms_node/
 │   ├── academics/            # Academic controllers
 │   ├── auth/                 # Authentication controllers
 │   ├── staff/                # Staff controllers
-│   └── students/             # Student controllers
+│   └── learners/             # Learner controllers
 ├── middlewares/
 │   ├── advancedResults.js    # Pagination middleware
 │   ├── caching.js            # Caching middleware
@@ -306,7 +306,7 @@ lms_node/
 │   ├── academics/            # Academic routes
 │   ├── auth/                 # Auth routes
 │   ├── staff/                # Staff routes
-│   └── students/             # Student routes
+│   └── learners/             # Learner routes
 ├── tests/
 │   ├── unit/                 # Unit tests
 │   └── integration/          # Integration tests

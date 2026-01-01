@@ -4,7 +4,7 @@
 - [x] Department hierarchy manager (Master admin): tree/list with create top-level/sub, edit, guarded delete; counts per node.
 - [x] Department assignment on staff profiles: select scoped department; badges in user tables.
 - [x] Content creation/edit (programs/subjects/class levels/SCORM): department select (scoped), `isGlobal` toggle for SCORM; badges in lists.
-- [x] Content listing filters: department filter (Master), `isGlobal` filter/badge; scoped visibility for teachers.
+- [x] Content listing filters: department filter (Master), `isGlobal` filter/badge; scoped visibility for instructors.
 - [x] Master templates/global content page: view/download/clone global packages/content for top-level admins.
 
 ## Backend Work Breakdown (with status)
@@ -15,7 +15,7 @@
    - `departmentScope` provides master/top/sub accessible ids; helpers applied to listings.
 
 3) Staff assignment — [x] complete
-   - Department selection on admin/teacher create/update with scope validation; department returned in responses.
+   - Department selection on admin/instructor create/update with scope validation; department returned in responses.
 
 4) Content models and creation — [x] complete
    - Department defaults to caller; admin may target department on SCORM; `isGlobal` supported.
@@ -40,7 +40,7 @@
 - Test-only tokens added to support scoped admin personas (`test-top-admin-token`, `test-sub-admin-token`) mapped to deterministic department IDs for integration coverage.
 
 ## Next Steps (Phase 5 Backend)
-- Staff department assignment: expose department on admin/teacher create/update with scope validation (master can set any, top limited to self/subs); return department in responses.
+- Staff department assignment: expose department on admin/instructor create/update with scope validation (master can set any, top limited to self/subs); return department in responses.
 - Content filters: add subject/class-level filter tests; consider remaining academic listings.
 - SCORM: add optional `department` query (master-only) and ensure `isGlobal` filter documented; consider clone endpoint (`POST /api/v1/scorm/packages/:id/clone`) for global-to-dept copies.
 - Validation polish: reject invalid `department` query values with 400; add better error messages for scope denials across academic endpoints.
@@ -62,7 +62,7 @@
   - DELETE `/api/v1/departments/:id` → only when empty; not allowed for master.
 
 - Staff
-  - Admin/Teacher create/update: accept `department` (scoped); respond with `department`.
+  - Admin/Instructor create/update: accept `department` (scoped); respond with `department`.
 
 - Content
   - Programs/Subjects/Class Levels create/update: optional `department` (master only); default caller dept; respond with `department`.

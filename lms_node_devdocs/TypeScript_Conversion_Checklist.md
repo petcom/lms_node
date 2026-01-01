@@ -197,8 +197,8 @@
   - [x] Add proper typing for custom properties (advancedResults for pagination)
 - [x] Create `types/models.ts` for database model types
   - [x] Define `IAdmin` interface
-  - [x] Define `ITeacher` interface
-  - [x] Define `IStudent` interface
+  - [x] Define `IInstructor` interface
+  - [x] Define `ILearner` interface
   - [x] Define `IAcademicYear` interface
   - [x] Define `IAcademicTerm` interface
   - [x] Define `IClassLevel` interface
@@ -354,26 +354,26 @@
 - [x] **Verification:** Model methods are properly typed ✅
 
 ### 3.3 Staff Models
-- [x] Convert `model/Staff/Teacher.js` to TypeScript
-  - [x] Rename to `Teacher.ts`
-  - [x] Define `ITeacherDocument` interface
-  - [x] Define `ITeacherModel` interface
+- [x] Convert `model/Staff/Instructor.js` to TypeScript
+  - [x] Rename to `Instructor.ts`
+  - [x] Define `IInstructorDocument` interface
+  - [x] Define `IInstructorModel` interface
   - [x] Type ID generation logic
   - [x] Type all schema fields with proper types
   - [x] Type pre-save hooks
-- [x] **Verification:** Teacher model compiles correctly ✅
+- [x] **Verification:** Instructor model compiles correctly ✅
 - [x] **Verification:** Population types work correctly ✅
 
-### 3.4 Student Models
-- [x] Convert `model/Academic/Student.js` to TypeScript
-  - [x] Rename to `Student.ts`
-  - [x] Define `IStudentDocument` interface
-  - [x] Define `IStudentModel` interface
-  - [x] Type student ID generation
+### 3.4 Learner Models
+- [x] Convert `model/Academic/Learner.js` to TypeScript
+  - [x] Rename to `Learner.ts`
+  - [x] Define `ILearnerDocument` interface
+  - [x] Define `ILearnerModel` interface
+  - [x] Type learner ID generation
   - [x] Type exam results array
   - [x] Type program and class level references
   - [x] Type all schema fields
-- [x] **Verification:** Student model compiles correctly ✅
+- [x] **Verification:** Learner model compiles correctly ✅
 - [x] **Verification:** Reference population is typed ✅
 
 ### 3.5 Academic Models
@@ -409,7 +409,7 @@
 - [x] Convert `model/Academic/ExamResults.js` to TypeScript
   - [x] Rename to `ExamResults.ts`
   - [x] Define `IExamResultDocument` interface
-  - [x] Type student and exam references
+  - [x] Type learner and exam references
   - [x] Type grade and answers
 - [x] Convert `model/Academic/Question.js` to TypeScript
   - [x] Rename to `Question.ts`
@@ -428,8 +428,8 @@
   - [x] Rename to `authValidation.ts`
   - [x] Define schema types
   - [x] Export typed schemas
-- [x] Convert `validators/studentValidation.js` to TypeScript
-  - [x] Rename to `studentValidation.ts`
+- [x] Convert `validators/learnerValidation.js` to TypeScript
+  - [x] Rename to `learnerValidation.ts`
   - [x] Type all validation schemas
 - [x] Convert `validators/staffValidation.js` to TypeScript
   - [x] Rename to `staffValidation.ts`
@@ -575,7 +575,7 @@
 ### 5.3 Admin Controllers
 - [ ] Convert `controller/staff/adminCtrl.js` to TypeScript
   - [ ] Rename to `adminCtrl.ts`
-  - [ ] Import `IAdmin`, `ITeacher` types
+  - [ ] Import `IAdmin`, `IInstructor` types
   - [ ] Type registration handler
   - [ ] Type login handler
   - [ ] Type profile handlers
@@ -584,25 +584,25 @@
 - [ ] **Verification:** Admin controller compiles correctly
 - [ ] **Verification:** Type safety for admin actions
 
-### 5.4 Teacher Controllers
-- [ ] Convert `controller/staff/teachersCtrl.js` to TypeScript
-  - [ ] Rename to `teachersCtrl.ts`
-  - [ ] Import `ITeacher` type
+### 5.4 Instructor Controllers
+- [ ] Convert `controller/staff/instructorsCtrl.js` to TypeScript
+  - [ ] Rename to `instructorsCtrl.ts`
+  - [ ] Import `IInstructor` type
   - [ ] Type registration handler
   - [ ] Type login handler
   - [ ] Type profile handlers
   - [ ] Type subject/class assignment
-- [ ] **Verification:** Teacher controller compiles correctly
+- [ ] **Verification:** Instructor controller compiles correctly
 
-### 5.5 Student Controllers
-- [ ] Convert `controller/students/studentsCtrl.js` to TypeScript
-  - [ ] Rename to `studentsCtrl.ts`
-  - [ ] Import `IStudent` type
+### 5.5 Learner Controllers
+- [ ] Convert `controller/learners/learnersCtrl.js` to TypeScript
+  - [ ] Rename to `learnersCtrl.ts`
+  - [ ] Import `ILearner` type
   - [ ] Type registration handler
   - [ ] Type login handler
   - [ ] Type profile handlers
   - [ ] Type exam-related handlers
-- [ ] **Verification:** Student controller compiles correctly
+- [ ] **Verification:** Learner controller compiles correctly
 
 ### 5.6 Academic Year Controllers
 - [ ] Convert `controller/academics/academicYearCtrl.js` to TypeScript
@@ -669,11 +669,11 @@
   - [ ] Rename to `adminRouter.ts`
   - [ ] Type all routes
   - [ ] Ensure middleware typing correct
-- [ ] Convert `routes/staff/teacherRouter.js` to TypeScript
-  - [ ] Rename to `teacherRouter.ts`
+- [ ] Convert `routes/staff/instructorRouter.js` to TypeScript
+  - [ ] Rename to `instructorRouter.ts`
   - [ ] Type all routes
-- [ ] Convert `routes/students/studentRouter.js` to TypeScript
-  - [ ] Rename to `studentRouter.ts`
+- [ ] Convert `routes/learners/learnerRouter.js` to TypeScript
+  - [ ] Rename to `learnerRouter.ts`
   - [ ] Type all routes
 - [ ] Convert `routes/academics/academicYear.js` to TypeScript
   - [ ] Rename to `academicYear.ts`
@@ -890,8 +890,8 @@
   - [ ] Verify 0 type errors
 - [ ] Test all API endpoints manually
   - [ ] Admin registration/login
-  - [ ] Teacher operations
-  - [ ] Student operations
+  - [ ] Instructor operations
+  - [ ] Learner operations
   - [ ] Academic operations
   - [ ] Exam operations
 - [ ] Performance testing

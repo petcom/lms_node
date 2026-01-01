@@ -94,7 +94,7 @@ const options: Options = {
             },
             role: {
               type: 'string',
-              example: 'admin',
+              example: 'global-admin',
             },
             createdAt: {
               type: 'string',
@@ -199,7 +199,7 @@ const options: Options = {
               type: 'string',
               example: 'ATT-XYZ789',
             },
-            student: {
+            learner: {
               type: 'string',
               example: '507f1f77bcf86cd799439011',
             },
@@ -241,7 +241,7 @@ const options: Options = {
             summary: {
               type: 'object',
               properties: {
-                totalStudents: {
+                totalLearners: {
                   type: 'number',
                   example: 50,
                 },
@@ -306,7 +306,7 @@ const options: Options = {
               },
               example: {
                 status: 'error',
-                message: 'Access denied. Required role(s): admin',
+                message: 'Access denied. Required role(s): global-admin',
               },
             },
           },

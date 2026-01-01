@@ -4,12 +4,12 @@ import dbConnect from '../config/dbConnect';
 import ScormPackage from '../model/Scorm/ScormPackage';
 import logger from '../utils/logger';
 
-const DEFAULT_MODEL: 'Admin' | 'Staff' | 'Teacher' | 'Student' =
+const DEFAULT_MODEL: 'Admin' | 'Staff' | 'Instructor' | 'Learner' =
   (process.env.SCORM_UPLOADED_BY_MODEL_DEFAULT as
     | 'Admin'
     | 'Staff'
-    | 'Teacher'
-    | 'Student') || 'Staff';
+    | 'Instructor'
+    | 'Learner') || 'Staff';
 
 async function run(): Promise<void> {
   await dbConnect();

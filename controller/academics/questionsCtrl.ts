@@ -24,7 +24,7 @@ interface UpdateQuestionBody {
 /**
  * @description Create Question
  * @route POST /api/v1/questions/:examID
- * @access Private Teachers Only
+ * @access Private Instructors Only
  */
 export const createQuestion = AsyncHandler(
   async (
@@ -72,7 +72,7 @@ export const createQuestion = AsyncHandler(
 /**
  * @description Get all questions
  * @route POST /api/v1/questions/
- * @access Private Teachers Only
+ * @access Private Instructors Only
  */
 export const getQuestions = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
   res.status(200).json(res.results);
@@ -81,7 +81,7 @@ export const getQuestions = AsyncHandler(async (_req: Request, res: Response): P
 /**
  * @description Get single questions
  * @route GET /api/v1/questions/:id
- * @access Private Teachers Only
+ * @access Private Instructors Only
  */
 export const getQuestion = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
@@ -97,7 +97,7 @@ export const getQuestion = AsyncHandler(
 /**
  * @description Update Question
  * @route PUT /api/v1/questions/:id
- * @access Private Teachers Only
+ * @access Private Instructors Only
  */
 export const updateQuestion = AsyncHandler(
   async (req: Request<{ id: string }, any, UpdateQuestionBody>, res: Response): Promise<void> => {

@@ -43,7 +43,7 @@ departmentResourcesRouter.get(
   '/staffusers',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(staffUsersQuery),
   listStaffUsers
 );
@@ -52,7 +52,7 @@ departmentResourcesRouter.patch(
   '/staffusers/:id/role',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(staffRolesUpdate),
   updateStaffRoles
 );
@@ -61,7 +61,7 @@ departmentResourcesRouter.patch(
   '/staffusers/:id/department',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(staffDepartmentUpdate),
   updateStaffDepartment
 );
@@ -70,7 +70,7 @@ departmentResourcesRouter.get(
   '/content',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentQuery),
   listDepartmentContent
 );
@@ -79,7 +79,7 @@ departmentResourcesRouter.post(
   '/content',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentCreate),
   createDepartmentContent
 );
@@ -88,7 +88,7 @@ departmentResourcesRouter.patch(
   '/content/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentUpdate),
   updateDepartmentContent
 );
@@ -97,7 +97,7 @@ departmentResourcesRouter.post(
   '/programs',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(programCreate),
   createDepartmentProgram
 );
@@ -106,7 +106,7 @@ departmentResourcesRouter.patch(
   '/programs/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(programUpdate),
   updateDepartmentProgram
 );
@@ -115,7 +115,7 @@ departmentResourcesRouter.patch(
   '/programs/:id/department',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(programDepartmentUpdate),
   updateProgramDepartment
 );
@@ -124,7 +124,7 @@ departmentResourcesRouter.post(
   '/courses',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseCreate),
   createDepartmentCourse
 );
@@ -133,7 +133,7 @@ departmentResourcesRouter.patch(
   '/courses/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseUpdate),
   updateDepartmentCourse
 );
@@ -142,7 +142,7 @@ departmentResourcesRouter.patch(
   '/courses/:id/department',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseDepartmentUpdate),
   updateCourseDepartment
 );
@@ -151,7 +151,7 @@ departmentResourcesRouter.patch(
   '/courses/:id/program',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseProgramUpdate),
   updateCourseProgram
 );
@@ -160,7 +160,7 @@ departmentResourcesRouter.get(
   '/departments',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   listDepartmentHierarchy
 );
 
@@ -168,7 +168,7 @@ departmentResourcesRouter.patch(
   '/departments/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(departmentUpdate),
   updateDepartment
 );

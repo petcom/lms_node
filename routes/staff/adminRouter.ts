@@ -5,14 +5,14 @@ import {
   getAdminsCtrl,
   getAdminProfileCtrl,
   updateAdminCtrl,
-  adminSuspendTeacherCtrl,
-  adminUnsuspendteacherCtrl,
-  adminWithdrawTeacherCtrl,
-  adminUnwithdrawTeacherCtrl,
-  adminSuspendStudentCtrl,
-  adminUnsuspendStudentCtrl,
-  adminWithdrawStudentCtrl,
-  adminUnwithdrawStudentCtrl,
+  adminSuspendInstructorCtrl,
+  adminUnsuspendinstructorCtrl,
+  adminWithdrawInstructorCtrl,
+  adminUnwithdrawInstructorCtrl,
+  adminSuspendLearnerCtrl,
+  adminUnsuspendLearnerCtrl,
+  adminWithdrawLearnerCtrl,
+  adminUnwithdrawLearnerCtrl,
   adminPublishResultsCtrl,
   adminUnpublishResultsCtrl,
 } from '../../controller/staff/adminCtrl';
@@ -32,7 +32,7 @@ const adminRouter: Router = express.Router();
 
 /**
  * @swagger
- * /api/v1/admins/register:
+ * /api/v1/staff/admins/register:
  *   post:
  *     summary: Register a new admin
  *     tags: [Admin]
@@ -75,7 +75,7 @@ adminRouter.post('/register', registerLimiter, validate(registerAdmin), register
 
 /**
  * @swagger
- * /api/v1/admins/login:
+ * /api/v1/staff/admins/login:
  *   post:
  *     summary: Admin login
  *     tags: [Admin]
@@ -116,7 +116,7 @@ adminRouter.post('/register', registerLimiter, validate(registerAdmin), register
  *                       description: JWT access token
  *                     role:
  *                       type: string
- *                       enum: [admin]
+ *                       enum: [global-admin]
  *       400:
  *         description: Invalid credentials
  *       429:
@@ -127,7 +127,7 @@ adminRouter.post('/login', authLimiter, validate(login), loginAdminCtrl);
 
 /**
  * @swagger
- * /api/v1/admins:
+ * /api/v1/staff/admins:
  *   get:
  *     summary: Get all admins
  *     tags: [Admin]
@@ -160,14 +160,14 @@ adminRouter.post('/login', authLimiter, validate(login), loginAdminCtrl);
 adminRouter.get(
   '/',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   advancedResults(Admin),
   getAdminsCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/profile:
+ * /api/v1/staff/admins/profile:
  *   get:
  *     summary: Get admin profile
  *     tags: [Admin]
@@ -183,11 +183,11 @@ adminRouter.get(
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-adminRouter.get('/profile', isAuthenticated(), roleRestriction('admin'), getAdminProfileCtrl);
+adminRouter.get('/profile', isAuthenticated(), roleRestriction('global-admin'), getAdminProfileCtrl);
 
 /**
  * @swagger
- * /api/v1/admins:
+ * /api/v1/staff/admins:
  *   put:
  *     summary: Update admin profile
  *     tags: [Admin]
@@ -217,14 +217,14 @@ adminRouter.put(
   '/',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(updateAdminProfile),
   updateAdminCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/suspend/staff/{id}:
+ * /api/v1/staff/admins/suspend/staff/{id}:
  *   put:
  *     summary: Suspend a staff member
  *     tags: [Admin]
@@ -250,13 +250,13 @@ adminRouter.put(
 adminRouter.put(
   '/suspend/staff/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminSuspendTeacherCtrl
+  roleRestriction('global-admin'),
+  adminSuspendInstructorCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/unsuspend/staff/{id}:
+ * /api/v1/staff/admins/unsuspend/staff/{id}:
  *   put:
  *     summary: Unsuspend a staff member
  *     tags: [Admin]
@@ -282,13 +282,13 @@ adminRouter.put(
 adminRouter.put(
   '/unsuspend/staff/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminUnsuspendteacherCtrl
+  roleRestriction('global-admin'),
+  adminUnsuspendinstructorCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/withdraw/staff/{id}:
+ * /api/v1/staff/admins/withdraw/staff/{id}:
  *   put:
  *     summary: Withdraw a staff member
  *     tags: [Admin]
@@ -314,13 +314,13 @@ adminRouter.put(
 adminRouter.put(
   '/withdraw/staff/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminWithdrawTeacherCtrl
+  roleRestriction('global-admin'),
+  adminWithdrawInstructorCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/unwithdraw/staff/{id}:
+ * /api/v1/staff/admins/unwithdraw/staff/{id}:
  *   put:
  *     summary: Unwithdraw a staff member
  *     tags: [Admin]
@@ -346,41 +346,41 @@ adminRouter.put(
 adminRouter.put(
   '/unwithdraw/staff/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminUnwithdrawTeacherCtrl
+  roleRestriction('global-admin'),
+  adminUnwithdrawInstructorCtrl
 );
 
 adminRouter.put(
-  '/suspend/student/:id',
+  '/suspend/learner/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminSuspendStudentCtrl
+  roleRestriction('global-admin'),
+  adminSuspendLearnerCtrl
 );
 
 adminRouter.put(
-  '/unsuspend/student/:id',
+  '/unsuspend/learner/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminUnsuspendStudentCtrl
+  roleRestriction('global-admin'),
+  adminUnsuspendLearnerCtrl
 );
 
 adminRouter.put(
-  '/withdraw/student/:id',
+  '/withdraw/learner/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminWithdrawStudentCtrl
+  roleRestriction('global-admin'),
+  adminWithdrawLearnerCtrl
 );
 
 adminRouter.put(
-  '/unwithdraw/student/:id',
+  '/unwithdraw/learner/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminUnwithdrawStudentCtrl
+  roleRestriction('global-admin'),
+  adminUnwithdrawLearnerCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/publish/exam/{id}:
+ * /api/v1/staff/admins/publish/exam/{id}:
  *   put:
  *     summary: Publish exam results
  *     tags: [Admin]
@@ -406,14 +406,14 @@ adminRouter.put(
 adminRouter.put(
   '/publish/exam/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(idParam),
   adminPublishResultsCtrl
 );
 
 /**
  * @swagger
- * /api/v1/admins/unpublish/exam/{id}:
+ * /api/v1/staff/admins/unpublish/exam/{id}:
  *   put:
  *     summary: Unpublish exam results
  *     tags: [Admin]
@@ -439,7 +439,7 @@ adminRouter.put(
 adminRouter.put(
   '/unpublish/exam/:id',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(idParam),
   adminUnpublishResultsCtrl
 );

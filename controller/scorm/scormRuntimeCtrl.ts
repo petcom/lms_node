@@ -73,12 +73,12 @@ const persistScormProgress = async (attempt: any): Promise<void> => {
 
   await LearnerProgress.findOneAndUpdate(
     {
-      learnerId: attempt.student,
+      learnerId: attempt.learner,
       contentId: attempt.package,
       segmentId: attempt.attemptId,
     },
     {
-      learnerId: attempt.student,
+      learnerId: attempt.learner,
       contentId: attempt.package,
       segmentId: attempt.attemptId,
       contentType: 'scorm',
@@ -97,12 +97,12 @@ const persistScormProgress = async (attempt: any): Promise<void> => {
 
   await ContentAttempt.findOneAndUpdate(
     {
-      learnerId: attempt.student,
+      learnerId: attempt.learner,
       contentId: attempt.package,
       attemptNumber: attempt.attemptNumber,
     },
     {
-      learnerId: attempt.student,
+      learnerId: attempt.learner,
       contentId: attempt.package,
       segmentId: attempt.attemptId,
       contentType: 'scorm',
@@ -123,7 +123,7 @@ const persistScormProgress = async (attempt: any): Promise<void> => {
 /**
  * @desc    Initialize SCORM session
  * @route   POST /api/v1/scorm/runtime/:attemptId/initialize
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const initializeSession = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -151,17 +151,17 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
   }
 
   // Allow unauthenticated/admin/staff to bypass ownership while testing
-  const skipOwnership = !user || (userRole && userRole !== 'student');
+  const skipOwnership = !user || (userRole && userRole !== 'learner');
 
-  // Verify student owns this attempt when required
-  if (!skipOwnership && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt when required
+  if (!skipOwnership && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
 
   try {
     const sessionUserId = skipOwnership
-      ? (attempt.student as any) || new mongoose.Types.ObjectId()
+      ? (attempt.learner as any) || new mongoose.Types.ObjectId()
       : userId;
 
     // Create session (ignore if already initialized)
@@ -201,7 +201,7 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
 /**
  * @desc    Terminate SCORM session
  * @route   POST /api/v1/scorm/runtime/:attemptId/terminate
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const terminateSessionAPI = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -221,8 +221,8 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -308,7 +308,7 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
 /**
  * @desc    Get CMI value
  * @route   GET /api/v1/scorm/runtime/:attemptId/value/:element
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId, element } = req.params;
@@ -322,7 +322,7 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
   // Find attempt
   const attempt = await ScormAttempt.findById(attemptId)
-    .populate('student', 'name email')
+    .populate('learner', 'name email')
     .populate('package', 'version');
 
   if (!attempt) {
@@ -330,8 +330,8 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && (attempt.student as any)._id.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && (attempt.learner as any)._id.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -355,23 +355,23 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     return;
   }
 
-  // Handle read-only student data
-  if (element === 'cmi.core.student_id' || element === 'cmi.learner_id') {
+  // Handle read-only learner data
+  if (element === 'cmi.core.learner_id' || element === 'cmi.learner_id') {
     res.status(200).json({
       success: true,
       data: {
-        value: (attempt.student as any)._id.toString(),
+        value: (attempt.learner as any)._id.toString(),
         errorCode: '0',
       },
     });
     return;
   }
 
-  if (element === 'cmi.core.student_name' || element === 'cmi.learner_name') {
+  if (element === 'cmi.core.learner_name' || element === 'cmi.learner_name') {
     res.status(200).json({
       success: true,
       data: {
-        value: (attempt.student as any).name,
+        value: (attempt.learner as any).name,
         errorCode: '0',
       },
     });
@@ -413,7 +413,7 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 /**
  * @desc    Set CMI value
  * @route   PUT /api/v1/scorm/runtime/:attemptId/value/:element
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId, element } = req.params;
@@ -434,8 +434,8 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -502,7 +502,7 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     // Lazily create session for unauthenticated/admin flows to avoid 500s
     if (error?.message?.includes('Session not initialized')) {
       try {
-        const sessionUserId = (attempt.student as any) || new mongoose.Types.ObjectId();
+        const sessionUserId = (attempt.learner as any) || new mongoose.Types.ObjectId();
         await createSession(attemptId, sessionUserId as any);
         await addPendingCMI(attemptId, element, value);
         await setSessionError(attemptId, '0');
@@ -540,7 +540,7 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 /**
  * @desc    Commit CMI data
  * @route   POST /api/v1/scorm/runtime/:attemptId/commit
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const commitData = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -560,8 +560,8 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -646,7 +646,7 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
 /**
  * @desc    Get last error
  * @route   GET /api/v1/scorm/runtime/:attemptId/error
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getLastError = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -666,8 +666,8 @@ export const getLastError = asyncHandler(async (req: Request, res: Response) => 
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -686,7 +686,7 @@ export const getLastError = asyncHandler(async (req: Request, res: Response) => 
 /**
  * @desc    Session heartbeat
  * @route   POST /api/v1/scorm/runtime/:attemptId/heartbeat
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const heartbeat = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -706,8 +706,8 @@ export const heartbeat = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // Verify student owns this attempt
-  if (userId && attempt.student.toString() !== userId.toString()) {
+  // Verify learner owns this attempt
+  if (userId && attempt.learner.toString() !== userId.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }

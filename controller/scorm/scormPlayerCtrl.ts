@@ -47,16 +47,16 @@ export const launchPlayer = async (req: Request, res: Response) => {
     }
 
     // Check if package is published (unless admin/staff)
-    if (scormPackage.status !== 'published' && !['admin', 'staff'].includes(userRole)) {
+    if (scormPackage.status !== 'published' && !['global-admin', 'staff'].includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: 'Package is not published',
       });
     }
 
-    // For students, check if package is assigned to them
-    if (userRole === 'student') {
-      const hasAccess = await (scormPackage as any).hasStudentAccess(userId);
+    // For learners, check if package is assigned to them
+    if (userRole === 'learner') {
+      const hasAccess = await (scormPackage as any).hasLearnerAccess(userId);
       if (!hasAccess) {
         return res.status(403).json({
           success: false,
@@ -67,7 +67,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
       // Check max attempts
       if (scormPackage.trackingOptions.maxAttempts) {
         const attemptCount = await ScormAttempt.countDocuments({
-          student: userId,
+          learner: userId,
           package: scormPackage._id,
         });
 
@@ -82,7 +82,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
 
     // Get or create attempt
     let attempt = await ScormAttempt.findOne({
-      student: userId,
+      learner: userId,
       package: scormPackage._id,
       status: { $in: ['running', 'suspended'] },
     });
@@ -91,20 +91,20 @@ export const launchPlayer = async (req: Request, res: Response) => {
       // Create new attempt
       const attemptNumber =
         (await ScormAttempt.countDocuments({
-          student: userId,
+          learner: userId,
           package: scormPackage._id,
         })) + 1;
 
       attempt = await ScormAttempt.create({
         attemptId: `${scormPackage.packageId}-${attemptNumber}`,
-        student: userId,
+        learner: userId,
         package: scormPackage._id,
         attemptNumber,
         status: 'not_started',
         cmi: {
           core: {
-            student_id: String(userId),
-            student_name: (req as any).userAuth?.name || 'Student',
+            learner_id: String(userId),
+            learner_name: (req as any).userAuth?.name || 'Learner',
             lesson_status: 'not attempted',
             entry: 'ab-initio',
             score: {},
@@ -174,12 +174,12 @@ export const serveContent = async (req: Request, res: Response) => {
       });
     }
 
-    // Verify user has access (students must be assigned)
+    // Verify user has access (learners must be assigned)
     const userId = (req as any).userAuth?._id;
     const userRole = (req as any).userAuth?.role;
 
-    if (userRole === 'student') {
-      const hasAccess = await (scormPackage as any).hasStudentAccess(userId);
+    if (userRole === 'learner') {
+      const hasAccess = await (scormPackage as any).hasLearnerAccess(userId);
       if (!hasAccess) {
         return res.status(403).json({
           success: false,
@@ -253,7 +253,7 @@ export const exitPlayer = async (req: Request, res: Response) => {
     }
 
     // Verify ownership
-    if (String(attempt.student) !== String(userId)) {
+    if (String(attempt.learner) !== String(userId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',

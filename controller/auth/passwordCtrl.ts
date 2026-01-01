@@ -4,8 +4,8 @@ import crypto from 'crypto';
 import { Types } from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Staff from '../../model/Staff/Staff';
-import Student from '../../model/Academic/Student';
-import { IAdmin, IStaff, IStudent } from '../../types/models';
+import Learner from '../../model/Academic/Learner';
+import { IAdmin, IStaff, ILearner } from '../../types/models';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import {
   validatePasswordConfirmation,
@@ -24,7 +24,7 @@ interface ChangePasswordRequestBody {
 
 interface ForgotPasswordRequestBody {
   email: string;
-  userType: 'admin' | 'staff' | 'student';
+  userType: 'global-admin' | 'staff' | 'learner';
 }
 
 interface ResetPasswordRequestBody {
@@ -38,7 +38,7 @@ interface ValidatePasswordRequestBody {
 
 interface ResetTokenData {
   userId: Types.ObjectId;
-  userType: 'admin' | 'staff' | 'student';
+  userType: 'global-admin' | 'staff' | 'learner';
   expiresAt: number;
 }
 
@@ -87,14 +87,14 @@ export const changePassword = AsyncHandler(
     }
 
     // Find user (check all collections)
-    let user: IAdmin | IStaff | IStudent | null = await Admin.findById(userId);
+    let user: IAdmin | IStaff | ILearner | null = await Admin.findById(userId);
 
     if (!user) {
       user = await Staff.findById(userId);
     }
 
     if (!user) {
-      user = await Student.findById(userId);
+      user = await Learner.findById(userId);
     }
 
     if (!user) {
@@ -175,22 +175,22 @@ export const forgotPassword = AsyncHandler(
     }
 
     // Find user based on type
-    let user: IAdmin | IStaff | IStudent | null = null;
+    let user: IAdmin | IStaff | ILearner | null = null;
 
     switch (userType) {
-      case 'admin':
+      case 'global-admin':
         user = await Admin.findOne({ email });
         break;
       case 'staff':
         user = await Staff.findOne({ email });
         break;
-      case 'student':
-        user = await Student.findOne({ email });
+      case 'learner':
+        user = await Learner.findOne({ email });
         break;
       default:
         res.status(400).json({
           status: 'failed',
-          message: 'Invalid user type. Must be: admin, staff, or student',
+          message: 'Invalid user type. Must be: admin, staff, or learner',
         });
         return;
     }
@@ -291,17 +291,17 @@ export const resetPassword = AsyncHandler(
     }
 
     // Find user
-    let user: IAdmin | IStaff | IStudent | null = null;
+    let user: IAdmin | IStaff | ILearner | null = null;
 
     switch (tokenData.userType) {
-      case 'admin':
+      case 'global-admin':
         user = await Admin.findById(tokenData.userId);
         break;
       case 'staff':
         user = await Staff.findById(tokenData.userId);
         break;
-      case 'student':
-        user = await Student.findById(tokenData.userId);
+      case 'learner':
+        user = await Learner.findById(tokenData.userId);
         break;
     }
 

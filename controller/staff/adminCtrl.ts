@@ -6,7 +6,7 @@ import { hashPassword, isPassMatched } from '../../utils/helpers';
 import mongoose from 'mongoose';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import Staff from '../../model/Staff/Staff';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 import logAudit from '../../utils/auditLogger';
 
 // Request body interfaces
@@ -30,7 +30,7 @@ interface UpdateAdminBody {
 
 /**
  * @description Register admins
- * @route       POST /api/v1/admins/register
+ * @route       POST /api/v1/staff/admins/register
  * @access      Private
  */
 export const registerAdminCtrl = expressAsyncHandler(
@@ -69,7 +69,7 @@ export const registerAdminCtrl = expressAsyncHandler(
 
 /**
  * @description login admins
- * @route       POST /api/v1/admins/login
+ * @route       POST /api/v1/staff/admins/login
  * @access      Public
  */
 export const loginAdminCtrl = expressAsyncHandler(
@@ -94,7 +94,7 @@ export const loginAdminCtrl = expressAsyncHandler(
         message: 'Invalid login credentials. Please try again.',
       });
     } else {
-      const role = user.role || 'admin';
+      const role = user.role || 'global-admin';
       const accessToken = generateToken(user._id.toString(), role);
 
       res.status(200).json({
@@ -112,7 +112,7 @@ export const loginAdminCtrl = expressAsyncHandler(
 
 /**
  * @description Get all admins
- * @route       GET /api/v1/admins
+ * @route       GET /api/v1/staff/admins
  * @access      Private
  */
 export const getAdminsCtrl = expressAsyncHandler(
@@ -123,7 +123,7 @@ export const getAdminsCtrl = expressAsyncHandler(
 
 /**
  * @description Get Admin Profile
- * @route       GET /api/v1/admins/profile
+ * @route       GET /api/v1/staff/admins/profile
  * @access      Private
  */
 export const getAdminProfileCtrl = expressAsyncHandler(
@@ -153,7 +153,7 @@ export const getAdminProfileCtrl = expressAsyncHandler(
 
 /**
  * @description Update Admin
- * @route       UPDATE /api/v1/admins/:id
+ * @route       UPDATE /api/v1/staff/admins/:id
  * @access      Private
  */
 export const updateAdminCtrl = expressAsyncHandler(
@@ -225,46 +225,46 @@ export const updateAdminCtrl = expressAsyncHandler(
 
 /**
  * @description Admin suspends a staff member
- * @route       PUT /api/v1/admins/suspend/staff/:id
+ * @route       PUT /api/v1/staff/admins/suspend/staff/:id
  * @access      Private
  */
-export const adminSuspendTeacherCtrl = expressAsyncHandler(
+export const adminSuspendInstructorCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const teacherId = req.params.id;
+    const instructorId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(teacherId)) {
+    if (!mongoose.isValidObjectId(instructorId)) {
       throw new ValidationError('Invalid staff id');
     }
 
-    const teacher = await Staff.findById(teacherId);
-    if (!teacher) {
+    const instructor = await Staff.findById(instructorId);
+    if (!instructor) {
       throw new NotFoundError('Staff member not found');
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const teacherDept = (teacher as any).department?.toString();
-    if (scope && scope !== 'all' && teacherDept && !scope.includes(teacherDept)) {
+    const instructorDept = (instructor as any).department?.toString();
+    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: teacher.isSuspended, isWithdrawn: teacher.isWithdrawn };
-    teacher.isSuspended = true;
-    await teacher.save();
+    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
+    instructor.isSuspended = true;
+    await instructor.save();
 
     await logAudit({
       req,
       action: 'staff.suspend',
       entityType: 'Staff',
-      entityId: teacher._id,
+      entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: true, isWithdrawn: teacher.isWithdrawn },
+      after: { isSuspended: true, isWithdrawn: instructor.isWithdrawn },
     });
 
     res.status(200).json({
       status: 'success',
-      data: teacher,
+      data: instructor,
       message: 'Staff member suspended successfully',
     });
   }
@@ -272,46 +272,46 @@ export const adminSuspendTeacherCtrl = expressAsyncHandler(
 
 /**
  * @description Admin unsuspends a staff member
- * @route       PUT /api/v1/admins/unsuspend/staff/:id
+ * @route       PUT /api/v1/staff/admins/unsuspend/staff/:id
  * @access      Private
  */
-export const adminUnsuspendteacherCtrl = expressAsyncHandler(
+export const adminUnsuspendinstructorCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const teacherId = req.params.id;
+    const instructorId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(teacherId)) {
+    if (!mongoose.isValidObjectId(instructorId)) {
       throw new ValidationError('Invalid staff id');
     }
 
-    const teacher = await Staff.findById(teacherId);
-    if (!teacher) {
+    const instructor = await Staff.findById(instructorId);
+    if (!instructor) {
       throw new NotFoundError('Staff member not found');
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const teacherDept = (teacher as any).department?.toString();
-    if (scope && scope !== 'all' && teacherDept && !scope.includes(teacherDept)) {
+    const instructorDept = (instructor as any).department?.toString();
+    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: teacher.isSuspended, isWithdrawn: teacher.isWithdrawn };
-    teacher.isSuspended = false;
-    await teacher.save();
+    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
+    instructor.isSuspended = false;
+    await instructor.save();
 
     await logAudit({
       req,
       action: 'staff.unsuspend',
       entityType: 'Staff',
-      entityId: teacher._id,
+      entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: false, isWithdrawn: teacher.isWithdrawn },
+      after: { isSuspended: false, isWithdrawn: instructor.isWithdrawn },
     });
 
     res.status(200).json({
       status: 'success',
-      data: teacher,
+      data: instructor,
       message: 'Staff member unsuspended successfully',
     });
   }
@@ -319,46 +319,46 @@ export const adminUnsuspendteacherCtrl = expressAsyncHandler(
 
 /**
  * @description Admin withdrawl a staff member
- * @route       PUT /api/v1/admins/withdraw/staff/:id
+ * @route       PUT /api/v1/staff/admins/withdraw/staff/:id
  * @access      Private
  */
-export const adminWithdrawTeacherCtrl = expressAsyncHandler(
+export const adminWithdrawInstructorCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const teacherId = req.params.id;
+    const instructorId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(teacherId)) {
+    if (!mongoose.isValidObjectId(instructorId)) {
       throw new ValidationError('Invalid staff id');
     }
 
-    const teacher = await Staff.findById(teacherId);
-    if (!teacher) {
+    const instructor = await Staff.findById(instructorId);
+    if (!instructor) {
       throw new NotFoundError('Staff member not found');
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const teacherDept = (teacher as any).department?.toString();
-    if (scope && scope !== 'all' && teacherDept && !scope.includes(teacherDept)) {
+    const instructorDept = (instructor as any).department?.toString();
+    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: teacher.isSuspended, isWithdrawn: teacher.isWithdrawn };
-    teacher.isWithdrawn = true;
-    await teacher.save();
+    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
+    instructor.isWithdrawn = true;
+    await instructor.save();
 
     await logAudit({
       req,
       action: 'staff.withdraw',
       entityType: 'Staff',
-      entityId: teacher._id,
+      entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: teacher.isSuspended, isWithdrawn: true },
+      after: { isSuspended: instructor.isSuspended, isWithdrawn: true },
     });
 
     res.status(200).json({
       status: 'success',
-      data: teacher,
+      data: instructor,
       message: 'Staff member withdrawn successfully',
     });
   }
@@ -366,218 +366,218 @@ export const adminWithdrawTeacherCtrl = expressAsyncHandler(
 
 /**
  * @description Admin Unwithdrawl a staff member
- * @route       PUT /api/v1/admins/unwithdraw/staff/:id
+ * @route       PUT /api/v1/staff/admins/unwithdraw/staff/:id
  * @access      Private
  */
-export const adminUnwithdrawTeacherCtrl = expressAsyncHandler(
+export const adminUnwithdrawInstructorCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const teacherId = req.params.id;
+    const instructorId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(teacherId)) {
+    if (!mongoose.isValidObjectId(instructorId)) {
       throw new ValidationError('Invalid staff id');
     }
 
-    const teacher = await Staff.findById(teacherId);
-    if (!teacher) {
+    const instructor = await Staff.findById(instructorId);
+    if (!instructor) {
       throw new NotFoundError('Staff member not found');
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const teacherDept = (teacher as any).department?.toString();
-    if (scope && scope !== 'all' && teacherDept && !scope.includes(teacherDept)) {
+    const instructorDept = (instructor as any).department?.toString();
+    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: teacher.isSuspended, isWithdrawn: teacher.isWithdrawn };
-    teacher.isWithdrawn = false;
-    await teacher.save();
+    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
+    instructor.isWithdrawn = false;
+    await instructor.save();
 
     await logAudit({
       req,
       action: 'staff.unwithdraw',
       entityType: 'Staff',
-      entityId: teacher._id,
+      entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: teacher.isSuspended, isWithdrawn: false },
+      after: { isSuspended: instructor.isSuspended, isWithdrawn: false },
     });
 
     res.status(200).json({
       status: 'success',
-      data: teacher,
+      data: instructor,
       message: 'Staff member unwithdrawn successfully',
     });
   }
 );
 
 /**
- * @description Admin suspends a student
- * @route       PUT /api/v1/admins/suspend/student/:id
+ * @description Admin suspends a learner
+ * @route       PUT /api/v1/staff/admins/suspend/learner/:id
  * @access      Private
  */
-export const adminSuspendStudentCtrl = expressAsyncHandler(
+export const adminSuspendLearnerCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const studentId = req.params.id;
+    const learnerId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(studentId)) {
-      throw new ValidationError('Invalid student id');
+    if (!mongoose.isValidObjectId(learnerId)) {
+      throw new ValidationError('Invalid learner id');
     }
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      throw new NotFoundError('Student not found');
+    const learner = await Learner.findById(learnerId);
+    if (!learner) {
+      throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
-    student.isSuspended = true;
-    await student.save();
+    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
+    learner.isSuspended = true;
+    await learner.save();
 
     await logAudit({
       req,
-      action: 'student.suspend',
-      entityType: 'Student',
-      entityId: student._id,
+      action: 'learner.suspend',
+      entityType: 'Learner',
+      entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: true, isWithdrawn: student.isWithdrawn },
+      after: { isSuspended: true, isWithdrawn: learner.isWithdrawn },
     });
 
     res.status(200).json({
       status: 'success',
-      data: student,
-      message: 'Student suspended successfully',
+      data: learner,
+      message: 'Learner suspended successfully',
     });
   }
 );
 
 /**
- * @description Admin unsuspends a student
- * @route       PUT /api/v1/admins/unsuspend/student/:id
+ * @description Admin unsuspends a learner
+ * @route       PUT /api/v1/staff/admins/unsuspend/learner/:id
  * @access      Private
  */
-export const adminUnsuspendStudentCtrl = expressAsyncHandler(
+export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const studentId = req.params.id;
+    const learnerId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(studentId)) {
-      throw new ValidationError('Invalid student id');
+    if (!mongoose.isValidObjectId(learnerId)) {
+      throw new ValidationError('Invalid learner id');
     }
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      throw new NotFoundError('Student not found');
+    const learner = await Learner.findById(learnerId);
+    if (!learner) {
+      throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
-    student.isSuspended = false;
-    await student.save();
+    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
+    learner.isSuspended = false;
+    await learner.save();
 
     await logAudit({
       req,
-      action: 'student.unsuspend',
-      entityType: 'Student',
-      entityId: student._id,
+      action: 'learner.unsuspend',
+      entityType: 'Learner',
+      entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: false, isWithdrawn: student.isWithdrawn },
+      after: { isSuspended: false, isWithdrawn: learner.isWithdrawn },
     });
 
     res.status(200).json({
       status: 'success',
-      data: student,
-      message: 'Student unsuspended successfully',
+      data: learner,
+      message: 'Learner unsuspended successfully',
     });
   }
 );
 
 /**
- * @description Admin withdraws a student
- * @route       PUT /api/v1/admins/withdraw/student/:id
+ * @description Admin withdraws a learner
+ * @route       PUT /api/v1/staff/admins/withdraw/learner/:id
  * @access      Private
  */
-export const adminWithdrawStudentCtrl = expressAsyncHandler(
+export const adminWithdrawLearnerCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const studentId = req.params.id;
+    const learnerId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(studentId)) {
-      throw new ValidationError('Invalid student id');
+    if (!mongoose.isValidObjectId(learnerId)) {
+      throw new ValidationError('Invalid learner id');
     }
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      throw new NotFoundError('Student not found');
+    const learner = await Learner.findById(learnerId);
+    if (!learner) {
+      throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
-    student.isWithdrawn = true;
-    await student.save();
+    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
+    learner.isWithdrawn = true;
+    await learner.save();
 
     await logAudit({
       req,
-      action: 'student.withdraw',
-      entityType: 'Student',
-      entityId: student._id,
+      action: 'learner.withdraw',
+      entityType: 'Learner',
+      entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: student.isSuspended, isWithdrawn: true },
+      after: { isSuspended: learner.isSuspended, isWithdrawn: true },
     });
 
     res.status(200).json({
       status: 'success',
-      data: student,
-      message: 'Student withdrawn successfully',
+      data: learner,
+      message: 'Learner withdrawn successfully',
     });
   }
 );
 
 /**
- * @description Admin unwithdraws a student
- * @route       PUT /api/v1/admins/unwithdraw/student/:id
+ * @description Admin unwithdraws a learner
+ * @route       PUT /api/v1/staff/admins/unwithdraw/learner/:id
  * @access      Private
  */
-export const adminUnwithdrawStudentCtrl = expressAsyncHandler(
+export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
   async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
-    const studentId = req.params.id;
+    const learnerId = req.params.id;
     const reason = req.body?.reason;
 
-    if (!mongoose.isValidObjectId(studentId)) {
-      throw new ValidationError('Invalid student id');
+    if (!mongoose.isValidObjectId(learnerId)) {
+      throw new ValidationError('Invalid learner id');
     }
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      throw new NotFoundError('Student not found');
+    const learner = await Learner.findById(learnerId);
+    if (!learner) {
+      throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: student.isSuspended, isWithdrawn: student.isWithdrawn };
-    student.isWithdrawn = false;
-    await student.save();
+    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
+    learner.isWithdrawn = false;
+    await learner.save();
 
     await logAudit({
       req,
-      action: 'student.unwithdraw',
-      entityType: 'Student',
-      entityId: student._id,
+      action: 'learner.unwithdraw',
+      entityType: 'Learner',
+      entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: student.isSuspended, isWithdrawn: false },
+      after: { isSuspended: learner.isSuspended, isWithdrawn: false },
     });
 
     res.status(200).json({
       status: 'success',
-      data: student,
-      message: 'Student unwithdrawn successfully',
+      data: learner,
+      message: 'Learner unwithdrawn successfully',
     });
   }
 );
 
 /**
  * @description Admin Publish Exam Results
- * @route       PUT /api/v1/admins/publish/exam/:id
+ * @route       PUT /api/v1/staff/admins/publish/exam/:id
  * @access      Private
  */
 export const adminPublishResultsCtrl = (_req: Request, res: Response): void => {
@@ -596,7 +596,7 @@ export const adminPublishResultsCtrl = (_req: Request, res: Response): void => {
 
 /**
  * @description Admin Unpublish Exam Results
- * @route       PUT /api/v1/admins/unpublish/exam/:id
+ * @route       PUT /api/v1/staff/admins/unpublish/exam/:id
  * @access      Private
  */
 export const adminUnpublishResultsCtrl = (_req: Request, res: Response): void => {

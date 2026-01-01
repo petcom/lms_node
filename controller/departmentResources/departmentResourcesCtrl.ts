@@ -27,7 +27,8 @@ type StaffUser = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'dept-admin' | 'staff';
+  role: 'global-admin' | 'staff';
+  roles?: string[];
   department: DepartmentSummary | null;
 };
 
@@ -164,13 +165,6 @@ const buildDepartmentMap = async (
   return map;
 };
 
-const getDepartmentRole = (department: IDepartment | null): 'admin' | 'dept-admin' => {
-  if (!department) {
-    return 'admin';
-  }
-  return department.level === 'master' ? 'admin' : 'dept-admin';
-};
-
 const normalizeExamType = (
   examType?: string
 ): NonNullable<ContentItem['customType']> => {
@@ -211,35 +205,29 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
   const { departmentIds, departments } = await resolveDepartmentScope(req, departmentId);
 
   const departmentMap = await buildDepartmentMap(departments);
-  const departmentRecordMap = buildDepartmentRecordMap(departments);
-  const masterDeptId =
-    departments.find((dept) => dept.level === 'master')?._id.toString() || MASTER_DEPARTMENT_ID;
 
   const adminFilter =
     departmentIds === null
       ? {}
       : { department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) } };
-  const teacherFilter =
+  const staffFilter =
     departmentIds === null
       ? {}
       : { department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) } };
 
   const [admins, staffMembers] = await Promise.all([
     Admin.find(adminFilter).select('name email department').lean(),
-    Staff.find(teacherFilter).select('name email department').lean(),
+    Staff.find(staffFilter).select('name email department roles').lean(),
   ]);
 
   const adminItems: StaffUser[] = admins.map((admin) => {
     const deptId = admin.department ? admin.department.toString() : null;
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
-    const deptRecord = deptId ? departmentRecordMap.get(deptId) || null : null;
-    const role = getDepartmentRole(deptRecord);
-    const effectiveRole = deptId === masterDeptId ? 'admin' : role;
     return {
       id: admin._id.toString(),
       name: admin.name,
       email: admin.email,
-      role: effectiveRole,
+      role: 'global-admin',
       department: deptSummary,
     };
   });
@@ -252,17 +240,26 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
       name: staff.name,
       email: staff.email,
       role: 'staff',
+      roles: Array.isArray(staff.roles) ? staff.roles : [],
       department: deptSummary,
     };
   });
 
   let items: StaffUser[] = [];
-  if (type === 'teacher') {
+  const normalizedType = type?.toLowerCase();
+  const staffSubtypeFilters = new Set([
+    'instructor',
+    'department-admin',
+    'content-admin',
+    'billing-admin',
+  ]);
+
+  if (normalizedType === 'staff') {
     items = staffItems;
-  } else if (type === 'dept-admin') {
-    items = adminItems.filter((admin) => admin.role === 'dept-admin');
-  } else if (type === 'staff') {
-    items = staffItems;
+  } else if (normalizedType === 'global-admin') {
+    items = adminItems;
+  } else if (normalizedType && staffSubtypeFilters.has(normalizedType)) {
+    items = staffItems.filter((staff) => staff.roles?.includes(normalizedType));
   } else {
     items = [...adminItems, ...staffItems];
   }

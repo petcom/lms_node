@@ -39,7 +39,7 @@ const subjectSchema = new Schema<ISubject>(
       type: Schema.Types.ObjectId,
       ref: 'Program',
     },
-    teachers: [
+    instructors: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Staff',

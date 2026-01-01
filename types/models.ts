@@ -2,7 +2,7 @@
 import { Document, Types, Model } from 'mongoose';
 
 // User role types
-export type UserRole = 'admin' | 'staff' | 'student';
+export type UserRole = 'global-admin' | 'staff' | 'learner';
 
 // Admin Interface
 export interface IAdmin extends Document {
@@ -10,15 +10,16 @@ export interface IAdmin extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'admin';
+  role: 'global-admin';
   department?: Types.ObjectId;
   academicYears?: Types.ObjectId[];
   academicTerms?: Types.ObjectId[];
   programs?: Types.ObjectId[];
   yearGroups?: Types.ObjectId[];
-  teachers?: Types.ObjectId[];
-  students?: Types.ObjectId[];
-  classLevels?: Types.ObjectId[];
+  instructors?: Types.ObjectId[];
+  learners?: Types.ObjectId[];
+  classLevels?: Types.ObjectId[]; // Deprecated: replaced by programLevels
+  programLevels?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +32,7 @@ export interface IStaff extends Document {
   email: string;
   password: string;
   dateEmployed?: Date;
-  teacherId?: string;
+  instructorId?: string;
   isWithdrawn: boolean;
   isSuspended: boolean;
   role: 'staff';
@@ -103,39 +104,18 @@ export interface IMasterTemplate extends Document {
   updatedAt: Date;
 }
 
-// Student Interface
-export interface IStudent extends Document {
+// Learner Interface
+export interface ILearner extends Document {
   _id: Types.ObjectId;
   name: string;
   email: string;
   password: string;
-  studentId?: string;
-  role: 'student';
-  dateAdmitted?: Date;
+  learnerId?: string;
+  role: 'learner';
+  globalStatus: 'active' | 'inactive';
   isSuspended: boolean;
   isWithdrawn: boolean;
-  isGraduated: boolean;
-  isPromotedToLevel200: boolean;
-  isPromotedToLevel300: boolean;
-  isPromotedToLevel400: boolean;
-  academicYear?: Types.ObjectId;
-  program?: Types.ObjectId;
-  classLevels: string[];
-  currentClassLevel?: string;
-  prefectName?: string;
-  yearGraduated?: Date;
-  examResults?: Types.ObjectId[];
   createdBy?: Types.ObjectId;
-  // SCORM Progress Tracking
-  scormProgress?: {
-    enrolledPackages: Types.ObjectId[]; // ScormPackage IDs
-    totalAttempts: number;
-    completedPackages: number;
-    averageScore?: number;
-    totalTimeSpent: number; // Total seconds across all packages
-    lastAccessedPackage?: Types.ObjectId;
-    lastAccessedAt?: Date;
-  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -148,8 +128,8 @@ export interface IAcademicYear extends Document {
   toYear: Date;
   isCurrent: boolean;
   createdBy: Types.ObjectId;
-  students?: Types.ObjectId[];
-  teachers?: Types.ObjectId[];
+  learners?: Types.ObjectId[];
+  instructors?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -168,16 +148,16 @@ export interface IAcademicTerm extends Document {
   updatedAt: Date;
 }
 
-// Class Level Interface
+// Class Level Interface (Deprecated: replaced by ProgramLevel)
 export interface IClassLevel extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
   createdBy: Types.ObjectId;
   department?: Types.ObjectId;
-  students?: Types.ObjectId[];
+  learners?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
-  teachers?: Types.ObjectId[];
+  instructors?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
   createdAt: Date;
@@ -192,9 +172,9 @@ export interface IProgram extends Document {
   duration: string;
   code?: string;
   createdBy: Types.ObjectId;
-  department?: Types.ObjectId;
-  teachers?: Types.ObjectId[];
-  students?: Types.ObjectId[];
+  department: Types.ObjectId;
+  instructors?: Types.ObjectId[];
+  learners?: Types.ObjectId[];
   subjects?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
@@ -202,7 +182,123 @@ export interface IProgram extends Document {
   updatedAt: Date;
 }
 
-// Subject Interface
+// Program Level Interface
+export interface IProgramLevel extends Document {
+  _id: Types.ObjectId;
+  program: Types.ObjectId;
+  name: string;
+  description?: string;
+  order: number;
+  department?: Types.ObjectId;
+  archived: boolean;
+  archivedAt?: Date;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Program Enrollment Interface
+export interface IProgramEnrollment extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  program: Types.ObjectId;
+  status: 'active' | 'completed' | 'withdrawn';
+  enrolledAt: Date;
+  completedAt?: Date;
+  withdrawnAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Class Interface (cohort for a ProgramLevel)
+export interface IClass extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  program: Types.ObjectId;
+  programLevel: Types.ObjectId;
+  department?: Types.ObjectId;
+  instructors?: Types.ObjectId[];
+  startDate?: Date;
+  endDate?: Date;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Class Enrollment Interface
+export interface IClassEnrollment extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  class: Types.ObjectId;
+  program: Types.ObjectId;
+  programLevel: Types.ObjectId;
+  enrolledAt: Date;
+  completedAt?: Date;
+  withdrawnAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Course Interface
+export interface ICourse extends Document {
+  _id: Types.ObjectId;
+  title: string;
+  description?: string;
+  program: Types.ObjectId;
+  programLevel?: Types.ObjectId;
+  department?: Types.ObjectId;
+  isArchived: boolean;
+  archivedAt?: Date;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Course Content Interface (unified content)
+export interface ICourseContent extends Document {
+  _id: Types.ObjectId;
+  course: Types.ObjectId;
+  contentType: 'scorm' | 'custom';
+  scormPackageId?: Types.ObjectId;
+  customContentId?: Types.ObjectId;
+  order: number;
+  isRequired: boolean;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Course Enrollment Interface
+export interface ICourseEnrollment extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  course: Types.ObjectId;
+  program: Types.ObjectId;
+  programLevel?: Types.ObjectId;
+  class?: Types.ObjectId;
+  status: 'active' | 'completed' | 'withdrawn';
+  progress: number;
+  startedAt?: Date;
+  completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Content Attempt Interface (unified attempts)
+export interface IContentAttempt extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  courseContent: Types.ObjectId;
+  contentType: 'scorm' | 'custom';
+  status: 'in_progress' | 'completed' | 'abandoned';
+  score?: number;
+  startedAt: Date;
+  completedAt?: Date;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
+// Subject Interface (Deprecated: replaced by Course)
 export interface ISubject extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -211,7 +307,7 @@ export interface ISubject extends Document {
   createdBy: Types.ObjectId;
   duration: string;
   program?: Types.ObjectId;
-  teachers?: Types.ObjectId[];
+  instructors?: Types.ObjectId[];
   department?: Types.ObjectId;
   archived: boolean;
   archivedAt?: Date;
@@ -284,7 +380,7 @@ export interface IExam extends Document {
 // Exam Result Interface
 export interface IExamResult extends Document {
   _id: Types.ObjectId;
-  student: Types.ObjectId;
+  learner: Types.ObjectId;
   exam: Types.ObjectId;
   grade: number;
   score: number;

@@ -18,7 +18,7 @@ interface DeviceInfo {
 /**
  * Generate access and refresh tokens
  * @param userId - User ID
- * @param userType - Type of user (admin, staff, student)
+ * @param userType - Type of user (global-admin, staff, learner)
  * @param deviceInfo - Optional device information
  * @returns Object containing accessToken and refreshToken
  */

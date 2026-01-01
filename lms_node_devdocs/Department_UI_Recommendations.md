@@ -3,7 +3,7 @@
 ## Goals
 - Let Master Admins manage the department hierarchy (Master → Top-Level → Sub) and shared/global content.
 - Let Top-Level admins manage sub-departments under their scope.
-- Enforce scoped visibility for teachers while keeping global items discoverable.
+- Enforce scoped visibility for instructors while keeping global items discoverable.
 
 ## Pages / Flows
 1) **Department Hierarchy Manager (Admin)**
@@ -13,7 +13,7 @@
    - Guardrails: prevent deleting Master; prevent deleting non-empty nodes; confirm reassign/move not yet supported (call out future work).
 
 2) **Department Assignment (Staff)**
-   - Admin/Teacher profile edit: select department (ObjectId) scoped by current admin’s permissions (Master sees all; top-level admin sees self + subs).
+   - Admin/Instructor profile edit: select department (ObjectId) scoped by current admin’s permissions (Master sees all; top-level admin sees self + subs).
    - Surface current department on profile header and in user tables.
 
 3) **Content Creation/Edit (Programs/Subjects/Class Levels/SCORM Packages)**
@@ -37,14 +37,14 @@
    - Update: PUT `/api/v1/departments/:id` (rename/code change) scoped; no level/parent change allowed (backend rejects).
    - Delete: DELETE `/api/v1/departments/:id` only if no children/staff/content; Master cannot be deleted.
 - Content endpoints now emit `department`:
-   - Programs: GET `/api/v1/programs` (admin/teacher view) returns `department`; auto-scoped; Master can filter via `?department=`.
+   - Programs: GET `/api/v1/programs` (admin/instructor view) returns `department`; auto-scoped; Master can filter via `?department=`.
    - Subjects: GET `/api/v1/subjects` scoped; Master can filter via `?department=`.
    - Class levels: GET `/api/v1/class-levels` scoped; Master can filter via `?department=`.
    - SCORM packages: GET `/api/v1/scorm/packages` accepts `department` (Master-only) plus `isGlobal`; response items include `department` and `isGlobal`; globals stay visible to all roles.
 - Creation semantics (current backend):
    - Programs/Subjects/Class Levels: department auto-set from creator; Master admin may target a department (UI should allow department select for Master, lock for others).
    - SCORM upload: accepts optional `department` when admin; otherwise defaults to creator’s department; optional `isGlobal` (admin-only) to share across departments.
-- Staff profiles: admin/teacher profile update supports `department` change with scope validation; show department picker for authorized admins, read-only for teachers.
+- Staff profiles: admin/instructor profile update supports `department` change with scope validation; show department picker for authorized admins, read-only for instructors.
 - Auth/testing note: test bypass uses `MASTER_DEPARTMENT_ID=000000000000000000000d00`; ignore in UI.
 
 ## Phase 5 UI Behaviors
@@ -64,5 +64,5 @@
 
 ## Future Enhancements
 - Bulk move content between departments (with safety checks).
-- Department-specific dashboards (usage counts, package adoption, teacher activity).
+- Department-specific dashboards (usage counts, package adoption, instructor activity).
 - Role refinement: explicit Department Admin role if needed.

@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The SCORM (Sharable Content Object Reference Model) implementation for the LMS is **complete and production-ready**. All 6 planned phases have been successfully implemented, tested, and documented. Additional production-readiness enhancements including student model integration, S3/CDN configuration, comprehensive API documentation, and monitoring/logging systems have been completed.
+The SCORM (Sharable Content Object Reference Model) implementation for the LMS is **complete and production-ready**. All 6 planned phases have been successfully implemented, tested, and documented. Additional production-readiness enhancements including learner model integration, S3/CDN configuration, comprehensive API documentation, and monitoring/logging systems have been completed.
 
 ### Overall Statistics
 
@@ -56,7 +56,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 - ✅ Package storage (local filesystem)
 - ✅ Package CRUD operations
 - ✅ Package publishing workflow
-- ✅ Student assignment system
+- ✅ Learner assignment system
 
 **API Endpoints (9):**
 1. `POST /api/v1/scorm/packages` - Upload package
@@ -66,8 +66,8 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 5. `DELETE /api/v1/scorm/packages/:id` - Delete package
 6. `POST /api/v1/scorm/packages/:id/publish` - Publish package
 7. `POST /api/v1/scorm/packages/:id/unpublish` - Unpublish package
-8. `POST /api/v1/scorm/packages/:id/students` - Assign to students
-9. `DELETE /api/v1/scorm/packages/:id/students/:studentId` - Unassign student
+8. `POST /api/v1/scorm/packages/:id/learners` - Assign to learners
+9. `DELETE /api/v1/scorm/packages/:id/learners/:learnerId` - Unassign learner
 
 **Key Files:**
 - `model/scorm/ScormPackage.ts` (124 lines)
@@ -174,10 +174,10 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 
 **API Endpoints (12):**
 1. `POST /api/v1/scorm/attempts` - Create attempt
-2. `GET /api/v1/scorm/attempts/student/:studentId` - Get student attempts
+2. `GET /api/v1/scorm/attempts/learner/:learnerId` - Get learner attempts
 3. `GET /api/v1/scorm/attempts/:id` - Get attempt details
 4. `GET /api/v1/scorm/attempts/package/:packageId` - Get package attempts
-5. `GET /api/v1/scorm/reports/student/:studentId` - Student progress report
+5. `GET /api/v1/scorm/reports/learner/:learnerId` - Learner progress report
 6. `GET /api/v1/scorm/reports/package/:packageId/analytics` - Package analytics
 7. `GET /api/v1/scorm/reports/export` - Export tracking data
 8. `GET /api/v1/scorm/reports/attempts/:attemptId` - Detailed attempt report
@@ -204,7 +204,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 - Score distributions
 - Time spent analysis
 - Pass/fail rates
-- Student progress tracking
+- Learner progress tracking
 - Package performance metrics
 
 ---
@@ -247,19 +247,19 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 
 ## Production Readiness Enhancements (COMPLETE)
 
-### ✅ Enhancement 1: Student Model Integration
+### ✅ Enhancement 1: Learner Model Integration
 **Status:** 100% Complete
 
 **Changes:**
-- ✅ Added `scormProgress` field to Student interface (`types/models.ts`)
-- ✅ Added `scormProgress` schema to Student model (`model/Academic/Student.ts`)
+- ✅ Added `scormProgress` field to Learner interface (`types/models.ts`)
+- ✅ Added `scormProgress` schema to Learner model (`model/Academic/Learner.ts`)
 - ✅ Added SCORM-specific indexes for query optimization
 - ✅ Integrated with existing academic system
 
 **Schema Fields:**
 ```typescript
 scormProgress: {
-  enrolledPackages: [ObjectId]      // Packages assigned to student
+  enrolledPackages: [ObjectId]      // Packages assigned to learner
   totalAttempts: Number              // Total SCORM attempts
   completedPackages: Number          // Successfully completed packages
   averageScore: Number               // Average score across all attempts
@@ -385,7 +385,7 @@ REDIS_SESSION_TTL=1800
 
 **API Endpoints (3):**
 1. `GET /api/v1/scorm/health` - Health status (public for load balancers)
-2. `GET /api/v1/scorm/metrics` - Detailed metrics (admin/teacher only)
+2. `GET /api/v1/scorm/metrics` - Detailed metrics (admin/instructor only)
 3. `POST /api/v1/scorm/metrics/reset` - Reset metrics (admin only)
 
 **Logging Events:**
@@ -517,7 +517,7 @@ lms_node/
 - ✅ ScormPackage (12 fields, 3 indexes)
 - ✅ ScormAttempt (15 fields, 4 indexes)
 - ✅ ScormSession (Redis-based, TTL)
-- ✅ Student integration (scormProgress field)
+- ✅ Learner integration (scormProgress field)
 
 ### Features
 - ✅ Package upload and validation
@@ -528,7 +528,7 @@ lms_node/
 - ✅ Progress tracking and persistence
 - ✅ Analytics and reporting
 - ✅ Data export (CSV, JSON)
-- ✅ Student assignment workflow
+- ✅ Learner assignment workflow
 - ✅ Package publishing workflow
 - ✅ Resume functionality
 - ✅ Health monitoring
@@ -574,7 +574,7 @@ While the backend SCORM implementation is complete and production-ready, the fol
 **Priority:** High  
 **Estimated Effort:** 4-6 weeks
 
-**Student Dashboard:**
+**Learner Dashboard:**
 - [ ] Available packages list view
 - [ ] Package enrollment interface
 - [ ] Progress tracking dashboard
@@ -582,10 +582,10 @@ While the backend SCORM implementation is complete and production-ready, the fol
 - [ ] Score and completion display
 - [ ] Certificate download
 
-**Teacher Dashboard:**
+**Instructor Dashboard:**
 - [ ] Package upload interface with drag-and-drop
 - [ ] Package management (edit, delete, publish)
-- [ ] Student assignment interface
+- [ ] Learner assignment interface
 - [ ] Analytics dashboard with charts
 - [ ] Export functionality UI
 - [ ] Grading interface
@@ -618,7 +618,7 @@ While the backend SCORM implementation is complete and production-ready, the fol
 **Enhanced Analytics:**
 - [ ] Real-time learning analytics dashboard
 - [ ] Predictive analytics (completion likelihood)
-- [ ] Comparative analytics (student vs. cohort)
+- [ ] Comparative analytics (learner vs. cohort)
 - [ ] Time-series analysis
 - [ ] Heatmaps for interaction patterns
 
@@ -684,8 +684,8 @@ While the backend SCORM implementation is complete and production-ready, the fol
 **Estimated Effort:** 1-2 weeks
 
 **User Documentation:**
-- [ ] Student user guide
-- [ ] Teacher user guide
+- [ ] Learner user guide
+- [ ] Instructor user guide
 - [ ] Admin user guide
 - [ ] SCORM package creation guide
 - [ ] Troubleshooting guide
@@ -827,10 +827,10 @@ While the backend SCORM implementation is complete and production-ready, the fol
 4. **Create deployment runbook** - Document deployment and rollback procedures
 
 ### Short-term (Month 1-2)
-1. **Develop frontend UI** - Student and teacher dashboards
+1. **Develop frontend UI** - Learner and instructor dashboards
 2. **Implement monitoring** - Prometheus, Grafana, error tracking
 3. **E2E testing** - Comprehensive user journey testing
-4. **User documentation** - Guides for students, teachers, admins
+4. **User documentation** - Guides for learners, instructors, admins
 
 ### Medium-term (Month 3-4)
 1. **Advanced analytics** - Real-time dashboards, predictive analytics
@@ -864,12 +864,12 @@ While the backend SCORM implementation is complete and production-ready, the fol
 - [ ] Session timeout at 30 minutes (configurable)
 
 ### Business Metrics (post-deployment)
-- [ ] Student engagement rate
+- [ ] Learner engagement rate
 - [ ] Course completion rate
 - [ ] Average scores
 - [ ] Time spent on courses
 - [ ] Number of active SCORM packages
-- [ ] Teacher adoption rate
+- [ ] Instructor adoption rate
 
 ---
 
@@ -891,7 +891,7 @@ The SCORM implementation for the LMS has been successfully completed with **100%
 | Category | Metric |
 |----------|--------|
 | **API Endpoints** | 36 |
-| **Database Models** | 3 (+ Student enhancement) |
+| **Database Models** | 3 (+ Learner enhancement) |
 | **Controllers** | 7 |
 | **Routes** | 8 |
 | **Utilities** | 10+ |
@@ -912,8 +912,8 @@ The remaining work consists primarily of **frontend UI development**, **advanced
 4. Create deployment runbook
 
 **For full feature completion:**
-1. Develop student dashboard UI
-2. Develop teacher dashboard UI
+1. Develop learner dashboard UI
+2. Develop instructor dashboard UI
 3. Develop admin dashboard UI
 4. Implement monitoring infrastructure (Prometheus/Grafana)
 

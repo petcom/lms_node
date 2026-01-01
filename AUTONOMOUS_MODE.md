@@ -162,8 +162,8 @@ lms_node/
 ├── controller/             # Request handlers
 │   ├── academics/         # Academic features
 │   ├── auth/              # Authentication & password
-│   ├── staff/             # Admin & teacher controllers
-│   └── students/          # Student controllers
+│   ├── staff/             # Admin & instructor controllers
+│   └── learners/          # Learner controllers
 ├── middlewares/           # Express middlewares
 ├── model/                 # Mongoose models
 │   ├── Academic/         # Academic entities
@@ -301,7 +301,7 @@ When operating autonomously:
 📋 Reading checklist: Phase 2.1 - Consolidate Authentication Middleware
 
 ✓ Task identified: Remove redundant authentication middleware
-✓ Planning: Will consolidate isLogin, isTeacherLogin, isStudentLogin
+✓ Planning: Will consolidate isLogin, isInstructorLogin, isLearnerLogin
 ✓ Creating: Enhanced isAuthenticated middleware
 ✓ Updating: All route files to use new middleware
 ✓ Installing: No new packages needed

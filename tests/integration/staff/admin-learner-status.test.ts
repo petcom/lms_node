@@ -1,13 +1,13 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import Staff from '../../../model/Staff/Staff';
+import Learner from '../../../model/Academic/Learner';
 import Admin from '../../../model/Staff/Admin';
 import { hashPassword } from '../../../utils/helpers';
 
-describe('Admin teacher status actions', () => {
-  const adminId = new mongoose.Types.ObjectId('00000000000000000000aa11');
-  const teacherId = new mongoose.Types.ObjectId('00000000000000000000bb11');
+describe('Admin learner status actions', () => {
+  const adminId = new mongoose.Types.ObjectId('00000000000000000000aa12');
+  const learnerId = new mongoose.Types.ObjectId('00000000000000000000cc11');
 
   beforeAll(async () => {
     const uri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/lms-test';
@@ -16,22 +16,22 @@ describe('Admin teacher status actions', () => {
     }
 
     await Admin.deleteMany({ _id: adminId });
-    await Staff.deleteMany({ _id: teacherId });
+    await Learner.deleteMany({ _id: learnerId });
 
     await Admin.create({
       _id: adminId,
       name: 'Admin User',
-      email: 'admin@example.com',
+      email: 'admin-learner@example.com',
       password: await hashPassword('Password123!'),
-      role: 'admin',
+      role: 'global-admin',
     });
 
-    await Staff.create({
-      _id: teacherId,
-      name: 'Staff User',
-      email: 'teacher@example.com',
+    await Learner.create({
+      _id: learnerId,
+      name: 'Learner User',
+      email: 'learner@example.com',
       password: await hashPassword('Password123!'),
-      role: 'staff',
+      role: 'learner',
       isSuspended: false,
       isWithdrawn: false,
     });
@@ -39,15 +39,15 @@ describe('Admin teacher status actions', () => {
 
   afterAll(async () => {
     await Admin.deleteMany({ _id: adminId });
-    await Staff.deleteMany({ _id: teacherId });
+    await Learner.deleteMany({ _id: learnerId });
     await mongoose.connection.close();
   });
 
-  it('suspends, unsuspends, withdraws, and unwithdraws a teacher', async () => {
-    const token = 'test-admin-token';
+  it('suspends, unsuspends, withdraws, and unwithdraws a learner', async () => {
+    const token = 'test-global-admin-token';
 
     const suspendRes = await request(app)
-      .put(`/api/v1/admins/suspend/staff/${teacherId.toString()}`)
+      .put(`/api/v1/staff/admins/suspend/learner/${learnerId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'policy' });
 
@@ -55,7 +55,7 @@ describe('Admin teacher status actions', () => {
     expect(suspendRes.body.data.isSuspended).toBe(true);
 
     const unsuspendRes = await request(app)
-      .put(`/api/v1/admins/unsuspend/staff/${teacherId.toString()}`)
+      .put(`/api/v1/staff/admins/unsuspend/learner/${learnerId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'reviewed' });
 
@@ -63,7 +63,7 @@ describe('Admin teacher status actions', () => {
     expect(unsuspendRes.body.data.isSuspended).toBe(false);
 
     const withdrawRes = await request(app)
-      .put(`/api/v1/admins/withdraw/staff/${teacherId.toString()}`)
+      .put(`/api/v1/staff/admins/withdraw/learner/${learnerId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'leave' });
 
@@ -71,7 +71,7 @@ describe('Admin teacher status actions', () => {
     expect(withdrawRes.body.data.isWithdrawn).toBe(true);
 
     const unwithdrawRes = await request(app)
-      .put(`/api/v1/admins/unwithdraw/staff/${teacherId.toString()}`)
+      .put(`/api/v1/staff/admins/unwithdraw/learner/${learnerId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'returned' });
 

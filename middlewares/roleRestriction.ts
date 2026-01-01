@@ -10,10 +10,10 @@ import { UserRole } from '../types/auth';
  * @returns Express middleware function
  * @example
  * // Single role
- * router.get('/admin-only', isAuthenticated(), roleRestriction('admin'), controller);
+ * router.get('/global-admin-only', isAuthenticated(), roleRestriction('global-admin'), controller);
  *
  * // Multiple roles
- * router.get('/staff-only', isAuthenticated(), roleRestriction('admin', 'staff'), controller);
+ * router.get('/staff-only', isAuthenticated(), roleRestriction('global-admin', 'staff'), controller);
  */
 const roleRestriction = (...roles: UserRole[]) => {
   // Validate that all provided roles are valid
@@ -43,18 +43,18 @@ const roleRestriction = (...roles: UserRole[]) => {
 };
 
 /**
- * Shorthand middleware for Teacher or Admin access
+ * Shorthand middleware for Instructor or Global Admin access
  */
-export const isTeacherOrAdmin = roleRestriction('staff', 'admin');
+export const isInstructorOrAdmin = roleRestriction('staff', 'global-admin');
 
 /**
- * Shorthand middleware for Admin only access
+ * Shorthand middleware for Global Admin only access
  */
-export const isAdmin = roleRestriction('admin');
+export const isAdmin = roleRestriction('global-admin');
 
 /**
- * Shorthand middleware for Student access
+ * Shorthand middleware for Learner access
  */
-export const isStudent = roleRestriction('student');
+export const isLearner = roleRestriction('learner');
 
 export default roleRestriction;

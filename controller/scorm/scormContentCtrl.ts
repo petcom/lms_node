@@ -9,11 +9,11 @@ import { NotFoundError } from '../../utils/errors';
 /**
  * @desc    Launch SCORM package
  * @route   GET /api/scorm/content/:packageId/launch
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const launchPackage = asyncHandler(async (req: Request, res: Response) => {
   const { packageId } = req.params;
-  const studentId = req.userAuth!._id;
+  const learnerId = req.userAuth!._id;
 
   // Get package
   const scormPackage = await ScormPackage.findById(packageId);
@@ -22,10 +22,10 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
     throw new NotFoundError('SCORM package not found');
   }
 
-  // Check if student has access (fall back to allow when method is unavailable)
+  // Check if learner has access (fall back to allow when method is unavailable)
   let hasAccess = true;
-  if (typeof (scormPackage as any).hasStudentAccess === 'function') {
-    hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  if (typeof (scormPackage as any).hasLearnerAccess === 'function') {
+    hasAccess = await (scormPackage as any).hasLearnerAccess(learnerId);
   }
 
   if (!hasAccess) {
@@ -34,7 +34,7 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   }
 
   // Get or create attempt
-  const attempt = await ScormAttempt.getOrCreateAttempt(studentId, scormPackage._id);
+  const attempt = await ScormAttempt.getOrCreateAttempt(learnerId, scormPackage._id);
 
   // Check max attempts
   if (
@@ -77,7 +77,7 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
         packageId: scormPackage.packageId,
         attemptId: attempt._id,
         attemptNumber: (attempt as any).attemptNumber,
-        learnerId: studentId,
+        learnerId: learnerId,
         version: scormPackage.version,
         endpoints: {
           initialize: `${runtimeBase}/initialize`,
@@ -96,12 +96,12 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
 /**
  * @desc    Get SCORM content file
  * @route   GET /api/scorm/content/:packageId/*
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getContentFile = asyncHandler(async (req: Request, res: Response) => {
   const { packageId } = req.params;
   const filePath = req.params[0]; // Capture everything after packageId
-  const studentId = req.userAuth!._id;
+  const learnerId = req.userAuth!._id;
 
   // Find package
   const scormPackage = await ScormPackage.findOne({ packageId });
@@ -111,10 +111,10 @@ export const getContentFile = asyncHandler(async (req: Request, res: Response) =
     throw new Error('SCORM package not found');
   }
 
-  // Check if student has access (fall back to allow when method is unavailable)
+  // Check if learner has access (fall back to allow when method is unavailable)
   let hasAccess = true;
-  if (typeof (scormPackage as any).hasStudentAccess === 'function') {
-    hasAccess = await (scormPackage as any).hasStudentAccess(studentId);
+  if (typeof (scormPackage as any).hasLearnerAccess === 'function') {
+    hasAccess = await (scormPackage as any).hasLearnerAccess(learnerId);
   }
 
   if (!hasAccess) {
@@ -160,7 +160,7 @@ export const getContentFile = asyncHandler(async (req: Request, res: Response) =
 /**
  * @desc    Get package manifest
  * @route   GET /api/scorm/content/:packageId/manifest
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const getManifest = asyncHandler(async (req: Request, res: Response) => {
   const { packageId } = req.params;

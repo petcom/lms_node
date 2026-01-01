@@ -162,9 +162,9 @@ export interface IScormPackage {
   // Access Control
   createdBy: Types.ObjectId;
   uploadedBy?: Types.ObjectId;
-  uploadedByModel?: 'Admin' | 'Teacher' | 'Student';
+  uploadedByModel?: 'Admin' | 'Instructor' | 'Learner';
   assignedTo: {
-    students?: Types.ObjectId[];
+    learners?: Types.ObjectId[];
     classLevels?: Types.ObjectId[];
     programs?: Types.ObjectId[];
   };
@@ -175,10 +175,10 @@ export interface IScormPackage {
   isGlobal?: boolean;
   publishedAt?: Date;
   publishedBy?: Types.ObjectId;
-  publishedByModel?: 'Admin' | 'Teacher';
+  publishedByModel?: 'Admin' | 'Instructor';
   unpublishedAt?: Date;
   unpublishedBy?: Types.ObjectId;
-  unpublishedByModel?: 'Admin' | 'Teacher';
+  unpublishedByModel?: 'Admin' | 'Instructor';
   isActive: boolean;
 
   // Tracking Settings
@@ -256,8 +256,8 @@ export interface IScormLearnerPreference {
 
 export interface IScormCMI {
   // SCORM 1.2 Core Data
-  student_id?: string;
-  student_name?: string;
+  learner_id?: string;
+  learner_name?: string;
   lesson_location?: string;
   lesson_status?: LessonStatus;
   entry?: EntryType;
@@ -310,7 +310,7 @@ export interface IScormAttempt {
   attemptId: string;
 
   // Relationships
-  student: Types.ObjectId;
+  learner: Types.ObjectId;
   package: Types.ObjectId;
 
   // Attempt Information
@@ -425,7 +425,7 @@ export interface IUploadScormPackageRequest {
   weight?: number;
   dueDate?: Date;
   assignedTo?: {
-    students?: string[];
+    learners?: string[];
     classLevels?: string[];
     programs?: string[];
   };
@@ -446,7 +446,7 @@ export interface IUpdateScormPackageRequest {
   status?: PackageStatus;
   isActive?: boolean;
   assignedTo?: {
-    students?: string[];
+    learners?: string[];
     classLevels?: string[];
     programs?: string[];
   };

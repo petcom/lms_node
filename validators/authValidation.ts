@@ -20,9 +20,9 @@ export const registerAdmin = {
 };
 
 /**
- * Teacher registration validation
+ * Instructor registration validation
  */
-export const registerTeacher = {
+export const registerInstructor = {
   body: Joi.object({
     name: Joi.string().min(2).max(100).trim().required(),
     email,
@@ -36,9 +36,9 @@ export const registerTeacher = {
 };
 
 /**
- * Student registration validation
+ * Learner registration validation
  */
-export const registerStudent = {
+export const registerLearner = {
   body: Joi.object({
     name: Joi.string().min(2).max(100).trim().required(),
     email,
@@ -48,7 +48,7 @@ export const registerStudent = {
     classLevel: objectId,
     program: objectId,
     dateAdmitted: Joi.date().iso(),
-    studentId: Joi.string().trim(),
+    learnerId: Joi.string().trim(),
   }),
 };
 

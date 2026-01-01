@@ -8,9 +8,9 @@ import { StorageFactory } from '../../../utils/scorm/storage/StorageFactory';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
-const teacherId = '0000000000000000000000b1';
+const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
-const teacherToken = 'test-teacher-token';
+const instructorToken = 'test-instructor-token';
 
 const makeManifest = () => `<?xml version="1.0" encoding="UTF-8"?>
 <manifest identifier="MANIFEST01" version="1.2">
@@ -53,13 +53,13 @@ describe('SCORM Package Upload API', () => {
       await mongoose.connect(uri);
     }
 
-    await Staff.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
 
     await Staff.create({
-      _id: new mongoose.Types.ObjectId(teacherId),
+      _id: new mongoose.Types.ObjectId(instructorId),
       name: 'Staff Upload',
-      email: 'teacher-upload@example.com',
+      email: 'instructor-upload@example.com',
       password: 'password',
       role: 'staff',
     });
@@ -69,7 +69,7 @@ describe('SCORM Package Upload API', () => {
       name: 'Admin Upload',
       email: 'admin-upload@example.com',
       password: 'password',
-      role: 'admin',
+      role: 'global-admin',
     });
   });
 
@@ -88,7 +88,7 @@ describe('SCORM Package Upload API', () => {
 
     const res = await request(app)
       .post('/api/v1/scorm/packages')
-      .set('Authorization', `Bearer ${teacherToken}`)
+      .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Upload Test')
       .field('isGraded', 'true')
       .field('maxScore', '50')
@@ -108,7 +108,7 @@ describe('SCORM Package Upload API', () => {
 
     const res = await request(app)
       .post('/api/v1/scorm/packages')
-      .set('Authorization', `Bearer ${teacherToken}`)
+      .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Bad Package')
       .attach('file', zipBuffer, 'bad.zip');
 
@@ -123,7 +123,7 @@ describe('SCORM Package Upload API', () => {
 
     const res = await request(app)
       .post('/api/v1/scorm/packages')
-      .set('Authorization', `Bearer ${teacherToken}`)
+      .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Too Big')
       .attach('file', bigBuffer, 'big.zip');
 

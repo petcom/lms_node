@@ -6,7 +6,7 @@ import ScormPackage from '../../../model/Scorm/ScormPackage';
 import CustomContent from '../../../model/Content/CustomContent';
 import Course from '../../../model/Content/Course';
 
-const adminToken = 'test-admin-token';
+const adminToken = 'test-global-admin-token';
 const masterDepartmentId = new mongoose.Types.ObjectId(
   process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
 );

@@ -549,7 +549,7 @@ export const listAttempts = asyncHandler(async (req: Request, res: Response) => 
   const scormAttempts = await ScormAttempt.find({ package: scorm._id }).lean();
   const items = scormAttempts.map((attempt: any) => ({
     id: attempt._id.toString(),
-    learnerId: attempt.student?.toString(),
+    learnerId: attempt.learner?.toString(),
     courseId: null,
     contentId: scorm._id.toString(),
     segmentId: attempt.attemptId,
@@ -593,7 +593,7 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
   if (!contentType || contentType === 'scorm') {
     const scormFilter: any = {};
     if (learnerId) {
-      scormFilter.student = new mongoose.Types.ObjectId(learnerId);
+      scormFilter.learner = new mongoose.Types.ObjectId(learnerId);
     }
     if (courseId) {
       const course = await Course.findById(courseId).lean();

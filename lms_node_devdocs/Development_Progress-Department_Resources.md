@@ -16,7 +16,7 @@ Implemented the department resources API surface under `/api/v1/department-resou
 
 ## Endpoints Implemented
 - `GET /api/v1/department-resources/staffusers`
-  - Query: `type=teacher|dept-admin|staff`, `departmentId`, `page`, `limit`
+  - Query: `type=instructor|dept-admin|staff`, `departmentId`, `page`, `limit`
   - Returns: `{ items: StaffUser[] }`
 - `GET /api/v1/department-resources/content`
   - Query: `type=scorm|test|quiz|practice|other`, `departmentId`, `page`, `limit`

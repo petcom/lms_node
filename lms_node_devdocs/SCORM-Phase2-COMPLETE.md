@@ -13,9 +13,9 @@
 Phase 2 implements a comprehensive RESTful API for SCORM package management including:
 - Package upload with validation and extraction
 - Full CRUD operations with filtering and pagination
-- Assignment management (students, classes, programs)
+- Assignment management (learners, classes, programs)
 - Content delivery with access control
-- Student attempt tracking with CMI data management
+- Learner attempt tracking with CMI data management
 - Progress statistics and reporting
 
 ---
@@ -30,60 +30,60 @@ Phase 2 implements a comprehensive RESTful API for SCORM package management incl
 - `getPackage` - Single package with populated relationships (subject, program, classLevel, createdBy)
 - `updatePackage` - Edit metadata, publishing status, grading config
 - `deletePackage` - Remove from storage and database
-- `assignPackage` - Assign to students/classes/programs (unique sets)
+- `assignPackage` - Assign to learners/classes/programs (unique sets)
 - `unassignPackage` - Remove assignments with filtering
-- `getMyAssignments` - Student view using static method `findAssignedToStudent`
+- `getMyAssignments` - Learner view using static method `findAssignedToLearner`
 
 **controller/scorm/scormContentCtrl.ts** (149 lines, 3 endpoints)
-- `launchPackage` - Student access check via `hasStudentAccess()`, attempt creation, max attempts enforcement, launch URL generation, statistics update
+- `launchPackage` - Learner access check via `hasLearnerAccess()`, attempt creation, max attempts enforcement, launch URL generation, statistics update
 - `getContentFile` - Serve SCORM files with 30+ content types (HTML, JS, CSS, images, videos, PDFs, etc.), streaming via StorageProvider
-- `getManifest` - Return manifest data (admin/teacher only)
+- `getManifest` - Return manifest data (admin/instructor only)
 
 **controller/scorm/scormAttemptCtrl.ts** (318 lines, 7 endpoints)
-- `getAttemptsByPackage` - Student's attempts for a package
-- `getAttempt` - Single attempt with role-based authorization (student own data, teacher/admin all data)
+- `getAttemptsByPackage` - Learner's attempts for a package
+- `getAttempt` - Single attempt with role-based authorization (learner own data, instructor/admin all data)
 - `updateCMI` - SCORM CMI data updates using `setCMIValue()`, session logging with timestamp/event/data
 - `getCMI` - Retrieve CMI element values using `getCMIValue()`
 - `completeAttempt` - Mark complete, calculate scores (raw/min/max/scaled), update completion status, calculate duration, auto-calculate completion percentage via `calculateCompletion()`, session logging, statistics update
-- `getAllAttempts` - Admin/teacher view with pagination
-- `getStudentProgress` - Summary statistics (total attempts, completed, passed, failed, in progress, average score, total time spent)
+- `getAllAttempts` - Admin/instructor view with pagination
+- `getLearnerProgress` - Summary statistics (total attempts, completed, passed, failed, in progress, average score, total time spent)
 
 ### 2. Routes ✅ (3 files, 18 route registrations)
 
 **routes/scorm/scormPackageRoutes.ts** (64 lines)
 - Multer config: memory storage, 500MB limit (configurable via env), ZIP filter
 - 8 routes with authentication and role-based authorization:
-  - `POST /` - Upload (teacher/admin, with multer single('package'))
-  - `GET /` - List all (teacher/admin)
-  - `GET /my-assignments` - Student assignments
+  - `POST /` - Upload (instructor/admin, with multer single('package'))
+  - `GET /` - List all (instructor/admin)
+  - `GET /my-assignments` - Learner assignments
   - `GET /:id` - Get one (authenticated)
-  - `PUT /:id` - Update (teacher/admin)
-  - `DELETE /:id` - Delete (teacher/admin)
-  - `POST /:id/assign` - Assign (teacher/admin)
-  - `POST /:id/unassign` - Unassign (teacher/admin)
+  - `PUT /:id` - Update (instructor/admin)
+  - `DELETE /:id` - Delete (instructor/admin)
+  - `POST /:id/assign` - Assign (instructor/admin)
+  - `POST /:id/unassign` - Unassign (instructor/admin)
 
 **routes/scorm/scormContentRoutes.ts** (32 lines)
 - 3 routes for content delivery:
-  - `GET /:packageId/launch` - Launch package (student)
-  - `GET /:packageId/manifest` - Get manifest (teacher/admin)
-  - `GET /:packageId/*` - Serve files with wildcard (student)
+  - `GET /:packageId/launch` - Launch package (learner)
+  - `GET /:packageId/manifest` - Get manifest (instructor/admin)
+  - `GET /:packageId/*` - Serve files with wildcard (learner)
 
 **routes/scorm/scormAttemptRoutes.ts** (38 lines)
 - 7 routes for attempt tracking:
-  - `GET /package/:packageId` - Get attempts (student)
-  - `GET /:attemptId` - Get attempt (student/teacher/admin)
-  - `PUT /:attemptId/cmi` - Update CMI (student)
-  - `GET /:attemptId/cmi/:element` - Get CMI (student)
-  - `POST /:attemptId/complete` - Complete (student)
-  - `GET /` - All attempts (teacher/admin)
-  - `GET /student/:studentId/summary` - Progress summary (teacher/admin)
+  - `GET /package/:packageId` - Get attempts (learner)
+  - `GET /:attemptId` - Get attempt (learner/instructor/admin)
+  - `PUT /:attemptId/cmi` - Update CMI (learner)
+  - `GET /:attemptId/cmi/:element` - Get CMI (learner)
+  - `POST /:attemptId/complete` - Complete (learner)
+  - `GET /` - All attempts (instructor/admin)
+  - `GET /learner/:learnerId/summary` - Progress summary (instructor/admin)
 
 ### 3. Middleware Enhancements ✅
 
 **middlewares/roleRestriction.ts**
-- Added `export const isTeacherOrAdmin = roleRestriction('teacher', 'admin')`
+- Added `export const isInstructorOrAdmin = roleRestriction('instructor', 'admin')`
 - Added `export const isAdmin = roleRestriction('admin')`
-- Added `export const isStudent = roleRestriction('student')`
+- Added `export const isLearner = roleRestriction('learner')`
 
 ### 4. App Integration ✅
 
@@ -111,11 +111,11 @@ Phase 2 implements a comprehensive RESTful API for SCORM package management incl
    - Solution: Non-null assertions `req.userAuth!._id`
    
 2. **Mongoose model methods not recognized** (~20 instances)
-   - Methods: setCMIValue, getCMIValue, calculateCompletion, hasStudentAccess, findAssignedToStudent, getOrCreateAttempt, updateStats
+   - Methods: setCMIValue, getCMIValue, calculateCompletion, hasLearnerAccess, findAssignedToLearner, getOrCreateAttempt, updateStats
    - Solution: Type assertions `(model as any).method()`
    
 3. **Mongoose model properties not recognized** (~20 instances)
-   - Properties: score, completionStatus, totalTime, sessionLog, assignedStudents, assignedClasses, assignedPrograms, maxAttempts, passingScore, requiredScore, isPublished, description, subject, program, classLevel, attemptNumber
+   - Properties: score, completionStatus, totalTime, sessionLog, assignedLearners, assignedClasses, assignedPrograms, maxAttempts, passingScore, requiredScore, isPublished, description, subject, program, classLevel, attemptNumber
    - Solution: Type assertions `(model as any).property`
    
 4. **Import issues** (3 instances)
@@ -142,9 +142,9 @@ field: 'package' (single file)
 
 ### Authentication & Authorization
 - All routes: `isAuthenticated` middleware
-- Package upload/CRUD: `isTeacherOrAdmin`
-- Content delivery: Student access check via `hasStudentAccess(studentId)`
-- Attempt tracking: Students (own data), Teachers/Admins (all data)
+- Package upload/CRUD: `isInstructorOrAdmin`
+- Content delivery: Learner access check via `hasLearnerAccess(learnerId)`
+- Attempt tracking: Learners (own data), Instructors/Admins (all data)
 
 ### Content Type Detection (30+ types)
 HTML, HTM, CSS, JS, JSON, XML, TXT, PDF, PNG, JPG, JPEG, GIF, SVG, BMP, WEBP, ICO, MP4, WEBM, OGG, MP3, WAV, WOFF, WOFF2, TTF, OTF, EOT, ZIP, default (octet-stream)
@@ -158,13 +158,13 @@ HTML, HTM, CSS, JS, JSON, XML, TXT, PDF, PNG, JPG, JPEG, GIF, SVG, BMP, WEBP, IC
 ### Statistics Tracking
 - Automatic recalculation via `ScormPackage.updateStats(packageId)`
 - Package stats: total attempts, completed attempts, average score, average time
-- Student progress: total attempts, completed, passed, failed, in progress, average score, total time
+- Learner progress: total attempts, completed, passed, failed, in progress, average score, total time
 
 ### API Patterns
 - RESTful design
 - Pagination support (advancedResults middleware compatible)
 - Filtering (subject, program, classLevel, published, search)
-- Populated relationships (subject, program, classLevel, student, package, createdBy)
+- Populated relationships (subject, program, classLevel, learner, package, createdBy)
 - Error responses: 404 (not found), 403 (forbidden), 400 (validation)
 - Success responses: `{ success: true, message, data }`
 
@@ -191,8 +191,8 @@ HTML, HTM, CSS, JS, JSON, XML, TXT, PDF, PNG, JPG, JPEG, GIF, SVG, BMP, WEBP, IC
 
 ### Package Management (8)
 - `POST /api/v1/scorm/packages` - Upload package
-- `GET /api/v1/scorm/packages` - List packages (teacher/admin)
-- `GET /api/v1/scorm/packages/my-assignments` - Student assignments
+- `GET /api/v1/scorm/packages` - List packages (instructor/admin)
+- `GET /api/v1/scorm/packages/my-assignments` - Learner assignments
 - `GET /api/v1/scorm/packages/:id` - Get package
 - `PUT /api/v1/scorm/packages/:id` - Update package
 - `DELETE /api/v1/scorm/packages/:id` - Delete package
@@ -210,8 +210,8 @@ HTML, HTM, CSS, JS, JSON, XML, TXT, PDF, PNG, JPG, JPEG, GIF, SVG, BMP, WEBP, IC
 - `PUT /api/v1/scorm/attempts/:attemptId/cmi` - Update CMI data
 - `GET /api/v1/scorm/attempts/:attemptId/cmi/:element` - Get CMI element
 - `POST /api/v1/scorm/attempts/:attemptId/complete` - Complete attempt
-- `GET /api/v1/scorm/attempts` - Get all attempts (admin/teacher)
-- `GET /api/v1/scorm/attempts/student/:studentId/summary` - Student progress
+- `GET /api/v1/scorm/attempts` - Get all attempts (admin/instructor)
+- `GET /api/v1/scorm/attempts/learner/:learnerId/summary` - Learner progress
 
 ### Health (1)
 - `GET /api/v1/health` - Health check (pre-existing)
@@ -343,7 +343,7 @@ HTML, HTM, CSS, JS, JSON, XML, TXT, PDF, PNG, JPG, JPEG, GIF, SVG, BMP, WEBP, IC
 
 ### Blocker 4: Argument Order Mismatch
 **Issue**: `getOrCreateAttempt()` called with wrong arg order  
-**Root Cause**: Assumed packageId first, actually studentId first  
+**Root Cause**: Assumed packageId first, actually learnerId first  
 **Resolution**: Reviewed model implementation, swapped arguments  
 **Status**: ✅ Resolved
 

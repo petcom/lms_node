@@ -12,7 +12,7 @@ import {
 import advancedResults from '../../middlewares/advancedResults';
 import Subject from '../../model/Academic/Subject';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import roleRestriction, { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
+import roleRestriction, { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 
 const subjectRouter: Router = express.Router();
@@ -20,12 +20,12 @@ const subjectRouter: Router = express.Router();
 /**
  * updated chained routes
  */
-subjectRouter.post('/:programID', isAuthenticated(), roleRestriction('admin'), createSubject);
+subjectRouter.post('/:programID', isAuthenticated(), roleRestriction('global-admin'), createSubject);
 subjectRouter.get(
   '/',
   isAuthenticated(),
   departmentScope(),
-  isTeacherOrAdmin,
+  isInstructorOrAdmin,
   advancedResults(Subject, undefined, (req) => {
     const scope = req.departmentScope?.accessibleDepartmentIds;
     const requestedDept =
@@ -48,15 +48,15 @@ subjectRouter.get(
   }),
   getSubjects
 );
-subjectRouter.get('/:id', isAuthenticated(), departmentScope(), isTeacherOrAdmin, getSubject);
-subjectRouter.put('/:id', isAuthenticated(), roleRestriction('admin'), updateSubject);
-subjectRouter.delete('/:id', isAuthenticated(), roleRestriction('admin'), deleteSubject);
+subjectRouter.get('/:id', isAuthenticated(), departmentScope(), isInstructorOrAdmin, getSubject);
+subjectRouter.put('/:id', isAuthenticated(), roleRestriction('global-admin'), updateSubject);
+subjectRouter.delete('/:id', isAuthenticated(), roleRestriction('global-admin'), deleteSubject);
 
 subjectRouter.patch(
   '/:id/archive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   archiveSubject
 );
 
@@ -64,7 +64,7 @@ subjectRouter.patch(
   '/:id/unarchive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   unarchiveSubject
 );
 

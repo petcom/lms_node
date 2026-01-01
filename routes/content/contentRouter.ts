@@ -33,7 +33,7 @@ contentRouter.get(
   '/',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentListQuery),
   listContent
 );
@@ -42,7 +42,7 @@ contentRouter.post(
   '/custom',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(customContentCreate),
   createCustomContent
 );
@@ -51,7 +51,7 @@ contentRouter.patch(
   '/custom/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(customContentUpdate),
   updateCustomContent
 );
@@ -60,7 +60,7 @@ contentRouter.get(
   '/courses/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseIdParam),
   getCourse
 );
@@ -69,7 +69,7 @@ contentRouter.patch(
   '/courses/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseUpdate),
   updateCourse
 );
@@ -78,7 +78,7 @@ contentRouter.get(
   '/courses/:id/render',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseIdParam),
   renderCourse
 );
@@ -87,7 +87,7 @@ contentRouter.post(
   '/courses/:id/render',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(courseIdParam),
   forceRenderCourse
 );
@@ -103,7 +103,7 @@ contentRouter.get(
   '/reports',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(reportsQuery),
   listReports
 );
@@ -112,7 +112,7 @@ contentRouter.get(
   '/:id/attempts',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentIdParam),
   listAttempts
 );
@@ -121,7 +121,7 @@ contentRouter.get(
   '/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(contentIdParam),
   getContent
 );

@@ -67,20 +67,20 @@ Successfully completed **5 major phases** of the LMS development checklist in au
   - Custom error classes (AuthenticationError)
 
 - Removed 6 redundant middleware files:
-  - isLogin.js, isTeacherLogin.js, isStudentLogin.js
-  - isAdmin.js, isTeacher.js, isStudent.js
+  - isLogin.js, isInstructorLogin.js, isLearnerLogin.js
+  - isAdmin.js, isInstructor.js, isLearner.js
 
 - Updated 14 route files to use unified pattern:
   - 2 auth routes
   - 2 staff routes  
-  - 1 student route
+  - 1 learner route
   - 7 academic routes
   - 2 exam routes
 
 #### Role-Based Access Control
 - Enhanced `middlewares/roleRestriction.js`:
   - Single role: `roleRestriction('admin')`
-  - Multiple roles: `roleRestriction('admin', 'teacher')`
+  - Multiple roles: `roleRestriction('admin', 'instructor')`
   - Throws AuthorizationError (403) for unauthorized access
 
 ### Verification Results
@@ -162,7 +162,7 @@ Created 5 comprehensive schema files:
 - Class level, academic term
 
 **validators/authValidation.js:**
-- registerAdmin, registerTeacher, registerStudent
+- registerAdmin, registerInstructor, registerLearner
 - login, refreshToken
 - changePassword, forgotPassword, resetPassword
 - validatePasswordStrength
@@ -173,13 +173,13 @@ Created 5 comprehensive schema files:
 - idParam (for :id routes)
 - paginationQuery
 
-**validators/studentValidation.js:**
+**validators/learnerValidation.js:**
 - updateProfile, submitExam, writeExam
 - checkResults, requestRemark
 
 **validators/staffValidation.js:**
-- updateAdminProfile, updateTeacherProfile
-- staffAction, publishResults, promoteStudent
+- updateAdminProfile, updateInstructorProfile
+- staffAction, publishResults, promoteLearner
 
 #### Route Integration
 Applied validation to key endpoints:

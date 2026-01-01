@@ -7,7 +7,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { launchPlayer, serveContent, exitPlayer } from '../../controller/scorm/scormPlayerCtrl';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import { isStudent } from '../../middlewares/roleRestriction';
+import { isLearner } from '../../middlewares/roleRestriction';
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ const attachTokenFromQuery = (req: Request, res: Response, next: NextFunction) =
  * GET /api/v1/scorm/player/:packageId/launch
  *
  * Returns HTML player interface with embedded content
- * Requires authentication (students must be assigned)
+ * Requires authentication (learners must be assigned)
  */
 router.get('/:packageId/launch', attachTokenFromQuery, isAuthenticated(), launchPlayer);
 
@@ -54,8 +54,8 @@ router.get('/:packageId/content/*', attachTokenFromQuery, isAuthenticated(), ser
  * POST /api/v1/scorm/player/:attemptId/exit
  *
  * Returns final attempt statistics
- * Requires student authentication
+ * Requires learner authentication
  */
-router.post('/:attemptId/exit', isAuthenticated(), isStudent, exitPlayer);
+router.post('/:attemptId/exit', isAuthenticated(), isLearner, exitPlayer);
 
 export default router;

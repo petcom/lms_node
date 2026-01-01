@@ -34,7 +34,7 @@ interface UpdateExamBody {
 /**
  * @description Create Exam
  * @route       POST /api/v1/exams
- * @access      Private Teachers Only
+ * @access      Private Instructors Only
  */
 export const createExam = AsyncHandler(
   async (
@@ -55,10 +55,10 @@ export const createExam = AsyncHandler(
       academicYear,
     } = req.body;
 
-    // find teacher
-    const teacherFound = await Staff.findById(req.userAuth?._id);
+    // find instructor
+    const instructorFound = await Staff.findById(req.userAuth?._id);
 
-    if (!teacherFound) {
+    if (!instructorFound) {
       throw new Error('Staff member not found');
     }
 
@@ -69,7 +69,7 @@ export const createExam = AsyncHandler(
     }
 
     /**
-     * Note: This is an alternative way to create an object using new Exam() very similiar to PHP/Laravel. Utilizing the `push()` method of mongoose I am pushing the examCreated object into the teacher object.
+     * Note: This is an alternative way to create an object using new Exam() very similiar to PHP/Laravel. Utilizing the `push()` method of mongoose I am pushing the examCreated object into the instructor object.
      */
     // create exam
     const examCreated = new Exam({
@@ -87,13 +87,13 @@ export const createExam = AsyncHandler(
       program,
     });
 
-    // push the exam into teacher
-    if (teacherFound.examsCreated) {
-      teacherFound.examsCreated.push(examCreated._id);
+    // push the exam into instructor
+    if (instructorFound.examsCreated) {
+      instructorFound.examsCreated.push(examCreated._id);
     }
     // save the exam
     await examCreated.save();
-    await teacherFound.save();
+    await instructorFound.save();
     // send response
     res.status(201).json({
       status: 'success',
@@ -109,7 +109,7 @@ export const createExam = AsyncHandler(
  * @access      Private
  *
  * Note: populating using an object allows more flexability to retrieve only the data we need
- * In the path, we are passing createdBy, which returns the teacher that created the question on the exam
+ * In the path, we are passing createdBy, which returns the instructor that created the question on the exam
  */
 export const getExams = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
   res.status(200).json(res.results);
@@ -118,7 +118,7 @@ export const getExams = AsyncHandler(async (_req: Request, res: Response): Promi
 /**
  * @description Get Single Exam
  * @route       GET /api/v1/exams/:id
- * @access      Private Teachers Only
+ * @access      Private Instructors Only
  */
 export const getExam = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
@@ -189,7 +189,7 @@ export const updateExam = AsyncHandler(
 /**
  * @description Delete Exam
  * @route DELETE /api/admins/exams/:id
- * @access Private Teachers
+ * @access Private Instructors
  */
 export const deleteExam = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {

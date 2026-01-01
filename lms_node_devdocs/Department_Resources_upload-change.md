@@ -1,7 +1,7 @@
 # Department Resources Upload/Change - Development Plan
 
 ## Goal
-Enable system admins and department admins to grant admin privileges within their allowed scope, add update routes under `/api/v1/department-resources`, and prevent department admins from administering other departments. Rename `Teacher` to `Staff` and introduce role capabilities for staff users.
+Enable system admins and department admins to grant admin privileges within their allowed scope, add update routes under `/api/v1/department-resources`, and prevent department admins from administering other departments. Rename `Instructor` to `Staff` and introduce role capabilities for staff users.
 
 ## Access Rules
 - System admins: can assign admin privileges across all departments.
@@ -21,7 +21,7 @@ Base: `/api/v1/department-resources`
      - Department admin: can grant/revoke roles only within scope.
    - Notes:
      - Roles are additive; absence means no capability.
-     - Staff user role list replaces legacy `teacher` naming.
+     - Staff user role list replaces legacy `instructor` naming.
 
 2) PATCH `/staffusers/:id/department`
    - Body: `{ departmentId: "<ObjectId>" | null }`
@@ -56,9 +56,9 @@ Base: `/api/v1/department-resources`
    - If needed for name/code changes within scope.
 
 ## Implementation Task Outline
-1) Rename `Teacher` to `Staff`:
+1) Rename `Instructor` to `Staff`:
    - Model rename, collection alias/migration plan
-   - Route renames from `/teachers/*` to `/staff/*` (add backward-compatible alias if needed)
+   - Route renames from `/instructors/*` to `/staff/*` (add backward-compatible alias if needed)
    - Update references in controllers, validators, types, and tests
 2) Introduce staff roles:
    - Create roles storage (collection or embedded on Staff model)
@@ -85,8 +85,8 @@ Base: `/api/v1/department-resources`
 10) Update progress report once tests pass.
 
 ## Open Questions
-1) Should `Teacher` data be migrated to `Staff` (rename collection), or should `Staff` be an alias of `Teacher`?
-Teacher should be migrated to 'Staff' - rename the collection.
+1) Should `Instructor` data be migrated to `Staff` (rename collection), or should `Staff` be an alias of `Instructor`?
+Instructor should be migrated to 'Staff' - rename the collection.
 
 2) Where should staff roles be stored (embedded array on Staff, or a separate roles collection)?
 

@@ -31,7 +31,7 @@ templatesRouter.get(
   '/departments/:id/master-css',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin', 'staff'),
+  roleRestriction('global-admin', 'staff'),
   validate(masterCssParam),
   getMasterCss
 );
@@ -40,7 +40,7 @@ templatesRouter.put(
   '/departments/:id/master-css',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(masterCssUpdate),
   updateMasterCss
 );
@@ -50,7 +50,7 @@ templatesRouter.post(
   '/score',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin', 'staff'),
+  roleRestriction('global-admin', 'staff'),
   validate(scoreRequest),
   scoreTemplateCss
 );
@@ -60,7 +60,7 @@ templatesRouter.get(
   '/',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin', 'staff'),
+  roleRestriction('global-admin', 'staff'),
   validate(templateListQuery),
   listTemplates
 );
@@ -69,7 +69,7 @@ templatesRouter.post(
   '/',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(templateCreate),
   createTemplate
 );
@@ -78,7 +78,7 @@ templatesRouter.get(
   '/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin', 'staff'),
+  roleRestriction('global-admin', 'staff'),
   validate(templateIdParam),
   getTemplate
 );
@@ -87,7 +87,7 @@ templatesRouter.patch(
   '/:id',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(templateUpdate),
   updateTemplate
 );
@@ -96,7 +96,7 @@ templatesRouter.post(
   '/:id/publish',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(templateIdParam),
   publishTemplate
 );
@@ -105,7 +105,7 @@ templatesRouter.post(
   '/:id/archive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   validate(templateIdParam),
   archiveTemplate
 );

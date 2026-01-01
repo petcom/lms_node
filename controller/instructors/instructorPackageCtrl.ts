@@ -5,7 +5,7 @@ import ScormPackage from '../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ClassLevel from '../../model/Academic/ClassLevel';
 import { NotFoundError, ValidationError } from '../../utils/errors';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 
 const asObjectId = (value: string) => new mongoose.Types.ObjectId(value);
 
@@ -30,7 +30,7 @@ const ensureOwnership = (pkg: any, req: Request) => {
   }
 };
 
-export const publishTeacherPackage = asyncHandler(
+export const publishInstructorPackage = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const pkg = await findPackageByAnyId(req.params.id);
     if (!pkg) {
@@ -48,7 +48,7 @@ export const publishTeacherPackage = asyncHandler(
     (pkg as any).status = 'published';
     (pkg as any).publishedAt = new Date();
     (pkg as any).publishedBy = req.userAuth!._id;
-    (pkg as any).publishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Staff';
+    (pkg as any).publishedByModel = req.userAuth!.role === 'global-admin' ? 'Admin' : 'Staff';
 
     await pkg.save();
 
@@ -56,7 +56,7 @@ export const publishTeacherPackage = asyncHandler(
   }
 );
 
-export const unpublishTeacherPackage = asyncHandler(
+export const unpublishInstructorPackage = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const pkg = await findPackageByAnyId(req.params.id);
     if (!pkg) {
@@ -74,7 +74,7 @@ export const unpublishTeacherPackage = asyncHandler(
     (pkg as any).status = 'draft';
     (pkg as any).unpublishedAt = new Date();
     (pkg as any).unpublishedBy = req.userAuth!._id;
-    (pkg as any).unpublishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Staff';
+    (pkg as any).unpublishedByModel = req.userAuth!.role === 'global-admin' ? 'Admin' : 'Staff';
 
     await pkg.save();
 
@@ -82,8 +82,8 @@ export const unpublishTeacherPackage = asyncHandler(
   }
 );
 
-export const listTeacherClasses = asyncHandler(async (req: Request, res: Response) => {
-  const teacherId = req.userAuth!._id.toString();
+export const listInstructorClasses = asyncHandler(async (req: Request, res: Response) => {
+  const instructorId = req.userAuth!._id.toString();
   const role = req.userAuth!.role;
   const search = (req.query.search as string) || '';
   const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
@@ -94,7 +94,7 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
     classFilter.name = { $regex: search, $options: 'i' };
   }
   if (role === 'staff') {
-    classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
+    classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
   const skip = (page - 1) * limit;
@@ -104,25 +104,25 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
   ]);
 
   const classIds = classes.map((c) => c._id.toString());
-  const students = await Student.find({ classLevels: { $in: classIds } }).select(
+  const learners = await Learner.find({ classLevels: { $in: classIds } }).select(
     'name classLevels'
   );
-  const studentsByClass: Record<string, mongoose.Types.ObjectId[]> = {};
-  students.forEach((s) => {
+  const learnersByClass: Record<string, mongoose.Types.ObjectId[]> = {};
+  learners.forEach((s) => {
     (s.classLevels || []).forEach((cl: any) => {
       if (classIds.includes(cl)) {
-        if (!studentsByClass[cl]) studentsByClass[cl] = [];
-        studentsByClass[cl].push(s._id as any);
+        if (!learnersByClass[cl]) learnersByClass[cl] = [];
+        learnersByClass[cl].push(s._id as any);
       }
     });
   });
 
-  const studentIds = students.map((s) => s._id);
+  const learnerIds = learners.map((s) => s._id);
   const attemptAgg = await ScormAttempt.aggregate([
-    { $match: { student: { $in: studentIds } } },
+    { $match: { learner: { $in: learnerIds } } },
     {
       $group: {
-        _id: '$student',
+        _id: '$learner',
         completed: {
           $sum: { $cond: [{ $in: ['$status', ['completed', 'passed']] }, 1, 0] },
         },
@@ -146,11 +146,11 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
 
   const items = classes.map((cls) => {
     const clsId = cls._id.toString();
-    const classStudents = studentsByClass[clsId] || [];
+    const classLearners = learnersByClass[clsId] || [];
     let totalAttempts = 0;
     let completedAttempts = 0;
     let passedAttempts = 0;
-    classStudents.forEach((sid) => {
+    classLearners.forEach((sid) => {
       const stats = attemptMap[sid.toString()];
       if (stats) {
         totalAttempts += stats.total;
@@ -165,7 +165,7 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
     return {
       id: clsId,
       name: cls.name,
-      students: classStudents.length,
+      learners: classLearners.length,
       completion,
       passRate,
     };
@@ -182,22 +182,22 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-export const teacherDashboard = asyncHandler(async (req: Request, res: Response) => {
-  const teacherId = req.userAuth!._id.toString();
+export const instructorDashboard = asyncHandler(async (req: Request, res: Response) => {
+  const instructorId = req.userAuth!._id.toString();
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
   if (role === 'staff') {
-    classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
+    classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
   const classes = await ClassLevel.find(classFilter).select('_id');
   const classIds = classes.map((c) => c._id.toString());
 
-  const students = await Student.find({ classLevels: { $in: classIds } }).select('_id');
-  const studentIds = students.map((s) => s._id);
+  const learners = await Learner.find({ classLevels: { $in: classIds } }).select('_id');
+  const learnerIds = learners.map((s) => s._id);
 
-  const attempts = await ScormAttempt.find({ student: { $in: studentIds } }).select(
+  const attempts = await ScormAttempt.find({ learner: { $in: learnerIds } }).select(
     'status package'
   );
 
@@ -213,7 +213,7 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
 
   const activePackages = await ScormPackage.countDocuments(
     role === 'staff'
-      ? { uploadedBy: new mongoose.Types.ObjectId(teacherId), isPublished: true }
+      ? { uploadedBy: new mongoose.Types.ObjectId(instructorId), isPublished: true }
       : { isPublished: true }
   );
 
@@ -221,7 +221,7 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
     success: true,
     data: {
       classes: classIds.length,
-      students: studentIds.length,
+      learners: learnerIds.length,
       activePackages,
       avgCompletion,
       passRate,
@@ -229,13 +229,13 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
   });
 });
 
-export const listTeacherAttempts = asyncHandler(async (req: Request, res: Response) => {
-  const teacherId = req.userAuth!._id.toString();
+export const listInstructorAttempts = asyncHandler(async (req: Request, res: Response) => {
+  const instructorId = req.userAuth!._id.toString();
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
   if (role === 'staff') {
-    classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
+    classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
   const classes = await ClassLevel.find(classFilter).select('_id');
@@ -248,11 +248,11 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
 
   const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
 
-  const students = await Student.find({ classLevels: { $in: classIdsToUse } }).select(
+  const learners = await Learner.find({ classLevels: { $in: classIdsToUse } }).select(
     'name classLevels'
   );
-  const studentIds = students.map((s) => s._id);
-  const studentNameMap = students.reduce<Record<string, string>>((acc, s) => {
+  const learnerIds = learners.map((s) => s._id);
+  const learnerNameMap = learners.reduce<Record<string, string>>((acc, s) => {
     acc[s._id.toString()] = s.name;
     return acc;
   }, {});
@@ -272,11 +272,11 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    ScormAttempt.find({ student: { $in: studentIds }, ...packageFilter })
+    ScormAttempt.find({ learner: { $in: learnerIds }, ...packageFilter })
       .sort({ startedAt: -1 })
       .skip(skip)
       .limit(limit),
-    ScormAttempt.countDocuments({ student: { $in: studentIds }, ...packageFilter }),
+    ScormAttempt.countDocuments({ learner: { $in: learnerIds }, ...packageFilter }),
   ]);
 
   const packageIds = items.map((a) => a.package);
@@ -288,7 +288,7 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
 
   const mapped = items.map((a) => ({
     id: a._id.toString(),
-    studentName: studentNameMap[a.student.toString()] || 'Unknown',
+    learnerName: learnerNameMap[a.learner.toString()] || 'Unknown',
     packageTitle: packageMap[a.package.toString()] || 'Unknown',
     status: a.status,
     score: (a as any).scorePercentage || undefined,
@@ -307,13 +307,13 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
   });
 });
 
-export const listTeacherAssignments = asyncHandler(async (req: Request, res: Response) => {
-  const teacherId = req.userAuth!._id.toString();
+export const listInstructorAssignments = asyncHandler(async (req: Request, res: Response) => {
+  const instructorId = req.userAuth!._id.toString();
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
   if (role === 'staff') {
-    classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
+    classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
   const classes = await ClassLevel.find(classFilter).select('name');
@@ -332,7 +332,7 @@ export const listTeacherAssignments = asyncHandler(async (req: Request, res: Res
 
   const pkgFilter: any = { 'assignedTo.classLevels': { $in: classIdsToUse } };
   if (role === 'staff') {
-    pkgFilter.uploadedBy = new mongoose.Types.ObjectId(teacherId);
+    pkgFilter.uploadedBy = new mongoose.Types.ObjectId(instructorId);
   }
 
   const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
@@ -370,7 +370,7 @@ export const listTeacherAssignments = asyncHandler(async (req: Request, res: Res
   });
 });
 
-export const listTeacherPackages = asyncHandler(async (req: Request, res: Response) => {
+export const listInstructorPackages = asyncHandler(async (req: Request, res: Response) => {
   const { search, status } = req.query as { search?: string; status?: string };
   const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
   const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
@@ -452,7 +452,7 @@ export const listTeacherPackages = asyncHandler(async (req: Request, res: Respon
   });
 });
 
-export const assignTeacherPackage = asyncHandler(async (req: Request, res: Response) => {
+export const assignInstructorPackage = asyncHandler(async (req: Request, res: Response) => {
   const {
     packageId,
     classIds = [],
@@ -474,18 +474,18 @@ export const assignTeacherPackage = asyncHandler(async (req: Request, res: Respo
 
   ensureOwnership(pkg, req);
 
-  const teacherId = req.userAuth!._id.toString();
+  const instructorId = req.userAuth!._id.toString();
   const classes = await ClassLevel.find({ _id: { $in: classIds } });
 
   const ownedClasses = classes.filter((c) =>
-    (c.teachers || []).some((t) => t.toString() === teacherId)
+    (c.instructors || []).some((t) => t.toString() === instructorId)
   );
 
   if (ownedClasses.length !== classIds.length) {
     throw new NotFoundError('One or more classes not found for this staff member');
   }
 
-  const assigned = pkg.assignedTo || { students: [], classLevels: [], programs: [] };
+  const assigned = pkg.assignedTo || { learners: [], classLevels: [], programs: [] };
   const uniqueClassIds = Array.from(
     new Set([...(assigned.classLevels || []).map(String), ...classIds.map(String)])
   );

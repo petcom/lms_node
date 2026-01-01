@@ -222,11 +222,11 @@ mongo mongodb://localhost:27017/lms_production
 
 // Create indexes
 db.admins.createIndex({ email: 1 }, { unique: true })
-db.teachers.createIndex({ email: 1 }, { unique: true })
-db.students.createIndex({ email: 1 }, { unique: true })
+db.instructors.createIndex({ email: 1 }, { unique: true })
+db.learners.createIndex({ email: 1 }, { unique: true })
 db.academicYears.createIndex({ name: 1 }, { unique: true })
 db.exams.createIndex({ createdBy: 1 })
-db.examResults.createIndex({ student: 1, exam: 1 })
+db.examResults.createIndex({ learner: 1, exam: 1 })
 ```
 
 ---

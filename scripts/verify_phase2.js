@@ -49,7 +49,7 @@ test('isAuthenticated.js exists and is the unified auth middleware', () => {
     throw new Error('isAuthenticated.js not found');
   }
   const content = readFile('middlewares/isAuthenticated.js');
-  if (!content.includes('Admin') || !content.includes('Teacher') || !content.includes('Student')) {
+  if (!content.includes('Admin') || !content.includes('Instructor') || !content.includes('Learner')) {
     throw new Error('isAuthenticated does not check all user types');
   }
 });
@@ -80,15 +80,15 @@ test('Deprecated isLogin.js has been removed', () => {
   }
 });
 
-test('Deprecated isTeacherLogin.js has been removed', () => {
-  if (!fileNotExists('middlewares/isTeacherLogin.js')) {
-    throw new Error('isTeacherLogin.js still exists - should be deleted');
+test('Deprecated isInstructorLogin.js has been removed', () => {
+  if (!fileNotExists('middlewares/isInstructorLogin.js')) {
+    throw new Error('isInstructorLogin.js still exists - should be deleted');
   }
 });
 
-test('Deprecated isStudentLogin.js has been removed', () => {
-  if (!fileNotExists('middlewares/isStudentLogin.js')) {
-    throw new Error('isStudentLogin.js still exists - should be deleted');
+test('Deprecated isLearnerLogin.js has been removed', () => {
+  if (!fileNotExists('middlewares/isLearnerLogin.js')) {
+    throw new Error('isLearnerLogin.js still exists - should be deleted');
   }
 });
 
@@ -98,15 +98,15 @@ test('Deprecated isAdmin.js has been removed', () => {
   }
 });
 
-test('Deprecated isTeacher.js has been removed', () => {
-  if (!fileNotExists('middlewares/isTeacher.js')) {
-    throw new Error('isTeacher.js still exists - should be deleted');
+test('Deprecated isInstructor.js has been removed', () => {
+  if (!fileNotExists('middlewares/isInstructor.js')) {
+    throw new Error('isInstructor.js still exists - should be deleted');
   }
 });
 
-test('Deprecated isStudent.js has been removed', () => {
-  if (!fileNotExists('middlewares/isStudent.js')) {
-    throw new Error('isStudent.js still exists - should be deleted');
+test('Deprecated isLearner.js has been removed', () => {
+  if (!fileNotExists('middlewares/isLearner.js')) {
+    throw new Error('isLearner.js still exists - should be deleted');
   }
 });
 
@@ -131,7 +131,7 @@ test('staffRouter uses unified isAuthenticated()', () => {
     throw new Error('staffRouter.js not found');
   }
   const content = readFile('routes/staff/staffRouter.js');
-  if (content.includes('isTeacherLogin') || content.includes('isAuthenticated(Teacher)')) {
+  if (content.includes('isInstructorLogin') || content.includes('isAuthenticated(Instructor)')) {
     throw new Error('staffRouter still uses old authentication pattern');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
@@ -139,16 +139,16 @@ test('staffRouter uses unified isAuthenticated()', () => {
   }
 });
 
-test('studentRouter uses unified isAuthenticated()', () => {
-  if (!fileExists('routes/students/studentRouter.js')) {
-    throw new Error('studentRouter.js not found');
+test('learnerRouter uses unified isAuthenticated()', () => {
+  if (!fileExists('routes/learners/learnerRouter.js')) {
+    throw new Error('learnerRouter.js not found');
   }
-  const content = readFile('routes/students/studentRouter.js');
-  if (content.includes('isStudentLogin') || content.includes('isAuthenticated(Student)')) {
-    throw new Error('studentRouter still uses old authentication pattern');
+  const content = readFile('routes/learners/learnerRouter.js');
+  if (content.includes('isLearnerLogin') || content.includes('isAuthenticated(Learner)')) {
+    throw new Error('learnerRouter still uses old authentication pattern');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
-    throw new Error('studentRouter not using unified authentication');
+    throw new Error('learnerRouter not using unified authentication');
   }
 });
 
@@ -157,7 +157,7 @@ test('examRoutes uses unified isAuthenticated()', () => {
     throw new Error('examRoutes.js not found');
   }
   const content = readFile('routes/academics/examRoutes.js');
-  if (content.includes('isTeacherLogin') || content.includes('isTeacher')) {
+  if (content.includes('isInstructorLogin') || content.includes('isInstructor')) {
     throw new Error('examRoutes still uses old middleware');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
@@ -170,7 +170,7 @@ test('questionRoutes uses unified isAuthenticated()', () => {
     throw new Error('questionRoutes.js not found');
   }
   const content = readFile('routes/academics/questionRoutes.js');
-  if (content.includes('isTeacherLogin') || content.includes('isTeacher')) {
+  if (content.includes('isInstructorLogin') || content.includes('isInstructor')) {
     throw new Error('questionRoutes still uses old middleware');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
@@ -183,7 +183,7 @@ test('examResultsRoutes uses unified isAuthenticated()', () => {
     throw new Error('examResultsRoutes.js not found');
   }
   const content = readFile('routes/academics/examResultsRoutes.js');
-  if (content.includes('isStudentLogin') || content.includes('isStudent') || content.includes('isLogin') || content.includes('isAdmin')) {
+  if (content.includes('isLearnerLogin') || content.includes('isLearner') || content.includes('isLogin') || content.includes('isAdmin')) {
     throw new Error('examResultsRoutes still uses old middleware');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
@@ -281,7 +281,7 @@ test('roleRestriction accepts multiple roles', () => {
   if (typeof roleRestriction !== 'function') {
     throw new Error('roleRestriction should export a function');
   }
-  const middleware = roleRestriction('admin', 'staff');
+  const middleware = roleRestriction('global-admin', 'staff');
   if (typeof middleware !== 'function') {
     throw new Error('roleRestriction(...roles) should return middleware function');
   }
@@ -292,7 +292,11 @@ test('roles.js exports required constants', () => {
   if (!roles.ROLES || !roles.ROLE_HIERARCHY || !roles.ROLE_PERMISSIONS) {
     throw new Error('roles.js missing required exports');
   }
-  if (roles.ROLES.ADMIN !== 'admin' || roles.ROLES.STAFF !== 'staff' || roles.ROLES.STUDENT !== 'student') {
+  if (
+    roles.ROLES.GLOBAL_ADMIN !== 'global-admin' ||
+    roles.ROLES.STAFF !== 'staff' ||
+    roles.ROLES.LEARNER !== 'learner'
+  ) {
     throw new Error('ROLES constants have incorrect values');
   }
 });
@@ -312,14 +316,14 @@ test('roles.js exports utility functions', () => {
 
 test('isValidRole correctly validates roles', () => {
   const { isValidRole } = require('../utils/roles');
-  if (!isValidRole('admin')) {
+  if (!isValidRole('global-admin')) {
     throw new Error('admin should be a valid role');
   }
   if (!isValidRole('staff')) {
     throw new Error('staff should be a valid role');
   }
-  if (!isValidRole('student')) {
-    throw new Error('student should be a valid role');
+  if (!isValidRole('learner')) {
+    throw new Error('learner should be a valid role');
   }
   if (isValidRole('invalid')) {
     throw new Error('invalid should not be a valid role');
@@ -335,7 +339,7 @@ test('getAllRoles returns all role values', () => {
   if (allRoles.length !== 3) {
     throw new Error('Should have exactly 3 roles');
   }
-  if (!allRoles.includes('admin') || !allRoles.includes('staff') || !allRoles.includes('student')) {
+  if (!allRoles.includes('global-admin') || !allRoles.includes('staff') || !allRoles.includes('learner')) {
     throw new Error('getAllRoles missing required role values');
   }
 });

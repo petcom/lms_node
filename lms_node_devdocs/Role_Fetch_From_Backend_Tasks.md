@@ -4,7 +4,7 @@ Goal: ensure the frontend relies solely on the backend-provided role (or a follo
 
 ## Backend/API
 - [x] Expose an authenticated identity endpoint that returns role (e.g., `GET /auth/me` or `GET /auth/token-info`) and ensure login responses include role when possible. (`/auth/token-info` now returns `role` from the JWT or `req.userAuth`).
-- [x] Align response shape: `{ role: 'student' | 'teacher' | 'admin', accessToken?: string }`; keep refresh cookie behavior unchanged. (Admin/Teacher/Student logins now return `{ accessToken, role }` with the role embedded in the signed JWT.)
+- [x] Align response shape: `{ role: 'learner' | 'instructor' | 'admin', accessToken?: string }`; keep refresh cookie behavior unchanged. (Admin/Instructor/Learner logins now return `{ accessToken, role }` with the role embedded in the signed JWT.)
 - [x] Add contract docs to OpenAPI/Swagger so the UI can generate types or at least trust the payload. (Swagger for login routes and `token-info` now declares `role` and `accessToken` fields.)
 
 ## Frontend Store & Client
@@ -22,7 +22,7 @@ Goal: ensure the frontend relies solely on the backend-provided role (or a follo
 
 ## Testing
 - [x] Add MSW handler for the identity endpoint with role in the payload; update login handlers to return role too. (Login handlers now return role; token-info added—MSW not used in this repo, covered via unit tests.)
-- [x] RTL: cover login happy paths per role, asserting redirect to `/student/home`, `/teacher/home`, `/admin/home` based on backend role (ignore dropdown selection). (`RoleRedirectFlow.test.tsx` covers student/teacher/admin routing and missing-role unauthorized.)
+- [x] RTL: cover login happy paths per role, asserting redirect to `/learner/home`, `/instructor/home`, `/admin/home` based on backend role (ignore dropdown selection). (`RoleRedirectFlow.test.tsx` covers learner/instructor/admin routing and missing-role unauthorized.)
 - [x] RTL: cover refresh-on-load restoring role and redirecting appropriately. (`AppRefresh.test.tsx` ensures refresh is invoked on mount; store refresh fetches role.)
 - [x] Unit: verify `authStore` stores backend role and ignores client-provided role. (`authStore.test.ts` covers role from login, token-info fallback, refresh role restore.)
 
@@ -35,5 +35,5 @@ Goal: ensure the frontend relies solely on the backend-provided role (or a follo
 - [x] Note backend contract and sample responses in the devdocs or API docs.
 
 Backend contract (reference):
-- Login responses return `{ accessToken: string, role: 'student' | 'teacher' | 'admin' }` for all roles (`/admins/login`, `/teachers/login`, `/students/login`).
-- Identity endpoint: `GET /auth/token-info` (Bearer auth, withCredentials) returns `data: { userId: string, role: 'student' | 'teacher' | 'admin', issuedAt: ISO | null, expiresAt: ISO | null, timeRemaining: number | null }`.
+- Login responses return `{ accessToken: string, role: 'learner' | 'instructor' | 'admin' }` for all roles (`/admins/login`, `/instructors/login`, `/learners/login`).
+- Identity endpoint: `GET /auth/token-info` (Bearer auth, withCredentials) returns `data: { userId: string, role: 'learner' | 'instructor' | 'admin', issuedAt: ISO | null, expiresAt: ISO | null, timeRemaining: number | null }`.

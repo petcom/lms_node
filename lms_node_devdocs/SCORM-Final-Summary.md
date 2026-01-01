@@ -191,7 +191,7 @@ lms_node/
 - 4 attempt tracking endpoints
 - MongoDB models
 - File upload handling
-- Student assignment
+- Learner assignment
 
 **Key Files**: 7 files, 28 integration tests
 
@@ -270,8 +270,8 @@ PUT    /api/v1/scorm/packages/:id                - Update package
 DELETE /api/v1/scorm/packages/:id                - Delete package
 POST   /api/v1/scorm/packages/:id/publish        - Publish package
 POST   /api/v1/scorm/packages/:id/unpublish      - Unpublish package
-POST   /api/v1/scorm/packages/:id/students       - Assign students
-DELETE /api/v1/scorm/packages/:id/students       - Unassign students
+POST   /api/v1/scorm/packages/:id/learners       - Assign learners
+DELETE /api/v1/scorm/packages/:id/learners       - Unassign learners
 ```
 
 #### Content Delivery (2 endpoints)
@@ -283,7 +283,7 @@ GET    /api/v1/scorm/content/:packageId/metadata - Get metadata
 #### Attempt Tracking (4 endpoints)
 ```
 POST   /api/v1/scorm/attempts                    - Create attempt
-GET    /api/v1/scorm/attempts/student/:studentId - Get student attempts
+GET    /api/v1/scorm/attempts/learner/:learnerId - Get learner attempts
 GET    /api/v1/scorm/attempts/:id                - Get attempt details
 GET    /api/v1/scorm/attempts/package/:packageId - Get package attempts
 ```
@@ -308,7 +308,7 @@ GET    /api/v1/scorm/player/:packageId/resume        - Resume suspended attempt
 
 #### Tracking & Reporting (8 endpoints)
 ```
-GET    /api/v1/scorm/reports/student/:studentId          - Student progress
+GET    /api/v1/scorm/reports/learner/:learnerId          - Learner progress
 GET    /api/v1/scorm/reports/package/:packageId/analytics - Package analytics
 GET    /api/v1/scorm/reports/attempts/:attemptId         - Attempt details
 GET    /api/v1/scorm/reports/export                      - Export data
@@ -324,9 +324,9 @@ GET    /api/v1/scorm/reports/interactions/:attemptId     - Interaction data
 
 ### Authentication & Authorization
 - ✅ All endpoints require JWT authentication
-- ✅ Role-based access control (Student, Teacher, Admin)
-- ✅ Students can only access their own data
-- ✅ Teachers can view all student data
+- ✅ Role-based access control (Learner, Instructor, Admin)
+- ✅ Learners can only access their own data
+- ✅ Instructors can view all learner data
 - ✅ Admins have full access
 
 ### Package Security
@@ -338,7 +338,7 @@ GET    /api/v1/scorm/reports/interactions/:attemptId     - Interaction data
 - ✅ Directory escape protection
 
 ### Content Security
-- ✅ Student assignment verification
+- ✅ Learner assignment verification
 - ✅ Published package checks
 - ✅ Max attempts enforcement
 - ✅ Session ownership validation
@@ -561,7 +561,7 @@ redis-cli keys "scorm:session:*"
 - [ ] xAPI (Tin Can API) support
 - [ ] Real-time analytics dashboard
 - [ ] Advanced reporting (custom queries)
-- [ ] Predictive analytics (student success prediction)
+- [ ] Predictive analytics (learner success prediction)
 - [ ] Redis Cluster for high availability
 - [ ] CDN integration for content delivery
 - [ ] Service Worker for offline support
@@ -585,8 +585,8 @@ redis-cli keys "scorm:session:*"
 
 ### Business Achievements
 - ✅ Full SCORM content delivery
-- ✅ Student progress tracking
-- ✅ Teacher analytics tools
+- ✅ Learner progress tracking
+- ✅ Instructor analytics tools
 - ✅ Multi-tenant support
 - ✅ Export functionality
 - ✅ Grading system integration

@@ -5,8 +5,8 @@ import Department from '../../../model/Academic/Department';
 import MasterTemplate from '../../../model/Content/MasterTemplate';
 import DepartmentMasterCSS from '../../../model/Content/DepartmentMasterCSS';
 
-const masterToken = 'test-admin-token';
-const topAdminToken = 'test-top-admin-token';
+const masterToken = 'test-global-admin-token';
+const topAdminToken = 'test-top-global-admin-token';
 
 const masterDepartmentId = new mongoose.Types.ObjectId(
   process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'

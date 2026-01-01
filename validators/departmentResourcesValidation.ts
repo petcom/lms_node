@@ -7,7 +7,7 @@ import { objectId, pagination } from './common';
 
 export const staffUsersQuery = {
   query: Joi.object({
-    type: Joi.string().valid('teacher', 'dept-admin', 'staff'),
+    type: Joi.string().valid('instructor', 'dept-admin', 'staff'),
     departmentId: objectId,
     page: pagination.page,
     limit: pagination.limit,

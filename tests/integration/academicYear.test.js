@@ -25,7 +25,7 @@ describe('Academic Year Integration Tests', () => {
 
     // Create and login admin for protected routes
     const registerResponse = await request(app)
-      .post('/api/v1/admins/register')
+      .post('/api/v1/staff/admins/register')
       .send({
         name: 'Test Admin',
         email: 'admin@test.com',
@@ -35,7 +35,7 @@ describe('Academic Year Integration Tests', () => {
     adminId = registerResponse.body.data._id;
 
     const loginResponse = await request(app)
-      .post('/api/v1/admins/login')
+      .post('/api/v1/staff/admins/login')
       .send({
         email: 'admin@test.com',
         password: 'Admin@123'

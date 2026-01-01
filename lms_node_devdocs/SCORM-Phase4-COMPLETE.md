@@ -128,7 +128,7 @@ Status: PASSED
    app.use('/api/v1/scorm/attempts', scormAttemptRouter)
    ```
    - Location: Line 151
-   - Purpose: Student attempt management
+   - Purpose: Learner attempt management
    - Phase: 2
 
 5. **SCORM Runtime API** ✅
@@ -167,9 +167,9 @@ Status: PASSED
 
 2. **ScormAttempt** ✅
    - Path: `/model/Scorm/ScormAttempt.ts`
-   - Purpose: Student learning attempts
+   - Purpose: Learner learning attempts
    - Used by: Phases 2, 3, 4
-   - Fields: student, package, status, score, cmi, sessionLog
+   - Fields: learner, package, status, score, cmi, sessionLog
 
 **Model Usage**:
 - ✅ Phase 2: Package CRUD operations
@@ -184,7 +184,7 @@ Status: PASSED
 
 1. **scormPackageCtrl.ts** ✅
    - Phase: 2
-   - Functions: create, getAll, getOne, update, delete, publish, unpublish, assignStudents, unassignStudents
+   - Functions: create, getAll, getOne, update, delete, publish, unpublish, assignLearners, unassignLearners
    - Status: Complete
 
 2. **scormContentCtrl.ts** ✅
@@ -194,7 +194,7 @@ Status: PASSED
 
 3. **scormAttemptCtrl.ts** ✅
    - Phase: 2
-   - Functions: create, getStudentAttempts, getOne, getPackageAttempts
+   - Functions: create, getLearnerAttempts, getOne, getPackageAttempts
    - Status: Complete
 
 4. **scormRuntimeCtrl.ts** ✅
@@ -277,17 +277,17 @@ Status: PASSED
 
 | Method | Endpoint | Handler | Middleware | Status |
 |--------|----------|---------|------------|--------|
-| POST | `/:attemptId/initialize` | initializeSession | Auth + Student | ✅ |
-| POST | `/:attemptId/terminate` | terminateSessionAPI | Auth + Student | ✅ |
-| GET | `/:attemptId/value/:element(*)` | getCMIValueAPI | Auth + Student | ✅ |
-| PUT | `/:attemptId/value/:element(*)` | setCMIValueAPI | Auth + Student | ✅ |
-| POST | `/:attemptId/commit` | commitData | Auth + Student | ✅ |
-| GET | `/:attemptId/error` | getLastError | Auth + Student | ✅ |
-| POST | `/:attemptId/heartbeat` | heartbeat | Auth + Student | ✅ |
+| POST | `/:attemptId/initialize` | initializeSession | Auth + Learner | ✅ |
+| POST | `/:attemptId/terminate` | terminateSessionAPI | Auth + Learner | ✅ |
+| GET | `/:attemptId/value/:element(*)` | getCMIValueAPI | Auth + Learner | ✅ |
+| PUT | `/:attemptId/value/:element(*)` | setCMIValueAPI | Auth + Learner | ✅ |
+| POST | `/:attemptId/commit` | commitData | Auth + Learner | ✅ |
+| GET | `/:attemptId/error` | getLastError | Auth + Learner | ✅ |
+| POST | `/:attemptId/heartbeat` | heartbeat | Auth + Learner | ✅ |
 
 **Middleware Verification**:
 - ✅ All routes require `isAuthenticated`
-- ✅ All routes require `isStudent`
+- ✅ All routes require `isLearner`
 - ✅ Wildcard param `(:element(*))` supports dots in CMI paths
 
 ---
@@ -300,12 +300,12 @@ Status: PASSED
 |--------|----------|---------|------------|--------|
 | GET | `/:packageId/launch` | launchPlayer | Auth | ✅ |
 | GET | `/:packageId/content/*` | serveContent | Auth | ✅ |
-| POST | `/:attemptId/exit` | exitPlayer | Auth + Student | ✅ |
+| POST | `/:attemptId/exit` | exitPlayer | Auth + Learner | ✅ |
 
 **Middleware Verification**:
-- ✅ Launch requires authentication (students verified via hasStudentAccess)
+- ✅ Launch requires authentication (learners verified via hasLearnerAccess)
 - ✅ Content serving requires authentication
-- ✅ Exit requires authentication + student role
+- ✅ Exit requires authentication + learner role
 
 ---
 
@@ -395,17 +395,17 @@ Status: ✅ EXPECTED BEHAVIOR
 
 **Authentication Enforcement**:
 - ✅ All runtime endpoints require `isAuthenticated`
-- ✅ All runtime endpoints require `isStudent`
+- ✅ All runtime endpoints require `isLearner`
 - ✅ Player launch requires authentication
 - ✅ Content serving requires authentication
-- ✅ Exit requires authentication + student role
+- ✅ Exit requires authentication + learner role
 - ✅ Test timeouts prove authentication is working
 
 **Authorization**:
-- ✅ Student ownership verified in controllers
-- ✅ hasStudentAccess checks package assignment
+- ✅ Learner ownership verified in controllers
+- ✅ hasLearnerAccess checks package assignment
 - ✅ Max attempts enforcement
-- ✅ Published package checks for students
+- ✅ Published package checks for learners
 
 **Data Protection**:
 - ✅ Read-only CMI elements enforced

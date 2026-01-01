@@ -67,7 +67,7 @@ export const validatePassword = (password: string): PasswordValidationResult => 
     '123456789',
     'letmein',
     'welcome',
-    'admin',
+    'global-admin',
   ];
 
   if (commonPasswords.includes(password.toLowerCase())) {

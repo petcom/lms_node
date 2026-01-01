@@ -22,7 +22,7 @@ const refreshTokenSchema = new Schema<IRefreshToken, IRefreshTokenModel>(
     userType: {
       type: String,
       required: true,
-      enum: ['admin', 'staff', 'student'],
+      enum: ['global-admin', 'staff', 'learner'],
     },
     expiresAt: {
       type: Date,

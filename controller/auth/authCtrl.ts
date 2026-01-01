@@ -49,7 +49,7 @@ export const logout = AsyncHandler(
 
     // Blacklist the access token
     if (accessToken) {
-      await TokenBlacklist.blacklistToken(accessToken, user._id, req.userType || 'admin', 'logout');
+      await TokenBlacklist.blacklistToken(accessToken, user._id, req.userType || 'global-admin', 'logout');
     }
 
     // Revoke the refresh token

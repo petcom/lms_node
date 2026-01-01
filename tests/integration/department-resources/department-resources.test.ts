@@ -13,8 +13,8 @@ import Subject from '../../../model/Academic/Subject';
 import ClassLevel from '../../../model/Academic/ClassLevel';
 import Exam from '../../../model/Academic/Exam';
 
-const masterToken = 'test-admin-token';
-const topAdminToken = 'test-top-admin-token';
+const masterToken = 'test-global-admin-token';
+const topAdminToken = 'test-top-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
 const topAdminId = new mongoose.Types.ObjectId('0000000000000000000000a2');
 const subAdminId = new mongoose.Types.ObjectId('0000000000000000000000a3');
@@ -112,20 +112,20 @@ describe('Department Resources API', () => {
 
     await Staff.create([
       {
-        name: 'Alpha Teacher',
-        email: 'alpha.teacher@example.com',
+        name: 'Alpha Instructor',
+        email: 'alpha.instructor@example.com',
         password: 'Password@123',
         department: topDepartmentId,
       },
       {
-        name: 'Sub Teacher',
-        email: 'sub.teacher@example.com',
+        name: 'Sub Instructor',
+        email: 'sub.instructor@example.com',
         password: 'Password@123',
         department: subDepartmentId,
       },
       {
-        name: 'Beta Teacher',
-        email: 'beta.teacher@example.com',
+        name: 'Beta Instructor',
+        email: 'beta.instructor@example.com',
         password: 'Password@123',
         department: otherDepartmentId,
       },
@@ -213,9 +213,9 @@ describe('Department Resources API', () => {
       program: program._id,
     });
 
-    const teacher = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
-    if (!teacher) {
-      throw new Error('Teacher not found for exam setup');
+    const instructor = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
+    if (!instructor) {
+      throw new Error('Instructor not found for exam setup');
     }
 
     await Exam.create({
@@ -232,7 +232,7 @@ describe('Department Resources API', () => {
       examType: 'quiz',
       examStatus: 'pending',
       classLevel: classLevel._id,
-      createdBy: teacher._id,
+      createdBy: instructor._id,
       academicYear: academicYear._id,
     });
   });
@@ -246,9 +246,9 @@ describe('Department Resources API', () => {
     const names = res.body.items.map((item: any) => item.name);
     expect(names).toContain('Top Admin');
     expect(names).toContain('Sub Admin');
-    expect(names).toContain('Alpha Teacher');
-    expect(names).toContain('Sub Teacher');
-    expect(names).not.toContain('Beta Teacher');
+    expect(names).toContain('Alpha Instructor');
+    expect(names).toContain('Sub Instructor');
+    expect(names).not.toContain('Beta Instructor');
   });
 
   it('filters staff users by role type', async () => {
@@ -300,8 +300,8 @@ describe('Department Resources API', () => {
 
     expect(res.status).toBe(200);
     const names = res.body.items.map((item: any) => item.name);
-    expect(names).toContain('Beta Teacher');
-    expect(names).not.toContain('Alpha Teacher');
+    expect(names).toContain('Beta Instructor');
+    expect(names).not.toContain('Alpha Instructor');
   });
 
   it('updates staff roles within scope', async () => {
@@ -312,7 +312,7 @@ describe('Department Resources API', () => {
       { name: 'billing-admin' },
     ]);
 
-    const staff = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
+    const staff = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
     if (!staff) {
       throw new Error('Staff member not found for role update');
     }
@@ -327,7 +327,7 @@ describe('Department Resources API', () => {
   });
 
   it('updates staff department within scope', async () => {
-    const staff = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
+    const staff = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
     if (!staff) {
       throw new Error('Staff member not found for department update');
     }

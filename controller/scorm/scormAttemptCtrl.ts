@@ -5,13 +5,13 @@ import ScormPackage from '../../model/Scorm/ScormPackage';
 import { NotFoundError } from '../../utils/errors';
 
 /**
- * @desc    Get student's attempts for a package
+ * @desc    Get learner's attempts for a package
  * @route   GET /api/scorm/attempts/package/:packageId
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getAttemptsByPackage = asyncHandler(async (req: Request, res: Response) => {
   const { packageId } = req.params;
-  const studentId = req.userAuth!._id;
+  const learnerId = req.userAuth!._id;
 
   // Find package
   const scormPackage = await ScormPackage.findOne({
@@ -25,7 +25,7 @@ export const getAttemptsByPackage = asyncHandler(async (req: Request, res: Respo
   // Get all attempts
   const attempts = await ScormAttempt.find({
     package: scormPackage._id,
-    student: studentId,
+    learner: learnerId,
   })
     .sort({ attemptNumber: -1 })
     .select('-cmiData -rawCMI'); // Exclude large data fields
@@ -39,7 +39,7 @@ export const getAttemptsByPackage = asyncHandler(async (req: Request, res: Respo
 /**
  * @desc    Get single attempt details
  * @route   GET /api/scorm/attempts/:attemptId
- * @access  Private (Student/Teacher/Admin)
+ * @access  Private (Learner/Instructor/Admin)
  */
 export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -57,13 +57,13 @@ export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userAuth!._id;
   const userRole = req.userAuth!.role;
 
-  const studentRef = (attempt.student as any)?._id || attempt.student;
+  const learnerRef = (attempt.learner as any)?._id || attempt.learner;
 
   if (
-    studentRef &&
-    studentRef.toString() !== userId.toString() &&
+    learnerRef &&
+    learnerRef.toString() !== userId.toString() &&
     userRole !== 'staff' &&
-    userRole !== 'admin'
+    userRole !== 'global-admin'
   ) {
     res.status(403);
     throw new Error('Not authorized to view this attempt');
@@ -78,7 +78,7 @@ export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
 /**
  * @desc    Update CMI data
  * @route   PUT /api/scorm/attempts/:attemptId/cmi
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const updateCMI = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -95,8 +95,8 @@ export const updateCMI = asyncHandler(async (req: Request, res: Response) => {
     throw new NotFoundError('Attempt not found');
   }
 
-  // Verify student owns this attempt
-  if (attempt.student.toString() !== req.userAuth!._id.toString()) {
+  // Verify learner owns this attempt
+  if (attempt.learner.toString() !== req.userAuth!._id.toString()) {
     res.status(403);
     throw new Error('Not authorized to update this attempt');
   }
@@ -128,7 +128,7 @@ export const updateCMI = asyncHandler(async (req: Request, res: Response) => {
 /**
  * @desc    Get CMI data
  * @route   GET /api/scorm/attempts/:attemptId/cmi/:element
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const getCMI = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId, element } = req.params;
@@ -140,8 +140,8 @@ export const getCMI = asyncHandler(async (req: Request, res: Response) => {
     throw new Error('Attempt not found');
   }
 
-  // Verify student owns this attempt
-  if (attempt.student.toString() !== req.userAuth!._id.toString()) {
+  // Verify learner owns this attempt
+  if (attempt.learner.toString() !== req.userAuth!._id.toString()) {
     res.status(403);
     throw new Error('Not authorized to access this attempt');
   }
@@ -160,7 +160,7 @@ export const getCMI = asyncHandler(async (req: Request, res: Response) => {
 /**
  * @desc    Complete attempt
  * @route   POST /api/scorm/attempts/:attemptId/complete
- * @access  Private (Student)
+ * @access  Private (Learner)
  */
 export const completeAttempt = asyncHandler(async (req: Request, res: Response) => {
   const { attemptId } = req.params;
@@ -173,8 +173,8 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
     throw new Error('Attempt not found');
   }
 
-  // Verify student owns this attempt
-  if (attempt.student.toString() !== req.userAuth!._id.toString()) {
+  // Verify learner owns this attempt
+  if (attempt.learner.toString() !== req.userAuth!._id.toString()) {
     res.status(403);
     throw new Error('Not authorized to complete this attempt');
   }
@@ -228,12 +228,12 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
 });
 
 /**
- * @desc    Get all attempts (Admin/Teacher)
+ * @desc    Get all attempts (Admin/Instructor)
  * @route   GET /api/scorm/attempts
- * @access  Private (Teacher/Admin)
+ * @access  Private (Instructor/Admin)
  */
 export const getAllAttempts = asyncHandler(async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, packageId, studentId, status } = req.query;
+  const { page = 1, limit = 10, packageId, learnerId, status } = req.query;
 
   const query: any = {};
 
@@ -244,8 +244,8 @@ export const getAllAttempts = asyncHandler(async (req: Request, res: Response) =
     }
   }
 
-  if (studentId) {
-    query.student = studentId;
+  if (learnerId) {
+    query.learner = learnerId;
   }
 
   if (status) {
@@ -256,7 +256,7 @@ export const getAllAttempts = asyncHandler(async (req: Request, res: Response) =
 
   const attempts = await ScormAttempt.find(query)
     .populate('package', 'title version packageId')
-    .populate('student', 'name email')
+    .populate('learner', 'name email')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(Number(limit))
@@ -277,14 +277,14 @@ export const getAllAttempts = asyncHandler(async (req: Request, res: Response) =
 });
 
 /**
- * @desc    Get student progress summary
- * @route   GET /api/scorm/attempts/student/:studentId/summary
- * @access  Private (Teacher/Admin)
+ * @desc    Get learner progress summary
+ * @route   GET /api/scorm/attempts/learner/:learnerId/summary
+ * @access  Private (Instructor/Admin)
  */
-export const getStudentProgress = asyncHandler(async (req: Request, res: Response) => {
-  const { studentId } = req.params;
+export const getLearnerProgress = asyncHandler(async (req: Request, res: Response) => {
+  const { learnerId } = req.params;
 
-  const attempts = await ScormAttempt.find({ student: studentId })
+  const attempts = await ScormAttempt.find({ learner: learnerId })
     .populate('package', 'title version packageId')
     .select('-cmiData -rawCMI -sessionLog')
     .sort({ createdAt: -1 });

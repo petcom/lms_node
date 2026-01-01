@@ -140,13 +140,13 @@ All source JavaScript files have been deleted except:
 **Achievements:**
 - ✅ Converted 14 Mongoose models to TypeScript:
   - **Auth:** TokenBlacklist.ts, RefreshToken.ts
-  - **Staff:** Admin.ts, Teacher.ts
-  - **Academic:** Student.ts, AcademicYear.ts, AcademicTerm.ts, ClassLevel.ts, Program.ts, Subject.ts, YearGroup.ts, Exam.ts, ExamResults.ts, Questions.ts
+  - **Staff:** Admin.ts, Instructor.ts
+  - **Academic:** Learner.ts, AcademicYear.ts, AcademicTerm.ts, ClassLevel.ts, Program.ts, Subject.ts, YearGroup.ts, Exam.ts, ExamResults.ts, Questions.ts
 - ✅ Full type safety with `Schema<T, M>` pattern
 - ✅ Typed pre-save hooks and instance methods
 - ✅ Typed model statics (e.g., TokenBlacklist.isBlacklisted)
 - ✅ Converted 5 Joi validator modules:
-  - common.ts, authValidation.ts, studentValidation.ts, staffValidation.ts, academicValidation.ts
+  - common.ts, authValidation.ts, learnerValidation.ts, staffValidation.ts, academicValidation.ts
 
 **Verification:**
 - ✅ All models compile correctly
@@ -195,13 +195,13 @@ All source JavaScript files have been deleted except:
 - ✅ Converted 15 controllers:
   - **Core:** healthCtrl.ts
   - **Auth:** authCtrl.ts, passwordCtrl.ts
-  - **Staff:** adminCtrl.ts, teachersCtrl.ts
-  - **Students:** studentsCtrl.ts
+  - **Staff:** adminCtrl.ts, instructorsCtrl.ts
+  - **Learners:** learnersCtrl.ts
   - **Academic:** academicYearCtrl.ts, academicTermCtrl.ts, classLevelCtrl.ts, programsCtrl.ts, subjectCtrl.ts, yearGroupsCtrl.ts, examsCtrl.ts, questionsCtrl.ts, examResults.ts
 - ✅ Converted 14 route files:
   - **Auth:** authRoutes.ts, passwordRoutes.ts
-  - **Staff:** adminRouter.ts, teacherRouter.ts
-  - **Students:** studentRouter.ts
+  - **Staff:** adminRouter.ts, instructorRouter.ts
+  - **Learners:** learnerRouter.ts
   - **Academic:** academicYear.ts, academicTerm.ts, classLevel.ts, program.ts, subject.ts, yearGroup.ts, examRoutes.ts, questionRoutes.ts, examResultsRoutes.ts
 - ✅ All controllers typed as `RequestHandler` or `RequestHandler<ParamsDictionary, any, BodyType>`
 - ✅ Request body interfaces defined for all endpoints
@@ -437,7 +437,7 @@ To achieve 100% checklist completion:
 2. **Advanced TypeScript Features**
    - Use conditional types for complex logic
    - Implement utility types for common patterns
-   - Add branded types for domain-specific values (e.g., StudentId)
+   - Add branded types for domain-specific values (e.g., LearnerId)
 
 3. **Testing Strategy**
    - Expand unit test coverage using TypeScript

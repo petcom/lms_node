@@ -18,5 +18,5 @@
 
 ## Follow-ups
 - Backfill existing package documents without `uploadedByModel` if populate needs correct model resolution.
-- Decide final author model(s) (`Teacher` vs `Admin`/`Student`) and adjust populate strategy/tests accordingly.
+- Decide final author model(s) (`Instructor` vs `Admin`/`Learner`) and adjust populate strategy/tests accordingly.
 - Add integration coverage for SCORM package list/detail endpoints after schema change.

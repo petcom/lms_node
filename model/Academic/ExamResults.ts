@@ -3,13 +3,13 @@ import { IExamResult } from '../../types/models';
 
 /**
  * Exam Result Schema
- * Represents exam results for students
+ * Represents exam results for learners
  */
 const examResultSchema = new Schema<IExamResult>(
   {
-    student: {
+    learner: {
       type: Schema.Types.ObjectId,
-      ref: 'Student',
+      ref: 'Learner',
       required: true,
     },
     exam: {
@@ -74,7 +74,7 @@ const examResultSchema = new Schema<IExamResult>(
 );
 
 // Indexes for query performance
-examResultSchema.index({ student: 1 });
+examResultSchema.index({ learner: 1 });
 examResultSchema.index({ exam: 1 });
 examResultSchema.index({ academicYear: 1 });
 examResultSchema.index({ academicTerm: 1 });
@@ -83,8 +83,8 @@ examResultSchema.index({ status: 1 });
 examResultSchema.index({ isPublished: 1 });
 examResultSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
-examResultSchema.index({ student: 1, academicYear: 1 });
-examResultSchema.index({ student: 1, exam: 1 }, { unique: true });
+examResultSchema.index({ learner: 1, academicYear: 1 });
+examResultSchema.index({ learner: 1, exam: 1 }, { unique: true });
 examResultSchema.index({ exam: 1, status: 1 });
 examResultSchema.index({ academicYear: 1, academicTerm: 1, classLevel: 1 });
 examResultSchema.index({ isPublished: 1, createdAt: -1 });

@@ -1,6 +1,6 @@
 # SCORM Package Upload API Design
 
-- [x] Implement POST /api/v1/scorm/packages (multipart/form-data) with teacher/admin JWT auth
+- [x] Implement POST /api/v1/scorm/packages (multipart/form-data) with instructor/admin JWT auth
 - [x] Enforce zip mime and max size; return 413 on oversize
 - [x] Validate required fields (file, title); optional fields: subject, classLevel, program, isGraded, maxScore, dueDate; 400 on invalid
 - [x] Parse imsmanifest.xml to extract launch href, version, title; 400 on missing/invalid manifest
@@ -20,7 +20,7 @@
 ## Endpoint
 
 - `POST /api/v1/scorm/packages` (multipart/form-data)
-- Auth: teacher/admin JWT; 401/403 otherwise
+- Auth: instructor/admin JWT; 401/403 otherwise
 
 ### Request Contract
 
@@ -91,7 +91,7 @@
       "launchUrl": "index.html",
       "fileSize": 12345,
       "createdAt": "...",
-      "uploadedBy": { "name": "...", "email": "...", "role": "Teacher" },
+      "uploadedBy": { "name": "...", "email": "...", "role": "Instructor" },
       "subject": { "_id": "...", "name": "..." },
       "program": { "_id": "...", "name": "..." },
       "classLevel": { "_id": "...", "name": "..." }

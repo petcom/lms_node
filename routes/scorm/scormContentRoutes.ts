@@ -1,6 +1,6 @@
 import express from 'express';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
+import { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
 import {
   launchPackage,
   getContentFile,
@@ -9,13 +9,13 @@ import {
 
 const scormContentRouter = express.Router();
 
-// Launch package (Student)
+// Launch package (Learner)
 scormContentRouter.get('/:packageId/launch', isAuthenticated(), launchPackage);
 
-// Get manifest (Teacher/Admin)
-scormContentRouter.get('/:packageId/manifest', isAuthenticated(), isTeacherOrAdmin, getManifest);
+// Get manifest (Instructor/Admin)
+scormContentRouter.get('/:packageId/manifest', isAuthenticated(), isInstructorOrAdmin, getManifest);
 
-// Serve content files (Student) - This must be last to catch all paths
+// Serve content files (Learner) - This must be last to catch all paths
 scormContentRouter.get('/:packageId/*', isAuthenticated(), getContentFile);
 
 export default scormContentRouter;

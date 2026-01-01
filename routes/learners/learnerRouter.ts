@@ -1,27 +1,27 @@
 import express, { Router } from 'express';
 import {
-  adminRegisterStudent,
-  loginStudent,
-  getStudentProfile,
-  getAllStudentsByAdmin,
-  getStudentByAdmin,
-  studentUpdateProfile,
-  adminUpdateStudent,
+  adminRegisterLearner,
+  loginLearner,
+  getLearnerProfile,
+  getAllLearnersByAdmin,
+  getLearnerByAdmin,
+  learnerUpdateProfile,
+  adminUpdateLearner,
   writeExam,
-} from '../../controller/students/studentsCtrl';
+} from '../../controller/learners/learnersCtrl';
 import advancedResults from '../../middlewares/advancedResults';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 import isAuthenticated from '../../middlewares/isAuthenticated';
 import roleRestriction from '../../middlewares/roleRestriction';
 
-const studentRouter: Router = express.Router();
+const learnerRouter: Router = express.Router();
 
 /**
  * @swagger
- * /api/v1/students/admin/register:
+ * /api/v1/learners/admin/register:
  *   post:
- *     summary: Admin registers a new student
- *     tags: [Students]
+ *     summary: Admin registers a new learner
+ *     tags: [Learners]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -44,23 +44,23 @@ const studentRouter: Router = express.Router();
  *                 type: string
  *     responses:
  *       201:
- *         description: Student registered successfully
+ *         description: Learner registered successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-studentRouter.post(
+learnerRouter.post(
   '/admin/register',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminRegisterStudent
+  roleRestriction('global-admin'),
+  adminRegisterLearner
 );
 
 /**
  * @swagger
- * /api/v1/students/login:
+ * /api/v1/learners/login:
  *   post:
- *     summary: Student login
- *     tags: [Students]
+ *     summary: Learner login
+ *     tags: [Learners]
  *     requestBody:
  *       required: true
  *       content:
@@ -94,51 +94,51 @@ studentRouter.post(
  *                       type: string
  *                     role:
  *                       type: string
- *                       enum: [student]
+ *                       enum: [learner]
  */
-studentRouter.post('/login', loginStudent);
+learnerRouter.post('/login', loginLearner);
 /**
  * @swagger
- * /api/v1/students/profile:
+ * /api/v1/learners/profile:
  *   get:
- *     summary: Get student profile
- *     tags: [Students]
+ *     summary: Get learner profile
+ *     tags: [Learners]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Student profile retrieved
+ *         description: Learner profile retrieved
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-studentRouter.get('/profile', isAuthenticated(), roleRestriction('student'), getStudentProfile);
-studentRouter.get(
+learnerRouter.get('/profile', isAuthenticated(), roleRestriction('learner'), getLearnerProfile);
+learnerRouter.get(
   '/admin',
   isAuthenticated(),
-  roleRestriction('admin'),
-  advancedResults(Student),
-  getAllStudentsByAdmin
+  roleRestriction('global-admin'),
+  advancedResults(Learner),
+  getAllLearnersByAdmin
 );
-studentRouter.get(
-  '/:studentID/admin',
+learnerRouter.get(
+  '/:learnerID/admin',
   isAuthenticated(),
-  roleRestriction('admin'),
-  getStudentByAdmin
+  roleRestriction('global-admin'),
+  getLearnerByAdmin
 );
-/** Students taking exams can access following: */
-studentRouter.post(
+/** Learners taking exams can access following: */
+learnerRouter.post(
   '/exams/:examID/write',
   isAuthenticated(),
-  roleRestriction('student'),
+  roleRestriction('learner'),
   writeExam
-); // Student only writes exams
+); // Learner only writes exams
 /** */
-studentRouter.put('/update', isAuthenticated(), roleRestriction('student'), studentUpdateProfile); // student only
-studentRouter.put(
-  '/:studentID/update/admin',
+learnerRouter.put('/update', isAuthenticated(), roleRestriction('learner'), learnerUpdateProfile); // learner only
+learnerRouter.put(
+  '/:learnerID/update/admin',
   isAuthenticated(),
-  roleRestriction('admin'),
-  adminUpdateStudent
+  roleRestriction('global-admin'),
+  adminUpdateLearner
 ); // Admin only
 
-export default studentRouter;
+export default learnerRouter;

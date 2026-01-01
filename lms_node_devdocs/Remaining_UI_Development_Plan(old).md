@@ -17,8 +17,8 @@
 - Confirmation UX: destructive actions return `409` with reason when blocked; clients must confirm before calling.
 
 ## Phase 6 — Admin Experience
-### User Management (Admins/Teachers/Students)
-- GET `/users` (admin/master): list with filters `role=admin|teacher|student`, `status=active|suspended|withdrawn`, `department=`; pagination/sort.
+### User Management (Admins/Instructors/Learners)
+- GET `/users` (admin/master): list with filters `role=admin|instructor|learner`, `status=active|suspended|withdrawn`, `department=`; pagination/sort.
 - POST `/users` (admin/master): create user; body depends on role; returns created user.
 - GET `/users/:id` (admin/master + owner self): detail.
 - PUT `/users/:id` (admin/master): update profile fields; scope by department; log changes.
@@ -47,7 +47,7 @@
 
 ### Permissions Matrix for SCORM
 - GET `/scorm/permissions-matrix` (admin/master): returns capabilities per role/department.
-  - Shape: `{ roles: ['admin','teacher','student'], permissions: { upload, publish, assign, clone, delete, viewAttempts, viewReports, globalAccess } with booleans }`.
+  - Shape: `{ roles: ['admin','instructor','learner'], permissions: { upload, publish, assign, clone, delete, viewAttempts, viewReports, globalAccess } with booleans }`.
 - PATCH `/scorm/permissions-matrix` (admin/master): update policy flags; store centrally (e.g., config collection); audit changes.
 
 ### Audit Logging
@@ -56,14 +56,14 @@
 
 ## Phase 7 — Reporting & Exports
 ### Reports Endpoints
-- GET `/reports/student-progress`: filters `student=`, `class=`, `program=`, `package=`, `from/to`, pagination; returns rollups per student+package.
+- GET `/reports/learner-progress`: filters `learner=`, `class=`, `program=`, `package=`, `from/to`, pagination; returns rollups per learner+package.
 - GET `/reports/package-analytics`: filters `package=`, `subject=`, `program=`, `from/to`; returns aggregates (launches, completions, avgScore, avgTime, passRate).
-- GET `/reports/attempts`: detailed attempts with pagination; filters `package=`, `student=`, `status=`, `from/to`.
+- GET `/reports/attempts`: detailed attempts with pagination; filters `package=`, `learner=`, `status=`, `from/to`.
 - GET `/reports/completion-distribution`: histogram buckets for scores/durations; filters `package=`, `class=`, `from/to`.
-- GET `/reports/interactions`: SCORM interaction rollups; filters `package=`, `student=`, `from/to`.
+- GET `/reports/interactions`: SCORM interaction rollups; filters `package=`, `learner=`, `from/to`.
 
 ### Exports
-- POST `/exports` create export jobs; body `{ type: 'student-progress'|'package-analytics'|'attempts'|'interactions', format: 'csv'|'json'|'xlsx', filters: {...} }`.
+- POST `/exports` create export jobs; body `{ type: 'learner-progress'|'package-analytics'|'attempts'|'interactions', format: 'csv'|'json'|'xlsx', filters: {...} }`.
 - GET `/exports/:id` fetch status `{ status: queued|processing|completed|failed, downloadUrl?, error? }`.
 - GET `/exports` list user-visible jobs with pagination and filters `type`, `status`, `from/to`.
 - Jobs should enqueue background worker; store files (S3/local) with signed URLs; include audit log entry.
@@ -74,7 +74,7 @@
 ## Phase 8 — Quality, A11y, Performance, Mobile (Backend Support)
 - Add lightweight `HEAD`/`OPTIONS` where needed for preflight/perf.
 - Provide compressed responses (ensure compression middleware enabled).
-- Support range/pagination for large tables; indexes for filters (date, package, student, class, department).
+- Support range/pagination for large tables; indexes for filters (date, package, learner, class, department).
 - Add rate limits for export/report routes; debounce-friendly (idempotent keys optional).
 
 ## Phase 9 — Delivery & Hardening
@@ -83,8 +83,8 @@
 - Front-end logging ingest: POST `/client-logs` to capture player/runtime errors; body `{ level, message, context, userAgent, url, userId? }`; rate limit and sample.
 
 ## Authz & Scope Rules
-- Admin/master can access all; top-level admins scoped to their department tree where applicable; teachers limited to ownership and department scope; students only self-data.
-- Export/report endpoints: admins by default; allow teachers to view their own classes/packages if required by product; enforce via departmentScope + ownership checks.
+- Admin/master can access all; top-level admins scoped to their department tree where applicable; instructors limited to ownership and department scope; learners only self-data.
+- Export/report endpoints: admins by default; allow instructors to view their own classes/packages if required by product; enforce via departmentScope + ownership checks.
 - Permissions matrix can further restrict capabilities (enforced in controllers/services).
 
 ## Data Model Notes
@@ -104,7 +104,7 @@
 - Load: baseline for report/export queries; ensure indexes.
 
 ## Open Questions
-- Should teachers be allowed to request exports for their own classes only? Default to admins; add feature flag.
+- Should instructors be allowed to request exports for their own classes only? Default to admins; add feature flag.
 - Storage provider for exports (S3 vs local) and retention policy.
 - Metrics source: expose internal `/metrics` or proxy Prometheus? Confirm shape expected by UI.
 - Audit log retention and PII considerations.

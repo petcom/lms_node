@@ -25,11 +25,11 @@ const scopedFilter = (req: express.Request) => {
 
 departmentRouter
   .route('/')
-  .post(isAuthenticated(), departmentScope(), roleRestriction('admin'), createDepartment)
+  .post(isAuthenticated(), departmentScope(), roleRestriction('global-admin'), createDepartment)
   .get(
     isAuthenticated(),
     departmentScope(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     advancedResults(Department, undefined, scopedFilter),
     getDepartments
   );
@@ -38,14 +38,14 @@ departmentRouter.get(
   '/hierarchy',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   getDepartmentHierarchy
 );
 
 departmentRouter
   .route('/:id')
-  .get(isAuthenticated(), departmentScope(), roleRestriction('admin'), getDepartment)
-  .put(isAuthenticated(), departmentScope(), roleRestriction('admin'), updateDepartment)
-  .delete(isAuthenticated(), departmentScope(), roleRestriction('admin'), deleteDepartment);
+  .get(isAuthenticated(), departmentScope(), roleRestriction('global-admin'), getDepartment)
+  .put(isAuthenticated(), departmentScope(), roleRestriction('global-admin'), updateDepartment)
+  .delete(isAuthenticated(), departmentScope(), roleRestriction('global-admin'), deleteDepartment);
 
 export default departmentRouter;

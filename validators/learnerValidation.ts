@@ -1,13 +1,13 @@
 /**
- * Student Validation Schemas
- * Joi validation schemas for student-related endpoints
+ * Learner Validation Schemas
+ * Joi validation schemas for learner-related endpoints
  */
 
 import Joi from 'joi';
 import { objectId, email, name, phone } from './common';
 
 /**
- * Update student profile validation
+ * Update learner profile validation
  */
 export const updateProfile = {
   body: Joi.object({
@@ -20,7 +20,7 @@ export const updateProfile = {
 };
 
 /**
- * Student exam submission validation
+ * Learner exam submission validation
  */
 export const submitExam = {
   params: Joi.object({

@@ -64,7 +64,7 @@ PUT `/<staffId>/update`
 PUT `/<staffId>/update/admin`
 
 ## Staff Dashboard + Packages
-All routes below require `role=staff` (or `admin` where noted).
+All routes below require `role=staff` (or `global-admin` where noted).
 
 POST `/packages/:id/publish`
 POST `/packages/:id/unpublish`
@@ -76,5 +76,8 @@ GET `/assignments`
 POST `/assignments/assign`
 
 Notes:
-- These endpoints replace the former `/api/v1/teachers/*` routes.
-- Role gates still allow `admin` for visibility and support.
+- These endpoints replace the former `/api/v1/instructors/*` routes.
+- Role gates still allow `global-admin` for visibility and support.
+
+## Changes (Phase 1)
+- Updated role references to `global-admin`.

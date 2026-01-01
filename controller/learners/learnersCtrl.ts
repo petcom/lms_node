@@ -1,15 +1,15 @@
 import AsyncHandler from 'express-async-handler';
 import { Request, Response } from 'express';
-import Student from '../../model/Academic/Student';
+import Learner from '../../model/Academic/Learner';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
 import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
 import Admin from '../../model/Staff/Admin';
-import { IStudent } from '../../types/models';
+import { ILearner } from '../../types/models';
 
 // Request body interfaces
-interface RegisterStudentBody {
+interface RegisterLearnerBody {
   name: string;
   email: string;
   password: string;
@@ -25,7 +25,7 @@ interface UpdateProfileBody {
   password?: string;
 }
 
-interface AdminUpdateStudentBody {
+interface AdminUpdateLearnerBody {
   classLevels?: string;
   academicYear?: string;
   program?: string;
@@ -47,70 +47,70 @@ interface AnsweredQuestion {
 }
 
 /**
- * @description Admin Register Student
- * @route       POST /api/students/admins/register
+ * @description Admin Register Learner
+ * @route       POST /api/learners/admins/register
  * @access      Private Admin Only
  */
-export const adminRegisterStudent = AsyncHandler(
-  async (req: Request<{}, {}, RegisterStudentBody>, res: Response): Promise<void> => {
+export const adminRegisterLearner = AsyncHandler(
+  async (req: Request<{}, {}, RegisterLearnerBody>, res: Response): Promise<void> => {
     const { name, email, password } = req.body;
     // find the admin
     const adminFound = await Admin.findById(req.userAuth?._id);
     if (!adminFound) {
       throw new Error('Admin not found');
     }
-    // check if the student already exists
-    const student = await Student.findOne({ email: email }).lean();
-    if (student) {
-      throw new Error('Student already exists');
+    // check if the learner already exists
+    const learner = await Learner.findOne({ email: email }).lean();
+    if (learner) {
+      throw new Error('Learner already exists');
     }
     //hash password
     const hashedPassword = await hashPassword(password);
-    // Student created
-    const studentRegistered = await Student.create({
+    // Learner created
+    const learnerRegistered = await Learner.create({
       name,
       email,
       password: hashedPassword,
     });
-    // push teacher into admin
-    adminFound.students?.push(studentRegistered?._id);
+    // push instructor into admin
+    adminFound.learners?.push(learnerRegistered?._id);
     await adminFound.save();
     // send response
     res.status(201).json({
       status: 'success',
-      message: 'Student registered Successfuly',
-      data: studentRegistered,
+      message: 'Learner registered Successfuly',
+      data: learnerRegistered,
     });
   }
 );
 
 /**
- * @description Login a Student
- * @route       POST /api/students/login
+ * @description Login a Learner
+ * @route       POST /api/learners/login
  * @access      Public
  */
-export const loginStudent = AsyncHandler(
+export const loginLearner = AsyncHandler(
   async (req: Request<{}, {}, LoginBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
-    //find the teacher user obj
-    const student = await Student.findOne({ email }).lean();
-    if (!student) {
+    //find the instructor user obj
+    const learner = await Learner.findOne({ email }).lean();
+    if (!learner) {
       res.json({ message: 'Invalid login credentials' });
       return;
     }
     // verify the password
-    const isMatched = await isPassMatched(password, student?.password);
+    const isMatched = await isPassMatched(password, learner?.password);
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
       return;
     } else {
-      const role = student.role || 'student';
-      const accessToken = generateToken(String(student?._id), role);
+      const role = learner.role || 'learner';
+      const accessToken = generateToken(String(learner?._id), role);
 
       res.status(200).json({
         status: 'success',
-        message: 'Student logged in successfully',
+        message: 'Learner logged in successfully',
         data: {
           accessToken,
           role,
@@ -121,93 +121,93 @@ export const loginStudent = AsyncHandler(
 );
 
 /**
- * @description Student Profile
- * @route       Get /api/students/profile
- * @access      Private Student only
+ * @description Learner Profile
+ * @route       Get /api/learners/profile
+ * @access      Private Learner only
  */
-export const getStudentProfile = AsyncHandler(
+export const getLearnerProfile = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const student = await Student.findById(req.userAuth?._id)
+    const learner = await Learner.findById(req.userAuth?._id)
       .select('-password -createdAt -updatedAt')
       .populate('examResults');
 
-    if (!student) {
-      throw new Error('Student not found');
+    if (!learner) {
+      throw new Error('Learner not found');
     }
-    // Get student profile
-    const studentProfile = {
-      name: student?.name,
-      email: student?.email,
-      currentClassLevel: student?.currentClassLevel,
-      program: student?.program,
-      dateAdmitted: student?.dateAdmitted,
-      isSuspended: student?.isSuspended,
-      isWithdrawn: student?.isWithdrawn,
-      studentId: student?.studentId,
-      prefectName: student?.prefectName,
+    // Get learner profile
+    const learnerProfile = {
+      name: learner?.name,
+      email: learner?.email,
+      currentClassLevel: learner?.currentClassLevel,
+      program: learner?.program,
+      dateAdmitted: learner?.dateAdmitted,
+      isSuspended: learner?.isSuspended,
+      isWithdrawn: learner?.isWithdrawn,
+      learnerId: learner?.learnerId,
+      prefectName: learner?.prefectName,
     };
-    // get student exam results
-    const studentExamResults = student?.examResults;
+    // get learner exam results
+    const learnerExamResults = learner?.examResults;
     // current exam
-    const currentExamResult = studentExamResults?.[studentExamResults.length - 1];
+    const currentExamResult = learnerExamResults?.[learnerExamResults.length - 1];
     // check if exam is published
     const isPublished = (currentExamResult as any)?.isPublished;
     // send response
     res.status(200).json({
       status: 'success',
       data: {
-        studentProfile,
+        learnerProfile,
         currentExamResult: isPublished ? currentExamResult : [],
       },
-      message: 'Student profile fetched successfully',
+      message: 'Learner profile fetched successfully',
     });
   }
 );
 
 /**
- * @description Get All Students
- * @route       GET /api/v1/students/admin
+ * @description Get All Learners
+ * @route       GET /api/v1/learners/admin
  * @access      Private admin only
  */
-export const getAllStudentsByAdmin = AsyncHandler(
+export const getAllLearnersByAdmin = AsyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
     res.status(200).json(res.results);
   }
 );
 
 /**
- * @description Get Single a Student
- * @route       POST /api/v1/students/:studentID/admin
+ * @description Get Single a Learner
+ * @route       POST /api/v1/learners/:learnerID/admin
  * @access      Private admin only
  */
-export const getStudentByAdmin = AsyncHandler(
-  async (req: Request<{ studentID: string }>, res: Response): Promise<void> => {
-    const studentID = req.params.studentID;
+export const getLearnerByAdmin = AsyncHandler(
+  async (req: Request<{ learnerID: string }>, res: Response): Promise<void> => {
+    const learnerID = req.params.learnerID;
 
     try {
-      // Try to find the student by ID
-      const student = await Student.findById(studentID);
+      // Try to find the learner by ID
+      const learner = await Learner.findById(learnerID);
 
-      // Check if the teacher was found
-      if (!student) {
+      // Check if the instructor was found
+      if (!learner) {
         res.status(404).json({
           status: 'error',
-          message: 'Student not found',
+          message: 'Learner not found',
         });
         return;
       }
 
       res.status(200).json({
         status: 'success',
-        message: 'Student fetched successfully',
-        data: student,
+        message: 'Learner fetched successfully',
+        data: learner,
       });
     } catch (error) {
       // If an error occurs (e.g., CastError for invalid ObjectId)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(400).json({
         status: 'error',
-        message: 'Invalid student ID format',
+        message: 'Invalid learner ID format',
         error: errorMessage, // Optional: provide error message for debugging
       });
     }
@@ -215,15 +215,15 @@ export const getStudentByAdmin = AsyncHandler(
 );
 
 /**
- * @description Student updating profile
- * @route       UPDATE /api/v1/students/update
- * @access      Private Student Only
+ * @description Learner updating profile
+ * @route       UPDATE /api/v1/learners/update
+ * @access      Private Learner Only
  */
-export const studentUpdateProfile = AsyncHandler(
+export const learnerUpdateProfile = AsyncHandler(
   async (req: Request<{}, {}, UpdateProfileBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
     // if email is taken
-    const emailExists = await Student.findOne({ email });
+    const emailExists = await Learner.findOne({ email });
     if (emailExists) {
       throw new Error('This email already exists');
     }
@@ -231,7 +231,7 @@ export const studentUpdateProfile = AsyncHandler(
     // check if user is updating password
     if (password) {
       // update user
-      const student = await Student.findByIdAndUpdate(
+      const learner = await Learner.findByIdAndUpdate(
         req.userAuth?._id,
         {
           email,
@@ -244,12 +244,12 @@ export const studentUpdateProfile = AsyncHandler(
       );
       res.status(200).json({
         success: 'success',
-        data: student,
-        message: 'Student profile updated successfully',
+        data: learner,
+        message: 'Learner profile updated successfully',
       });
     } else {
       // update user email and name
-      const student = await Student.findByIdAndUpdate(
+      const learner = await Learner.findByIdAndUpdate(
         req.userAuth?._id,
         {
           email,
@@ -261,24 +261,24 @@ export const studentUpdateProfile = AsyncHandler(
       );
       res.status(200).json({
         success: 'success',
-        data: student,
-        message: 'Student profile updated successfully',
+        data: learner,
+        message: 'Learner profile updated successfully',
       });
     }
   }
 );
 
 /**
- * @description Admin Update Student eg: Assign Classes, name, etc.
- * @route       UPDATE /api/v1/students/:studentID/update/admin
+ * @description Admin Update Learner eg: Assign Classes, name, etc.
+ * @route       UPDATE /api/v1/learners/:learnerID/update/admin
  * @access      Private Admin Only
  *
  * Notes:  $set operator replaces the value of a field with the specified value - mongoose handles saving those field. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/set/
  * Notes:  $addToSet operator adds a value to an array UNLESS the value is already present. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/
  */
-export const adminUpdateStudent = AsyncHandler(
+export const adminUpdateLearner = AsyncHandler(
   async (
-    req: Request<{ studentID: string }, {}, AdminUpdateStudentBody>,
+    req: Request<{ learnerID: string }, {}, AdminUpdateLearnerBody>,
     res: Response
   ): Promise<void> => {
     const {
@@ -292,14 +292,14 @@ export const adminUpdateStudent = AsyncHandler(
       isWithdrawn,
     } = req.body;
 
-    // find the student by id
-    const studentFound = await Student.findById(req.params.studentID);
-    if (!studentFound) {
-      throw new Error('Student not found');
+    // find the learner by id
+    const learnerFound = await Learner.findById(req.params.learnerID);
+    if (!learnerFound) {
+      throw new Error('Learner not found');
     }
     // update
-    const studentUpdated = await Student.findByIdAndUpdate(
-      req.params.studentID,
+    const learnerUpdated = await Learner.findByIdAndUpdate(
+      req.params.learnerID,
       {
         $set: {
           name,
@@ -322,23 +322,23 @@ export const adminUpdateStudent = AsyncHandler(
     // send response
     res.status(200).json({
       status: 'success',
-      data: studentUpdated,
-      message: 'Student updated successfully',
+      data: learnerUpdated,
+      message: 'Learner updated successfully',
     });
   }
 );
 
 /**
- * @description Student taking exam
- * @route       POST /api/v1/students/exams/:examID/write
- * @access      Private Student Only
+ * @description Learner taking exam
+ * @route       POST /api/v1/learners/exams/:examID/write
+ * @access      Private Learner Only
  */
 export const writeExam = AsyncHandler(
   async (req: Request<{ examID: string }, {}, WriteExamBody>, res: Response): Promise<void> => {
-    // get student taking exam
-    const studentFound = (await Student.findById(req.userAuth?.id)) as IStudent | null;
-    if (!studentFound) {
-      throw new Error('Student not found');
+    // get learner taking exam
+    const learnerFound = (await Learner.findById(req.userAuth?.id)) as ILearner | null;
+    if (!learnerFound) {
+      throw new Error('Learner not found');
     }
     // get exam
     // to populate multiple fields at once use .populate() for each field necessary
@@ -352,24 +352,24 @@ export const writeExam = AsyncHandler(
     // get questions to be answered
     const questions = examFound?.questions;
     // get all answers the user submitted
-    const studentAnswers = req.body?.answers;
-    // check if student answered all questions
-    if (studentAnswers.length !== questions.length) {
+    const learnerAnswers = req.body?.answers;
+    // check if learner answered all questions
+    if (learnerAnswers.length !== questions.length) {
       throw new Error('You have not answered all of the questions');
     }
 
-    /** Check if users name is already in students who took this exam using the id from student in the exam results as the query */
-    const studentFoundInResults = await ExamResult.findOne({ student: studentFound?._id });
-    if (studentFoundInResults) {
+    /** Check if users name is already in learners who took this exam using the id from learner in the exam results as the query */
+    const learnerFoundInResults = await ExamResult.findOne({ learner: learnerFound?._id });
+    if (learnerFoundInResults) {
       throw new Error('You have already taken this exam. Wait for your results.');
     }
 
-    // Check if student is suspended
-    if (studentFound.isWithdrawn || studentFound.isSuspended) {
+    // Check if learner is suspended
+    if (learnerFound.isWithdrawn || learnerFound.isSuspended) {
       throw new Error('You are withdrawn/suspended and cannot take this exam.');
     }
 
-    // build report object - this will tell the student how many answers they got right/wrong
+    // build report object - this will tell the learner how many answers they got right/wrong
     let correctAnswers = 0;
     let wrongAnswers = 0;
     let status: 'passed' | 'failed' = 'failed'; // failed/passed
@@ -382,7 +382,7 @@ export const writeExam = AsyncHandler(
       // find the single question
       const question = questions[i];
       // check if the answer is correct
-      if (question.correctAnswer === studentAnswers[i]) {
+      if (question.correctAnswer === learnerAnswers[i]) {
         correctAnswers++;
         score++;
         question.isCorrect = true;
@@ -423,7 +423,7 @@ export const writeExam = AsyncHandler(
 
     // generate exam results
     const examResults = await ExamResult.create({
-      studentID: studentFound?.studentId,
+      learnerID: learnerFound?.learnerId,
       exam: examFound?._id,
       grade,
       score,
@@ -434,67 +434,67 @@ export const writeExam = AsyncHandler(
       academicYear: examFound?.academicYear,
       answeredQuestions: answeredQuestionsArray,
     });
-    // push results into students
-    studentFound.examResults?.push(examResults?._id);
+    // push results into learners
+    learnerFound.examResults?.push(examResults?._id);
     // save
-    await studentFound.save();
+    await learnerFound.save();
 
     /**
-     * Promote Student to next Class Level or Term/Year if necessary
+     * Promote Learner to next Class Level or Term/Year if necessary
      */
     // Promote to level 200
     if (
       examFound.academicTerm.name === '3rd term' &&
       status === 'passed' &&
-      studentFound?.currentClassLevel === 'Level 100'
+      learnerFound?.currentClassLevel === 'Level 100'
     ) {
-      studentFound.classLevels.push('Level 200');
-      studentFound.currentClassLevel = 'Level 200';
-      await studentFound.save();
+      learnerFound.classLevels.push('Level 200');
+      learnerFound.currentClassLevel = 'Level 200';
+      await learnerFound.save();
     }
 
     // Promote to level 300
     if (
       examFound.academicTerm.name === '3rd term' &&
       status === 'passed' &&
-      studentFound?.currentClassLevel === 'Level 200'
+      learnerFound?.currentClassLevel === 'Level 200'
     ) {
-      studentFound.classLevels.push('Level 300');
-      studentFound.currentClassLevel = 'Level 300';
-      await studentFound.save();
+      learnerFound.classLevels.push('Level 300');
+      learnerFound.currentClassLevel = 'Level 300';
+      await learnerFound.save();
     }
 
     // Promote to level 400
     if (
       examFound.academicTerm.name === '3rd term' &&
       status === 'passed' &&
-      studentFound?.currentClassLevel === 'Level 300'
+      learnerFound?.currentClassLevel === 'Level 300'
     ) {
-      studentFound.classLevels.push('Level 400');
-      studentFound.currentClassLevel = 'Level 400';
-      await studentFound.save();
+      learnerFound.classLevels.push('Level 400');
+      learnerFound.currentClassLevel = 'Level 400';
+      await learnerFound.save();
     }
 
     // Promote to level 500
     if (
       examFound.academicTerm.name === '3rd term' &&
       status === 'passed' &&
-      studentFound?.currentClassLevel === 'Level 400'
+      learnerFound?.currentClassLevel === 'Level 400'
     ) {
-      studentFound.classLevels.push('Level 500');
-      studentFound.currentClassLevel = 'Level 500';
-      await studentFound.save();
+      learnerFound.classLevels.push('Level 500');
+      learnerFound.currentClassLevel = 'Level 500';
+      await learnerFound.save();
     }
 
     // Promote to Graduate
     if (
       examFound.academicTerm.name === '3rd term' &&
       status === 'passed' &&
-      studentFound?.currentClassLevel === 'Level 500'
+      learnerFound?.currentClassLevel === 'Level 500'
     ) {
-      studentFound.isGraduated = true;
-      studentFound.yearGraduated = new Date();
-      await studentFound.save();
+      learnerFound.isGraduated = true;
+      learnerFound.yearGraduated = new Date();
+      await learnerFound.save();
     }
 
     // submit request

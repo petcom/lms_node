@@ -22,7 +22,7 @@ import subjectRouter from '../routes/academics/subject';
 import yearGroupRouter from '../routes/academics/yearGroup';
 import staffRouter from '../routes/staff/staffRouter';
 import examRouter from '../routes/academics/examRoutes';
-import studentRouter from '../routes/students/studentRouter';
+import learnerRouter from '../routes/learners/learnerRouter';
 import questionsRouter from '../routes/academics/questionRoutes';
 import examResultRouter from '../routes/academics/examResultsRoutes';
 import scormPackageRouter from '../routes/scorm/scormPackageRoutes';
@@ -148,7 +148,7 @@ app.use(
  */
 app.use('/api/v1/auth', authRouter); // Auth routes (login, logout, refresh)
 app.use('/api/v1/password', passwordRouter); // Password management routes
-app.use('/api/v1/admins', adminRouter); // Admin routes
+app.use('/api/v1/staff/admins', adminRouter); // Global admin routes
 app.use('/api/v1/academic-years', academicYearRouter); // academic year routes
 app.use('/api/v1/academic-terms', academicTermRouter); // academic term routes
 app.use('/api/v1/class-levels', classLevelRouter); // Class level routes
@@ -157,7 +157,7 @@ app.use('/api/v1/subjects', subjectRouter); // Subject routes
 app.use('/api/v1/year-groups', yearGroupRouter); // Year Group routes
 app.use('/api/v1/staff', staffRouter); // Staff routes
 app.use('/api/v1/exams', examRouter); // Exams routes
-app.use('/api/v1/students', studentRouter); // Student routes
+app.use('/api/v1/learners', learnerRouter); // Learner routes
 app.use('/api/v1/questions', questionsRouter); // Question routes
 app.use('/api/v1/exam-results', examResultRouter); // Exam results routes
 app.use('/api/v1/scorm/packages', scormPackageRouter); // SCORM package management
@@ -182,7 +182,7 @@ app.use('/api/v1/content', contentRouter); // Unified content API
 app.use('/api/v1/templates', templatesRouter); // Master templates
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects
-app.get('/student/dashboard', (_req, res) => res.redirect('/'));
+app.get('/learner/dashboard', (_req, res) => res.redirect('/'));
 
 /**
  * Error Middlewares

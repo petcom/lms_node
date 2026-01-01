@@ -4,14 +4,14 @@ Base URL: `/api/v1/department-resources`
 
 ## Auth
 - Requires `Authorization: Bearer <token>`
-- Roles: system admin or department admin (scoped)
+- Roles: `global-admin` or `staff` with `department-admin` subtype (scoped)
 
 ## Staff Users
 GET `/staffusers`
 
 Query:
-- `type=teacher|dept-admin|staff` (optional; `teacher` is an alias for staff users)
-- `departmentId=<ObjectId>` (optional; system admin only)
+- `type=staff|global-admin|instructor|department-admin|content-admin|billing-admin` (optional)
+- `departmentId=<ObjectId>` (optional; `global-admin` only)
 - `page`, `limit` (optional)
 
 Response:
@@ -24,13 +24,15 @@ Response:
       "id": "user-id",
       "name": "Full Name",
       "email": "email@example.com",
-      "role": "admin" | "dept-admin" | "staff",
+      "role": "global-admin" | "staff",
+      "roles": ["instructor","content-admin"],
       "department": {
         "id": "dept-id",
         "name": "Department Name",
         "code": "DEPT",
         "parentId": "parent-id" | null,
-        "level": 0 | 1 | 2
+        "level": 0 | 1 | 2,
+        "passingStyleScore": 80
       } | null
     }
   ]
@@ -43,7 +45,7 @@ GET `/content`
 Query:
 - `type=scorm|custom` (optional)
 - `customType=exam|quiz|practice|other` (optional)
-- `departmentId=<ObjectId>` (optional; system admin only)
+- `departmentId=<ObjectId>` (optional; `global-admin` only)
 - `page`, `limit` (optional)
 
 Response:
@@ -62,7 +64,8 @@ Response:
         "name": "Department Name",
         "code": "DEPT",
         "parentId": "parent-id" | null,
-        "level": 0 | 1 | 2
+        "level": 0 | 1 | 2,
+        "passingStyleScore": 80
       } | null
     }
   ]
@@ -112,7 +115,8 @@ Response:
       "name": "Department Name",
       "code": "DEPT",
       "parentId": "parent-id" | null,
-      "level": 0 | 1 | 2
+      "level": 0 | 1 | 2,
+      "passingStyleScore": 80
     } | null
   }
 }
@@ -355,3 +359,8 @@ Body:
 ```
 { "name": "Department Name", "code": "DEPT", "passingStyleScore": 80 }
 ```
+
+## Changes (Phase 1)
+- Role values updated to `global-admin | staff` with staff subtypes in `roles`.
+- Staff users list supports subtype filters (`instructor`, `department-admin`, `content-admin`, `billing-admin`).
+- Department summaries now include `passingStyleScore`.

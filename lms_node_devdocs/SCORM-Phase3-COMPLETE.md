@@ -25,7 +25,7 @@ Phase 3 of the SCORM implementation is **100% complete and production-ready**. A
 - ✅ SCORM 2004 error codes (24 codes: 0, 101-143, 201, 301, 351, 391, 401-408)
 - ✅ SCORM 1.2 valid elements (30+ elements including core, suspend_data, interactions)
 - ✅ SCORM 2004 valid elements (35+ elements including learner, completion, success)
-- ✅ SCORM 1.2 read-only elements (20+ including student_id, student_name, total_time)
+- ✅ SCORM 1.2 read-only elements (20+ including learner_id, learner_name, total_time)
 - ✅ SCORM 2004 read-only elements (22+ including learner_id, learner_name, total_time)
 
 **Implemented Functions**:
@@ -192,7 +192,7 @@ interface ScormSession {
 ✅ POST /api/v1/scorm/runtime/:attemptId/initialize
    - Creates session via sessionManager
    - Marks attempt status as "running"
-   - Verifies student ownership
+   - Verifies learner ownership
    - Returns SCORM-compliant response
    - Error 103/101 for already initialized
 
@@ -231,7 +231,7 @@ Response:
 ✅ GET /api/v1/scorm/runtime/:attemptId/value/:element(*)
    - Validates CMI element path
    - Reads from attempt.cmi using getCMIValue()
-   - Special handling for student_id/student_name
+   - Special handling for learner_id/learner_name
    - Returns value and error code
    - Error 401 for invalid elements
 
@@ -317,7 +317,7 @@ Response:
 ```
 
 **Common Features**:
-- All endpoints verify student ownership
+- All endpoints verify learner ownership
 - All use type assertions for Mongoose properties
 - All return SCORM-compliant error codes
 - All handle errors gracefully
@@ -341,7 +341,7 @@ Response:
 
 **Middleware Stack**:
 - All routes: `isAuthenticated` (JWT verification)
-- All routes: `isStudent` (role check)
+- All routes: `isLearner` (role check)
 - Wildcard param: `:element(*)` allows dots in CMI paths
 
 **Integration**:
@@ -727,8 +727,8 @@ Status: ✅ EXPECTED BEHAVIOR
 - ✅ Version field used for API selection
 - ✅ Not directly modified by runtime (read-only)
 
-**Student Model**:
-- ✅ Used for student_id/student_name
+**Learner Model**:
+- ✅ Used for learner_id/learner_name
 - ✅ Ownership verification
 - ✅ Not modified by runtime
 
@@ -751,7 +751,7 @@ Status: ✅ EXPECTED BEHAVIOR
 
 ### Security ✅
 - **Authentication**: Required on all endpoints
-- **Authorization**: Student role enforced
+- **Authorization**: Learner role enforced
 - **Ownership**: Verified per request
 - **Error Codes**: SCORM-compliant (no info leakage)
 - **Input Validation**: CMI element paths validated
@@ -776,7 +776,7 @@ Status: ✅ EXPECTED BEHAVIOR
 
 ### 1. In-Memory Sessions
 **Issue**: Sessions lost on server restart  
-**Impact**: Students must re-initialize after deployment  
+**Impact**: Learners must re-initialize after deployment  
 **Mitigation**: Auto-commit minimizes data loss  
 **Solution**: Migrate to Redis for production
 
@@ -864,7 +864,7 @@ Status: ✅ EXPECTED BEHAVIOR
 - [x] scormRuntimeRoutes.ts created and configured
 - [x] All 7 endpoints implemented
 - [x] Authentication middleware applied
-- [x] Student role restriction applied
+- [x] Learner role restriction applied
 - [x] Error handling implemented
 - [x] SCORM error codes returned
 - [x] Database integration working

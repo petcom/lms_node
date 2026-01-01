@@ -185,11 +185,11 @@ export function calculateSessionTime(attempt: IScormAttempt): number {
 }
 
 /**
- * Calculate completion rate for a package across students
+ * Calculate completion rate for a package across learners
  */
-export function calculateCompletionRate(totalStudents: number, completedStudents: number): number {
-  if (totalStudents === 0) return 0;
-  return Math.round((completedStudents / totalStudents) * 100);
+export function calculateCompletionRate(totalLearners: number, completedLearners: number): number {
+  if (totalLearners === 0) return 0;
+  return Math.round((completedLearners / totalLearners) * 100);
 }
 
 /**

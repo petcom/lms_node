@@ -23,7 +23,7 @@ const tokenBlacklistSchema = new Schema<ITokenBlacklist, ITokenBlacklistModel>(
     userType: {
       type: String,
       required: true,
-      enum: ['admin', 'staff', 'student'],
+      enum: ['global-admin', 'staff', 'learner'],
     },
     reason: {
       type: String,
@@ -55,7 +55,7 @@ tokenBlacklistSchema.statics.blacklistToken = async function (
   this: ITokenBlacklistModel,
   token: string,
   userId: string,
-  userType: 'admin' | 'staff' | 'student',
+  userType: 'global-admin' | 'staff' | 'learner',
   reason:
     | 'logout'
     | 'password_change'
@@ -111,7 +111,7 @@ tokenBlacklistSchema.statics.blacklistAllUserTokens = async function (
   return await this.create({
     token: `USER_${userId}_ALL_TOKENS`,
     userId,
-    userType: 'admin', // placeholder, will match any user type
+    userType: 'global-admin', // placeholder, will match any user type
     reason,
     expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
   });

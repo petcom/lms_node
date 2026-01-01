@@ -4,8 +4,8 @@ import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import Department from '../../../model/Academic/Department';
 
-const masterToken = 'test-admin-token';
-const topAdminToken = 'test-top-admin-token';
+const masterToken = 'test-global-admin-token';
+const topAdminToken = 'test-top-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
 const masterDepartmentId = new mongoose.Types.ObjectId(
   process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'

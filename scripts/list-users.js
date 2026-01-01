@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * List all admins, staff, and students.
+ * List all admins, staff, and learners.
  * Usage: node scripts/list-users.js [env-file]
  */
 
@@ -34,8 +34,8 @@ const Staff = mongoose.model(
   'Staff',
   new mongoose.Schema({}, { strict: false })
 );
-const Student = mongoose.model(
-  'Student',
+const Learner = mongoose.model(
+  'Learner',
   new mongoose.Schema({}, { strict: false })
 );
 
@@ -49,11 +49,11 @@ const simplify = (doc, kind) => {
   };
 
   if (kind === 'staff') {
-    return { ...base, teacherId: doc.teacherId, applicationStatus: doc.applicationStatus };
+    return { ...base, instructorId: doc.instructorId, applicationStatus: doc.applicationStatus };
   }
 
-  if (kind === 'student') {
-    return { ...base, studentId: doc.studentId, currentClassLevel: doc.currentClassLevel };
+  if (kind === 'learner') {
+    return { ...base, learnerId: doc.learnerId, currentClassLevel: doc.currentClassLevel };
   }
 
   return base;
@@ -62,20 +62,20 @@ const simplify = (doc, kind) => {
 mongoose
   .connect(MONGO_URL)
   .then(async () => {
-    const [admins, staff, students] = await Promise.all([
+    const [admins, staff, learners] = await Promise.all([
       Admin.find({}).lean(),
       Staff.find({}).lean(),
-      Student.find({}).lean(),
+      Learner.find({}).lean(),
     ]);
 
     console.log(`\nAdmins (${admins.length})`);
-    admins.map((doc) => simplify(doc, 'admin')).forEach((doc) => console.log(doc));
+    admins.map((doc) => simplify(doc, 'global-admin')).forEach((doc) => console.log(doc));
 
     console.log(`\nStaff (${staff.length})`);
     staff.map((doc) => simplify(doc, 'staff')).forEach((doc) => console.log(doc));
 
-    console.log(`\nStudents (${students.length})`);
-    students.map((doc) => simplify(doc, 'student')).forEach((doc) => console.log(doc));
+    console.log(`\nLearners (${learners.length})`);
+    learners.map((doc) => simplify(doc, 'learner')).forEach((doc) => console.log(doc));
   })
   .then(() => mongoose.connection.close())
   .catch((err) => {

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import verifyToken from '../utils/verifyToken';
 import Admin from '../model/Staff/Admin';
 import Staff from '../model/Staff/Staff';
-import Student from '../model/Academic/Student';
+import Learner from '../model/Academic/Learner';
 import { AuthenticationError, NotFoundError } from '../utils/errors';
 
 type UserAuth = {
@@ -15,7 +15,7 @@ type UserAuth = {
 
 /**
  * Unified authentication middleware
- * Authenticates users from any user type (Admin, Teacher, Student)
+ * Authenticates users from any user type (Admin, Instructor, Learner)
  * @param options - Optional configuration
  * @returns Express middleware function
  */
@@ -31,29 +31,29 @@ const isAuthenticated = () => {
 
       if (shouldBypassAuth && token) {
         const roleMap: Record<string, { role: string; id: string; department?: string }> = {
-          'test-admin-token': {
-            role: 'admin',
+          'test-global-admin-token': {
+            role: 'global-admin',
             id: '0000000000000000000000a1',
             department: bypassDepartmentId,
           },
-          'test-teacher-token': {
+          'test-instructor-token': {
             role: 'staff',
             id: '0000000000000000000000b1',
             department: bypassDepartmentId,
           },
-          'test-student-token': {
-            role: 'student',
+          'test-learner-token': {
+            role: 'learner',
             id: '0000000000000000000000c1',
             department: bypassDepartmentId,
           },
-          // Department-scoped admin tokens for integration tests
-          'test-top-admin-token': {
-            role: 'admin',
+          // Department-scoped global admin tokens for integration tests
+          'test-top-global-admin-token': {
+            role: 'global-admin',
             id: '0000000000000000000000a2',
             department: '0000000000000000000000d1',
           },
-          'test-sub-admin-token': {
-            role: 'admin',
+          'test-sub-global-admin-token': {
+            role: 'global-admin',
             id: '0000000000000000000000a3',
             department: '0000000000000000000000d2',
           },
@@ -110,7 +110,7 @@ const isAuthenticated = () => {
       }
 
       if (!user) {
-        user = (await Student.findById(verifiedToken.id)
+        user = (await Learner.findById(verifiedToken.id)
           .select('name email role department')
           .lean()) as UserAuth | null;
       }

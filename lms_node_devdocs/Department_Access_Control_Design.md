@@ -11,7 +11,7 @@
 - Seed a singleton Master Department.
 - Associate content/staff to departments (minimum: SCORM packages, programs, subjects, class levels; optionally year groups/courses if present).
 - Adjust read-list endpoints to filter content by the requester’s department scope.
-- Keep create/update restricted to existing role gates (admin/teacher) but scoped by department where applicable.
+- Keep create/update restricted to existing role gates (admin/instructor) but scoped by department where applicable.
 
 ## Department Model (proposed)
 - Fields:
@@ -27,11 +27,11 @@
   - `sub` departments must have parent = a top-level department.
 
 ## Staff Association
-- Add `department` (ObjectId -> Department) to staff models (Admin/Teacher). For Master Admins, set to Master Department.
+- Add `department` (ObjectId -> Department) to staff models (Admin/Instructor). For Master Admins, set to Master Department.
 - Role semantics:
   - Master Admin: role=admin AND department=master → global visibility.
   - Department Admin (if introduced later): role=admin AND department=top/sub → scoped visibility.
-  - Teacher: role=teacher AND department set → scoped visibility.
+  - Instructor: role=instructor AND department set → scoped visibility.
 
 ## Content Association
 - Add `department` (ObjectId -> Department) to content models:
@@ -83,9 +83,9 @@
 
 --YES (answered by developer)
 
-- Should teachers be able to read subjects/programs/class levels across their top-level’s sub-departments? (Assumed yes.) 
+- Should instructors be able to read subjects/programs/class levels across their top-level’s sub-departments? (Assumed yes.) 
 
---YES, if a teacher is assigned to the top level, then they should be able to read subjects/programs/class levels accross the department, if assigned to a sub-department, then limit to just those set in the sub-department (answered by developer)
+--YES, if a instructor is assigned to the top level, then they should be able to read subjects/programs/class levels accross the department, if assigned to a sub-department, then limit to just those set in the sub-department (answered by developer)
 
 - Any cross-department sharing needed (e.g., master-created shared packages) beyond master scope? If yes, we may add an `isGlobal` flag. 
 

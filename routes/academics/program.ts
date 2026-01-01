@@ -12,7 +12,7 @@ import {
 import advancedResults from '../../middlewares/advancedResults';
 import Program from '../../model/Academic/Program';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import roleRestriction, { isTeacherOrAdmin } from '../../middlewares/roleRestriction';
+import roleRestriction, { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 
 const programRouter: Router = express.Router();
@@ -22,11 +22,11 @@ const programRouter: Router = express.Router();
  */
 programRouter
   .route('/')
-  .post(isAuthenticated(), roleRestriction('admin'), createProgram)
+  .post(isAuthenticated(), roleRestriction('global-admin'), createProgram)
   .get(
     isAuthenticated(),
     departmentScope(),
-    isTeacherOrAdmin,
+    isInstructorOrAdmin,
     advancedResults(Program, undefined, (req) => {
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const requestedDept =
@@ -52,15 +52,15 @@ programRouter
 
 programRouter
   .route('/:id')
-  .get(isAuthenticated(), departmentScope(), isTeacherOrAdmin, getSingleProgram)
-  .put(isAuthenticated(), roleRestriction('admin'), updateProgram)
-  .delete(isAuthenticated(), roleRestriction('admin'), deleteProgram);
+  .get(isAuthenticated(), departmentScope(), isInstructorOrAdmin, getSingleProgram)
+  .put(isAuthenticated(), roleRestriction('global-admin'), updateProgram)
+  .delete(isAuthenticated(), roleRestriction('global-admin'), deleteProgram);
 
 programRouter.patch(
   '/:id/archive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   archiveProgram
 );
 
@@ -68,7 +68,7 @@ programRouter.patch(
   '/:id/unarchive',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   unarchiveProgram
 );
 

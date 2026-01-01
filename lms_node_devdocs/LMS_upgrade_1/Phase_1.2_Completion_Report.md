@@ -333,7 +333,7 @@ Test 7: Token manager functions exist
 {
   token: String (indexed, unique),
   userId: ObjectId (indexed),
-  userType: 'admin' | 'teacher' | 'student',
+  userType: 'admin' | 'instructor' | 'learner',
   reason: 'logout' | 'password_change' | 'token_refresh' | 'security_breach',
   expiresAt: Date (TTL index),
   createdAt: Date,
@@ -346,7 +346,7 @@ Test 7: Token manager functions exist
 {
   token: String (indexed, unique),
   userId: ObjectId (indexed),
-  userType: 'admin' | 'teacher' | 'student',
+  userType: 'admin' | 'instructor' | 'learner',
   expiresAt: Date (TTL index),
   isUsed: Boolean,
   isRevoked: Boolean,
@@ -394,7 +394,7 @@ JWT_REFRESH_EXPIRY=7d       # New
 ## Integration Notes
 
 ### For Login Controllers
-Update admin/teacher/student login to use new token system:
+Update admin/instructor/learner login to use new token system:
 
 ```javascript
 // Old approach

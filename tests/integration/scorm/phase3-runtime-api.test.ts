@@ -8,11 +8,11 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
-import Student from '../../../model/Academic/Student';
+import Learner from '../../../model/Academic/Learner';
 
-const teacherId = new mongoose.Types.ObjectId('0000000000000000000000b1');
-const studentId = new mongoose.Types.ObjectId('0000000000000000000000c1');
-const studentToken = 'test-student-token';
+const instructorId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+const learnerId = new mongoose.Types.ObjectId('0000000000000000000000c1');
+const learnerToken = 'test-learner-token';
 
 const makePackageData = (pkgId: string) => ({
   packageId: pkgId,
@@ -30,8 +30,8 @@ const makePackageData = (pkgId: string) => ({
     organizations: [],
     resources: [],
   },
-  createdBy: teacherId,
-  uploadedBy: teacherId,
+  createdBy: instructorId,
+  uploadedBy: instructorId,
   uploadedByModel: 'Staff' as const,
   status: 'published',
   isActive: true,
@@ -48,18 +48,18 @@ const makePackageData = (pkgId: string) => ({
 
 const seedAttempt = async () => {
   const pkg = await ScormPackage.create(makePackageData(`runtime-${Date.now()}`));
-  await Student.deleteMany({ _id: studentId });
-  await Student.create({
-    _id: studentId,
-    name: 'Runtime Student',
-    email: 'runtime.student@example.com',
+  await Learner.deleteMany({ _id: learnerId });
+  await Learner.create({
+    _id: learnerId,
+    name: 'Runtime Learner',
+    email: 'runtime.learner@example.com',
     password: 'password123',
-    role: 'student',
+    role: 'learner',
   });
 
   const attempt = await ScormAttempt.create({
-    attemptId: `${pkg.packageId}-${studentId}-1`,
-    student: studentId,
+    attemptId: `${pkg.packageId}-${learnerId}-1`,
+    learner: learnerId,
     package: pkg._id,
     attemptNumber: 1,
     status: 'not_started',
@@ -84,7 +84,7 @@ describe('SCORM Phase 3: Runtime API', () => {
   afterAll(async () => {
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
-    await Student.deleteMany({ _id: studentId });
+    await Learner.deleteMany({ _id: learnerId });
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
@@ -93,15 +93,15 @@ describe('SCORM Phase 3: Runtime API', () => {
   beforeEach(async () => {
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
-    await Student.deleteMany({ _id: studentId });
+    await Learner.deleteMany({ _id: learnerId });
   });
 
-  it('runs initialize → set → commit → get → terminate for a student attempt', async () => {
+  it('runs initialize → set → commit → get → terminate for a learner attempt', async () => {
     const { attemptId } = await seedAttempt();
 
     const initRes = await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     expect(initRes.status).toBe(200);
@@ -111,17 +111,17 @@ describe('SCORM Phase 3: Runtime API', () => {
       .put(
         `/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.lesson_status')}`
       )
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: 'completed' });
 
     await request(app)
       .put(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: '92' });
 
     const commitRes = await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/commit`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     expect(commitRes.status).toBe(200);
@@ -133,14 +133,14 @@ describe('SCORM Phase 3: Runtime API', () => {
 
     const getRes = await request(app)
       .get(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
-      .set('Authorization', `Bearer ${studentToken}`);
+      .set('Authorization', `Bearer ${learnerToken}`);
 
     expect(getRes.status).toBe(200);
     expect(getRes.body.data.value).toBe('92');
 
     const terminateRes = await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/terminate`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     expect(terminateRes.status).toBe(200);
@@ -155,12 +155,12 @@ describe('SCORM Phase 3: Runtime API', () => {
     const { attemptId } = await seedAttempt();
     await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     const heartbeatRes = await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/heartbeat`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     expect(heartbeatRes.status).toBe(200);
@@ -171,12 +171,12 @@ describe('SCORM Phase 3: Runtime API', () => {
     const { attemptId } = await seedAttempt();
     await request(app)
       .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     const res = await request(app)
       .put(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.invalid.element')}`)
-      .set('Authorization', `Bearer ${studentToken}`)
+      .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: 'nope' });
 
     expect(res.status).toBe(200);

@@ -24,7 +24,7 @@ const staffSchema = new Schema<IStaff>(
       default: Date.now,
     },
     // Randomizes a number between 1 and 999 to make the id unique for each staff member
-    teacherId: {
+    instructorId: {
       type: String,
       required: true,
       default: function (this: IStaff) {
@@ -70,7 +70,7 @@ const staffSchema = new Schema<IStaff>(
     program: {
       type: String,
     },
-    // A teacher can teach in more than one class level
+    // A instructor can teach in more than one class level
     classLevel: {
       type: String,
     },
@@ -97,7 +97,7 @@ const staffSchema = new Schema<IStaff>(
 
 // Indexes for query performance
 staffSchema.index({ email: 1 }, { unique: true });
-staffSchema.index({ teacherId: 1 }, { unique: true });
+staffSchema.index({ instructorId: 1 }, { unique: true });
 staffSchema.index({ subject: 1 });
 staffSchema.index({ classLevel: 1 });
 staffSchema.index({ applicationStatus: 1 });

@@ -5,10 +5,10 @@ import { UserRole } from '../types/auth';
  * Centralized definition of all system roles
  * Use these constants throughout the application for consistency
  */
-export const ROLES: Record<'ADMIN' | 'STAFF' | 'STUDENT', UserRole> = {
-  ADMIN: 'admin',
+export const ROLES: Record<'GLOBAL_ADMIN' | 'STAFF' | 'LEARNER', UserRole> = {
+  GLOBAL_ADMIN: 'global-admin',
   STAFF: 'staff',
-  STUDENT: 'student',
+  LEARNER: 'learner',
 } as const;
 
 /**
@@ -16,9 +16,9 @@ export const ROLES: Record<'ADMIN' | 'STAFF' | 'STUDENT', UserRole> = {
  * Used for hierarchical access control
  */
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  student: 1,
+  learner: 1,
   staff: 2,
-  admin: 3,
+  'global-admin': 3,
 };
 
 /**
@@ -27,7 +27,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export type Permission =
   | 'manage_users'
   | 'manage_staff'
-  | 'manage_students'
+  | 'manage_learners'
   | 'manage_academic_years'
   | 'manage_academic_terms'
   | 'manage_programs'
@@ -43,7 +43,7 @@ export type Permission =
   | 'delete_own_exams'
   | 'create_questions'
   | 'update_own_questions'
-  | 'view_assigned_students'
+  | 'view_assigned_learners'
   | 'grade_exams'
   | 'take_exams'
   | 'view_own_results'
@@ -55,10 +55,10 @@ export type Permission =
  * Defines what actions each role can perform
  */
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  admin: [
+  'global-admin': [
     'manage_users',
     'manage_staff',
-    'manage_students',
+    'manage_learners',
     'manage_academic_years',
     'manage_academic_terms',
     'manage_programs',
@@ -76,12 +76,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'delete_own_exams',
     'create_questions',
     'update_own_questions',
-    'view_assigned_students',
+    'view_assigned_learners',
     'grade_exams',
     'view_own_profile',
     'update_own_profile',
   ],
-  student: ['take_exams', 'view_own_results', 'view_own_profile', 'update_own_profile'],
+  learner: ['take_exams', 'view_own_results', 'view_own_profile', 'update_own_profile'],
 };
 
 /**

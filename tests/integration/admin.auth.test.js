@@ -22,7 +22,7 @@ describe('Admin Authentication Integration Tests', () => {
     await clearTestDB();
   });
 
-  describe('POST /api/v1/admins/register', () => {
+  describe('POST /api/v1/staff/admins/register', () => {
     it('should register a new admin with valid data', async () => {
       const adminData = {
         name: 'Test Admin',
@@ -31,7 +31,7 @@ describe('Admin Authentication Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send(adminData);
 
       expect(response.status).toBe(201);
@@ -49,7 +49,7 @@ describe('Admin Authentication Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send(adminData);
 
       expect(response.status).toBe(400);
@@ -64,12 +64,12 @@ describe('Admin Authentication Integration Tests', () => {
 
       // First registration
       await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send(adminData);
 
       // Duplicate registration
       const response = await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send(adminData);
 
       expect(response.status).toBeGreaterThanOrEqual(400);
@@ -77,7 +77,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject registration with missing required fields', async () => {
       const response = await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send({ name: 'Test Admin' });
 
       expect(response.status).toBe(400);
@@ -91,18 +91,18 @@ describe('Admin Authentication Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send(adminData);
 
       expect(response.status).toBe(400);
     });
   });
 
-  describe('POST /api/v1/admins/login', () => {
+  describe('POST /api/v1/staff/admins/login', () => {
     beforeEach(async () => {
       // Create a test admin for login tests
       await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send({
           name: 'Test Admin',
           email: 'admin@test.com',
@@ -112,7 +112,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should login with valid credentials', async () => {
       const response = await request(app)
-        .post('/api/v1/admins/login')
+        .post('/api/v1/staff/admins/login')
         .send({
           email: 'admin@test.com',
           password: 'Admin@123'
@@ -125,7 +125,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject login with wrong password', async () => {
       const response = await request(app)
-        .post('/api/v1/admins/login')
+        .post('/api/v1/staff/admins/login')
         .send({
           email: 'admin@test.com',
           password: 'WrongPassword@123'
@@ -137,7 +137,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject login with non-existent email', async () => {
       const response = await request(app)
-        .post('/api/v1/admins/login')
+        .post('/api/v1/staff/admins/login')
         .send({
           email: 'nonexistent@test.com',
           password: 'Admin@123'
@@ -149,20 +149,20 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject login with missing credentials', async () => {
       const response = await request(app)
-        .post('/api/v1/admins/login')
+        .post('/api/v1/staff/admins/login')
         .send({ email: 'admin@test.com' });
 
       expect(response.status).toBe(400);
     });
   });
 
-  describe('GET /api/v1/admins/profile', () => {
+  describe('GET /api/v1/staff/admins/profile', () => {
     let authToken;
 
     beforeEach(async () => {
       // Register and login to get auth token
       await request(app)
-        .post('/api/v1/admins/register')
+        .post('/api/v1/staff/admins/register')
         .send({
           name: 'Test Admin',
           email: 'admin@test.com',
@@ -170,7 +170,7 @@ describe('Admin Authentication Integration Tests', () => {
         });
 
       const loginResponse = await request(app)
-        .post('/api/v1/admins/login')
+        .post('/api/v1/staff/admins/login')
         .send({
           email: 'admin@test.com',
           password: 'Admin@123'
@@ -181,7 +181,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should get admin profile with valid token', async () => {
       const response = await request(app)
-        .get('/api/v1/admins/profile')
+        .get('/api/v1/staff/admins/profile')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
@@ -192,14 +192,14 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject profile access without token', async () => {
       const response = await request(app)
-        .get('/api/v1/admins/profile');
+        .get('/api/v1/staff/admins/profile');
 
       expect(response.status).toBe(401);
     });
 
     it('should reject profile access with invalid token', async () => {
       const response = await request(app)
-        .get('/api/v1/admins/profile')
+        .get('/api/v1/staff/admins/profile')
         .set('Authorization', 'Bearer invalid-token');
 
       expect(response.status).toBe(401);

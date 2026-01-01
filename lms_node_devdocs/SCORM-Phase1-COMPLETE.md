@@ -174,7 +174,7 @@ With Phase 1 complete, we can now proceed to:
 1. API endpoints (upload, CRUD, content delivery)
 2. Integration tests
 3. Admin interface planning
-4. Student progress tracking
+4. Learner progress tracking
 
 ---
 

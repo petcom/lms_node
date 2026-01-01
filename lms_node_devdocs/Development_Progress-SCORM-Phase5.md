@@ -5,13 +5,13 @@
 **Target Completion**: December 19, 2025
 
 ## Overview
-Phase 5 implements comprehensive tracking and reporting features for SCORM content, including student progress dashboards, teacher analytics, completion tracking, score aggregation, and data export functionality.
+Phase 5 implements comprehensive tracking and reporting features for SCORM content, including learner progress dashboards, instructor analytics, completion tracking, score aggregation, and data export functionality.
 
 ## Phase 5 Goals (from SCORM_Implementation_Plan.md)
 
 ### Deliverables:
-- [ ] Student progress dashboard endpoints
-- [ ] Teacher analytics dashboard endpoints
+- [ ] Learner progress dashboard endpoints
+- [ ] Instructor analytics dashboard endpoints
 - [ ] Completion tracking and calculations
 - [ ] Score tracking and grading integration
 - [ ] Time tracking and aggregation
@@ -25,8 +25,8 @@ Phase 5 implements comprehensive tracking and reporting features for SCORM conte
 
 ### Report Controller
 - [ ] Create `controller/scorm/scormReportCtrl.ts`
-  - [ ] `getStudentProgress()` - Student's SCORM progress across all packages
-  - [ ] `getPackageAnalytics()` - Package-level analytics for teachers
+  - [ ] `getLearnerProgress()` - Learner's SCORM progress across all packages
+  - [ ] `getPackageAnalytics()` - Package-level analytics for instructors
   - [ ] `getAttemptDetails()` - Detailed attempt information
   - [ ] `exportTrackingData()` - Export data in various formats
   - [ ] `getCompletionRates()` - Completion statistics
@@ -36,7 +36,7 @@ Phase 5 implements comprehensive tracking and reporting features for SCORM conte
 
 ### Report Routes
 - [ ] Create `routes/scorm/scormReportRoutes.ts`
-  - [ ] GET /student/:studentId - Student progress
+  - [ ] GET /learner/:learnerId - Learner progress
   - [ ] GET /package/:packageId/analytics - Package analytics
   - [ ] GET /attempts/:attemptId - Attempt details
   - [ ] GET /export - Export tracking data
@@ -65,7 +65,7 @@ Phase 5 implements comprehensive tracking and reporting features for SCORM conte
 - [ ] Integrate with existing gradebook
 - [ ] Update grade calculation to include SCORM scores
 - [ ] Link SCORM completion to course requirements
-- [ ] Add SCORM data to student transcripts
+- [ ] Add SCORM data to learner transcripts
 
 ### Testing
 - [ ] Unit tests for report controller
@@ -78,16 +78,16 @@ Phase 5 implements comprehensive tracking and reporting features for SCORM conte
 
 ## API Endpoints Design
 
-### 1. Student Progress
+### 1. Learner Progress
 ```typescript
-GET /api/v1/scorm/reports/student/:studentId
+GET /api/v1/scorm/reports/learner/:learnerId
 
 Response:
 {
   success: true,
   data: {
-    studentId: ObjectId,
-    studentName: string,
+    learnerId: ObjectId,
+    learnerName: string,
     packages: [
       {
         packageId: ObjectId,
@@ -139,18 +139,18 @@ Response:
     packageTitle: string,
     dateRange: { start: Date, end: Date },
     summary: {
-      totalStudents: number,
-      studentsStarted: number,
-      studentsCompleted: number,
+      totalLearners: number,
+      learnersStarted: number,
+      learnersCompleted: number,
       completionRate: number,
       averageScore: number,
       averageTimeSpent: number,
       passRate: number
     },
-    students: [
+    learners: [
       {
-        studentId: ObjectId,
-        studentName: string,
+        learnerId: ObjectId,
+        learnerName: string,
         attempts: number,
         bestScore: number,
         averageScore: number,
@@ -181,7 +181,7 @@ Response:
   success: true,
   data: {
     attemptId: string,
-    student: {
+    learner: {
       id: ObjectId,
       name: string,
       email: string
@@ -224,7 +224,7 @@ GET /api/v1/scorm/reports/export
 
 Query Params:
 - packageId?: ObjectId
-- studentId?: ObjectId
+- learnerId?: ObjectId
 - startDate?: Date
 - endDate?: Date
 - format: 'json' | 'csv' | 'xlsx'
@@ -253,8 +253,8 @@ Response:
     packageId: ObjectId,
     packageTitle: string,
     overall: {
-      totalStudents: number,
-      completedStudents: number,
+      totalLearners: number,
+      completedLearners: number,
       completionRate: number
     },
     timeline: [
@@ -390,8 +390,8 @@ export function calculateAverageScore(attempts: IScormAttempt[]): number {
   // Average score across attempts
 }
 
-export function calculateCompletionRate(students: any[], packageId: ObjectId): number {
-  // Percentage of students who completed the package
+export function calculateCompletionRate(learners: any[], packageId: ObjectId): number {
+  // Percentage of learners who completed the package
 }
 
 export function aggregateScoreDistribution(attempts: IScormAttempt[]): object {
@@ -417,7 +417,7 @@ export function formatTimeForDisplay(seconds: number): string {
 
 ### CSV Export Format
 ```csv
-Student ID,Student Name,Package ID,Package Title,Attempt Number,Started At,Completed At,Status,Score,Time Spent,Completion Status,Success Status
+Learner ID,Learner Name,Package ID,Package Title,Attempt Number,Started At,Completed At,Status,Score,Time Spent,Completion Status,Success Status
 123,John Doe,abc,Course 101,1,2025-01-01 09:00,2025-01-01 10:30,completed,85,5400,completed,passed
 123,John Doe,def,Course 102,1,2025-01-02 14:00,,incomplete,0,1200,incomplete,unknown
 ```
@@ -433,7 +433,7 @@ Student ID,Student Name,Package ID,Package Title,Attempt Number,Started At,Compl
   },
   "data": [
     {
-      "student": {
+      "learner": {
         "id": "123",
         "name": "John Doe"
       },
@@ -483,13 +483,13 @@ interface IExamResult {
 #### Grade Calculation
 ```typescript
 // Include SCORM scores in final grade calculation
-async function calculateStudentGrade(studentId: ObjectId, subjectId: ObjectId) {
+async function calculateLearnerGrade(learnerId: ObjectId, subjectId: ObjectId) {
   // Get traditional exam results
-  const examResults = await ExamResult.find({ student: studentId });
+  const examResults = await ExamResult.find({ learner: learnerId });
   
   // Get SCORM attempt results
   const scormResults = await ScormAttempt.find({ 
-    student: studentId,
+    learner: learnerId,
     status: 'completed'
   }).populate('package');
   

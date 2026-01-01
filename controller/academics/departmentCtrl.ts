@@ -58,7 +58,7 @@ const buildCounts = async (
 ): Promise<DepartmentWithCounts['counts']> => {
   const [
     adminCount,
-    teacherCount,
+    instructorCount,
     programCount,
     subjectCount,
     classLevelCount,
@@ -75,7 +75,7 @@ const buildCounts = async (
   ]);
 
   return {
-    staffCount: adminCount + teacherCount,
+    staffCount: adminCount + instructorCount,
     programCount,
     subjectCount,
     classLevelCount,

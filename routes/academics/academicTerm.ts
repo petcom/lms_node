@@ -20,10 +20,10 @@ const academicTermRouter: Router = express.Router();
  */
 academicTermRouter
   .route('/')
-  .post(isAuthenticated(), roleRestriction('admin'), createAcademicTerm)
+  .post(isAuthenticated(), roleRestriction('global-admin'), createAcademicTerm)
   .get(
     isAuthenticated(),
-    roleRestriction('admin'),
+    roleRestriction('global-admin'),
     advancedResults(AcademicTerm, undefined, (req) => {
       const includeArchived = req.query.includeArchived === 'true';
       return includeArchived ? ({} as any) : ({ archived: false } as any);
@@ -33,21 +33,21 @@ academicTermRouter
 
 academicTermRouter
   .route('/:id')
-  .get(isAuthenticated(), roleRestriction('admin'), getAcademicTerm)
-  .put(isAuthenticated(), roleRestriction('admin'), updateAcademicTerms)
-  .delete(isAuthenticated(), roleRestriction('admin'), deleteAcademicTerm);
+  .get(isAuthenticated(), roleRestriction('global-admin'), getAcademicTerm)
+  .put(isAuthenticated(), roleRestriction('global-admin'), updateAcademicTerms)
+  .delete(isAuthenticated(), roleRestriction('global-admin'), deleteAcademicTerm);
 
 academicTermRouter.patch(
   '/:id/archive',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   archiveAcademicTerm
 );
 
 academicTermRouter.patch(
   '/:id/unarchive',
   isAuthenticated(),
-  roleRestriction('admin'),
+  roleRestriction('global-admin'),
   unarchiveAcademicTerm
 );
 

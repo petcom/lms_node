@@ -1,7 +1,7 @@
 # SCORM Backend Fix Plan (2025-12-23)
 
 ## Context
-- GET /api/v1/scorm/packages returns 500 due to `StrictPopulateError` on `uploadedBy`; controller populates `uploadedBy` while schema lacks that path, so package lists for students/teachers are broken.
+- GET /api/v1/scorm/packages returns 500 due to `StrictPopulateError` on `uploadedBy`; controller populates `uploadedBy` while schema lacks that path, so package lists for learners/instructors are broken.
 - SCORM player iframe still placeholder; runtime commit/suspend/resume and telemetry are not wired to backend runtime endpoints and launch data is unstable, so progress syncing is blocked.
 
 ## Goals
@@ -50,22 +50,22 @@
 - Validation notes (tests run, manual checks) captured when implemented.
 
 ## Next Steps (immediate)
-1) Verify fixes: restart dev server, hit GET /api/v1/scorm/packages and /api/v1/scorm/packages/:id to ensure 200 responses with populated author fields and no strict populate warnings. **Status: done (in-memory validation succeeded; populate still hard-codes model 'Teacher')**
+1) Verify fixes: restart dev server, hit GET /api/v1/scorm/packages and /api/v1/scorm/packages/:id to ensure 200 responses with populated author fields and no strict populate warnings. **Status: done (in-memory validation succeeded; populate still hard-codes model 'Instructor')**
 2) Data hygiene: add a small migration/backfill to set `uploadedBy = createdBy` and `uploadedByModel` based on known roles for existing package documents. **Status: done (script exists: scripts/backfill-scorm-uploadedBy.ts; run via npm run migrate:scorm:uploadedBy with proper env)**
 3) Tests: update SCORM integration tests/seeds to include `uploadedBy` + `uploadedByModel`, and add assertions that list/detail endpoints return author projection. **Status: done (phase2 integration suite asserts uploadedBy and passes)**
-4) Populate model resolution: consider removing the hard-coded `model: 'Teacher'` in populates once refPath data is backfilled; otherwise enforce a single author model in the contract and document it. **Status: done (controller populates now rely on refPath)**
+4) Populate model resolution: consider removing the hard-coded `model: 'Instructor'` in populates once refPath data is backfilled; otherwise enforce a single author model in the contract and document it. **Status: done (controller populates now rely on refPath)**
 5) Runtime wiring: proceed with Workstream B—stabilize launch data shape, implement commit/suspend/resume handlers, and hook telemetry to the player; add integration coverage for the runtime endpoints. **Status: done (runtime endpoints wired with in-memory session fallback, launch payload exposes runtime endpoints, phase3 runtime integration covers initialize/commit/terminate/heartbeat/error)**
 6) Test harness fixes: ensure `JWT_SECRET` is set in test setup and skip morgan in `NODE_ENV=test` to avoid `stream.write` errors during supertest runs. **Status: done (JWT secret already set in tests/setup; morgan skipped in test env; password reset cleanup interval now guarded to avoid open handles)**
 7) SCORM test fixtures: provide full required package fields (launchUrl, entryPoint, manifestData, filePath, fileSize, createdBy) in integration seeds to avoid validation failures. **Status: done (phase2/phase3 integration seeds use complete package payload with uploadedBy/uploadedByModel and entryPoint/launchUrl/manifestData/file metadata)**
-8) Index hygiene: remove duplicate index definitions for `expiresAt` (token models) and SCORM attempt indexes (`student/package/attemptNumber`, `package/status`) to silence warnings. **Status: done (TTL now via `expires` option; removed redundant scorm attempt prefix index)**
-9) Assignment model alignment: fix SCORM package assignment handlers and populates to use `assignedTo.students/classLevels/programs` (schema paths) instead of nonexistent `assignedStudents/Classes/Programs` to eliminate strictPopulate errors and runtime crashes. **Status: done (assignment lookup checks assignedTo students/programs/classLevels for current student)**
-10) Test auth roles: ensure role bypass/test tokens satisfy roleRestriction (teacher/admin) where required or adjust tests to send matching Bearer tokens; keep bypass confined to NODE_ENV=test. **Status: done (test tokens map to roles via isAuthenticated; roleRestriction unchanged)**
+8) Index hygiene: remove duplicate index definitions for `expiresAt` (token models) and SCORM attempt indexes (`learner/package/attemptNumber`, `package/status`) to silence warnings. **Status: done (TTL now via `expires` option; removed redundant scorm attempt prefix index)**
+9) Assignment model alignment: fix SCORM package assignment handlers and populates to use `assignedTo.learners/classLevels/programs` (schema paths) instead of nonexistent `assignedLearners/Classes/Programs` to eliminate strictPopulate errors and runtime crashes. **Status: done (assignment lookup checks assignedTo learners/programs/classLevels for current learner)**
+10) Test auth roles: ensure role bypass/test tokens satisfy roleRestriction (instructor/admin) where required or adjust tests to send matching Bearer tokens; keep bypass confined to NODE_ENV=test. **Status: done (test tokens map to roles via isAuthenticated; roleRestriction unchanged)**
 
 
 --Additional items:
 Runtime wiring (Next Step 5): Implement launch data/commit/suspend/resume and telemetry; it unlocks actual player usability and will surface any schema gaps across scorm and controllers.
 Test harness stability (Next Step 6): Fix test env guardrails (set JWT_SECRET, silence morgan in NODE_ENV=test) so new runtime tests are reliable while you iterate.
 SCORM fixtures completeness (Next Step 7): Update integration seeds with full package fields before adding runtime tests; prevents validation noise and keeps focus on runtime behavior. **Status: done (fixtures in phase2/phase3 integration include required SCORM package fields + uploadedBy/ref model)**
-Assignment model alignment (Next Step 9): Fix assignment handlers/populates to match schema paths so package→assignment flows don’t fail strictPopulate once runtime is wired. **Status: done (assignedTo lookup covers students/programs/classLevels)**
+Assignment model alignment (Next Step 9): Fix assignment handlers/populates to match schema paths so package→assignment flows don’t fail strictPopulate once runtime is wired. **Status: done (assignedTo lookup covers learners/programs/classLevels)**
 Test auth roles (Next Step 10): Ensure Bearer tokens/roles in tests satisfy roleRestriction so runtime and assignment tests don’t trip auth. **Status: done (test tokens mapped in isAuthenticated; roleRestriction enforced)**
 Index hygiene (Next Step 8): Clean duplicate indexes after feature work; lowest urgency since it’s noise, not functional. **Status: done (expires TTL via field opts; removed redundant scorm attempt index)**

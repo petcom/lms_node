@@ -65,8 +65,8 @@ GetDiagnostic(code)       // Get detailed diagnostic
 ```
 
 ### Key CMI Elements (SCORM 1.2)
-- `cmi.core.student_id`
-- `cmi.core.student_name`
+- `cmi.core.learner_id`
+- `cmi.core.learner_name`
 - `cmi.core.lesson_status` (passed, completed, failed, incomplete, browsed, not attempted)
 - `cmi.core.score.raw` (0-100)
 - `cmi.core.score.min`
@@ -293,9 +293,9 @@ Or create new:
 
 ## Data Flow Example
 
-### Scenario: Student launches SCORM content and completes it
+### Scenario: Learner launches SCORM content and completes it
 
-1. **Student clicks "Launch" on package**
+1. **Learner clicks "Launch" on package**
    - Frontend: POST /api/v1/scorm/content/:packageId/launch
    - Backend: Creates ScormAttempt if new, returns launch URL
    
@@ -312,10 +312,10 @@ Or create new:
    - Server: Creates session, sets attempt status to "running"
    - Returns: "true"
    
-5. **Content sets student name**
-   - Content calls `API.LMSGetValue("cmi.core.student_name")`
-   - Client API: GET /api/v1/scorm/runtime/:attemptId/value/cmi.core.student_name
-   - Server: Returns student name from attempt
+5. **Content sets learner name**
+   - Content calls `API.LMSGetValue("cmi.core.learner_name")`
+   - Client API: GET /api/v1/scorm/runtime/:attemptId/value/cmi.core.learner_name
+   - Server: Returns learner name from attempt
    - Returns: "John Doe"
    
 6. **Content tracks progress**
@@ -331,7 +331,7 @@ Or create new:
    - Server: Uses cmiDataMapper to validate and store
    - Returns: "true"
    
-8. **Student completes content**
+8. **Learner completes content**
    - Content calls `API.LMSSetValue("cmi.core.lesson_status", "completed")`
    - Content calls `API.LMSSetValue("cmi.core.score.raw", "95")`
    - Content calls `API.LMSCommit("")`
@@ -416,7 +416,7 @@ const SCORM_ERRORS = {
 
 ### Session Lifecycle
 1. **Create**: On LMSInitialize/Initialize
-2. **Active**: While student interacts with content
+2. **Active**: While learner interacts with content
 3. **Heartbeat**: Periodic ping to keep session alive
 4. **Timeout**: After N minutes of inactivity
 5. **Terminate**: On LMSFinish/Terminate or timeout
@@ -442,7 +442,7 @@ interface ScormSession {
   - Auto-commit any pending CMI data
   - Set attempt status to "suspended"
   - Log timeout event
-  - Send notification to student (optional)
+  - Send notification to learner (optional)
 
 ### Heartbeat Mechanism
 - **Frequency**: Every 2 minutes from client

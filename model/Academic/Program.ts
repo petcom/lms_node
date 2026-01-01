@@ -45,17 +45,17 @@ const programSchema = new Schema<IProgram>(
       ref: 'Department',
       index: true,
     },
-    // Teachers that are in charge of the program
-    teachers: [
+    // Instructors that are in charge of the program
+    instructors: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Staff',
       },
     ],
-    students: [
+    learners: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Student',
+        ref: 'Learner',
         default: [],
       },
     ],

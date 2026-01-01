@@ -17,8 +17,8 @@ Successfully consolidated all authentication and authorization middleware into a
 #### Authentication Middleware Analysis
 Analyzed 4 existing authentication middleware files:
 - `isLogin.js` - Admin-only authentication
-- `isTeacherLogin.js` - Teacher-only authentication  
-- `isStudentLogin.js` - Student-only authentication
+- `isInstructorLogin.js` - Instructor-only authentication  
+- `isLearnerLogin.js` - Learner-only authentication
 - `isAuthenticated.js` - Model-based authentication
 
 **Problem Identified:** Significant code duplication with identical token verification logic repeated across 3 files.
@@ -29,7 +29,7 @@ Enhanced `isAuthenticated.js` to be a unified authentication middleware:
 ```javascript
 const isAuthenticated = (options = {}) => {
   return async (req, res, next) => {
-    // Auto-detects user type across Admin, Teacher, and Student models
+    // Auto-detects user type across Admin, Instructor, and Learner models
     // Supports optional model parameter for specific user type checking
     // Verifies token with blacklist checking (from Phase 1.2)
     // Attaches user and token to req object
@@ -49,10 +49,10 @@ Updated all 14 route files to use the unified pattern:
 
 **Staff Routes:**
 - `routes/staff/adminRouter.js` - 6 endpoints updated
-- `routes/staff/teacherRouter.js` - 7 endpoints updated
+- `routes/staff/instructorRouter.js` - 7 endpoints updated
 
-**Student Routes:**
-- `routes/students/studentRouter.js` - 8 endpoints updated
+**Learner Routes:**
+- `routes/learners/learnerRouter.js` - 8 endpoints updated
 
 **Academic Routes:**
 - `routes/academics/examRoutes.js` - 5 endpoints updated
@@ -68,21 +68,21 @@ Updated all 14 route files to use the unified pattern:
 **Migration Pattern:**
 ```javascript
 // OLD PATTERN
-.get(isTeacherLogin, isTeacher, controller)
+.get(isInstructorLogin, isInstructor, controller)
 .get(isLogin, isAdmin, controller)
-.get(isStudentLogin, isStudent, controller)
+.get(isLearnerLogin, isLearner, controller)
 
 // NEW UNIFIED PATTERN
-.get(isAuthenticated(), roleRestriction("teacher"), controller)
+.get(isAuthenticated(), roleRestriction("instructor"), controller)
 .get(isAuthenticated(), roleRestriction("admin"), controller)
-.get(isAuthenticated(), roleRestriction("student"), controller)
+.get(isAuthenticated(), roleRestriction("learner"), controller)
 ```
 
 #### Cleanup
 Deleted 3 deprecated authentication middleware files:
 - ✅ Removed `middlewares/isLogin.js` (34 lines)
-- ✅ Removed `middlewares/isTeacherLogin.js` (29 lines)
-- ✅ Removed `middlewares/isStudentLogin.js` (29 lines)
+- ✅ Removed `middlewares/isInstructorLogin.js` (29 lines)
+- ✅ Removed `middlewares/isLearnerLogin.js` (29 lines)
 
 **Code Reduction:** Eliminated 92 lines of duplicate code
 
@@ -93,8 +93,8 @@ Deleted 3 deprecated authentication middleware files:
 #### Role Middleware Analysis
 Analyzed 4 existing role-checking middleware files:
 - `isAdmin.js` - Admin role verification with DB query
-- `isTeacher.js` - Teacher role verification with DB query
-- `isStudent.js` - Student role verification with DB query
+- `isInstructor.js` - Instructor role verification with DB query
+- `isLearner.js` - Learner role verification with DB query
 - `roleRestriction.js` - Basic role checking with console logging
 
 **Problems Identified:**
@@ -110,20 +110,20 @@ Analyzed 4 existing role-checking middleware files:
 ```javascript
 const ROLES = {
   ADMIN: 'admin',
-  TEACHER: 'teacher',
-  STUDENT: 'student'
+  TEACHER: 'instructor',
+  STUDENT: 'learner'
 };
 
 const ROLE_HIERARCHY = {
-  student: 1,
-  teacher: 2,
+  learner: 1,
+  instructor: 2,
   admin: 3
 };
 
 const ROLE_PERMISSIONS = {
   admin: ['manage_users', 'manage_staff', ...],
-  teacher: ['create_exams', 'grade_exams', ...],
-  student: ['take_exams', 'view_own_results', ...]
+  instructor: ['create_exams', 'grade_exams', ...],
+  learner: ['take_exams', 'view_own_results', ...]
 };
 ```
 
@@ -157,20 +157,20 @@ All routes updated to use enhanced `roleRestriction()`:
 **Single Role Examples:**
 ```javascript
 .get(isAuthenticated(), roleRestriction("admin"), controller)
-.post(isAuthenticated(), roleRestriction("teacher"), controller)
-.get(isAuthenticated(), roleRestriction("student"), controller)
+.post(isAuthenticated(), roleRestriction("instructor"), controller)
+.get(isAuthenticated(), roleRestriction("learner"), controller)
 ```
 
 **Multi-Role Support (for future use):**
 ```javascript
-.get(isAuthenticated(), roleRestriction("admin", "teacher"), controller)
+.get(isAuthenticated(), roleRestriction("admin", "instructor"), controller)
 ```
 
 #### Cleanup
 Deleted 3 deprecated role middleware files:
 - ✅ Removed `middlewares/isAdmin.js` (17 lines)
-- ✅ Removed `middlewares/isTeacher.js` (18 lines)
-- ✅ Removed `middlewares/isStudent.js` (17 lines)
+- ✅ Removed `middlewares/isInstructor.js` (18 lines)
+- ✅ Removed `middlewares/isLearner.js` (17 lines)
 
 **Code Reduction:** Eliminated 52 lines of duplicate code + redundant DB queries
 
@@ -204,10 +204,10 @@ All route files updated to use unified authentication pattern:
 
 **Staff Routes (2):**
 - routes/staff/adminRouter.js
-- routes/staff/teacherRouter.js
+- routes/staff/instructorRouter.js
 
-**Student Routes (1):**
-- routes/students/studentRouter.js
+**Learner Routes (1):**
+- routes/learners/learnerRouter.js
 
 **Academic Routes (11):**
 - routes/academics/examRoutes.js
@@ -231,13 +231,13 @@ All route files updated to use unified authentication pattern:
 
 ### Authentication Middleware (3 files)
 - middlewares/isLogin.js
-- middlewares/isTeacherLogin.js
-- middlewares/isStudentLogin.js
+- middlewares/isInstructorLogin.js
+- middlewares/isLearnerLogin.js
 
 ### Role Middleware (3 files)
 - middlewares/isAdmin.js
-- middlewares/isTeacher.js
-- middlewares/isStudent.js
+- middlewares/isInstructor.js
+- middlewares/isLearner.js
 
 **Total Files Deleted:** 6 files (144 lines of code)
 
@@ -266,7 +266,7 @@ node scripts/verify_phase2.js
 
 **Route Configuration Tests (12/12 passed):**
 - ✅ All staff routes use unified pattern
-- ✅ All student routes use unified pattern
+- ✅ All learner routes use unified pattern
 - ✅ All academic routes use unified pattern
 - ✅ No deprecated middleware imports found
 
@@ -308,8 +308,8 @@ node scripts/verify_phase2.js
 ## Migration Statistics
 
 ### Before Phase 2
-- **Authentication Middleware:** 4 files (isLogin, isTeacherLogin, isStudentLogin, isAuthenticated)
-- **Role Middleware:** 4 files (isAdmin, isTeacher, isStudent, roleRestriction)
+- **Authentication Middleware:** 4 files (isLogin, isInstructorLogin, isLearnerLogin, isAuthenticated)
+- **Role Middleware:** 4 files (isAdmin, isInstructor, isLearner, roleRestriction)
 - **Total Middleware Files:** 8
 - **Route Pattern:** Inconsistent (3 different patterns)
 - **Code Lines:** ~200 lines across 8 files

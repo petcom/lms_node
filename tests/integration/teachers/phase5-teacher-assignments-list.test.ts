@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ClassLevel from '../../../model/Academic/ClassLevel';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';
@@ -28,7 +28,7 @@ const makePackage = (title: string) => ({
   },
   createdBy: new mongoose.Types.ObjectId(teacherId),
   uploadedBy: new mongoose.Types.ObjectId(teacherId),
-  uploadedByModel: 'Teacher' as const,
+  uploadedByModel: 'Staff' as const,
   isPublished: true,
   status: 'published',
 });
@@ -40,10 +40,10 @@ describe('Teacher Phase 5: Assignment Listing', () => {
       await mongoose.connect(uri);
     }
 
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
 
-    await Teacher.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Teacher One',
       email: 'teacher1@example.com',
@@ -63,7 +63,7 @@ describe('Teacher Phase 5: Assignment Listing', () => {
   afterAll(async () => {
     await ClassLevel.deleteMany({});
     await ScormPackage.deleteMany({});
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
     await mongoose.connection.close();
   });
@@ -87,7 +87,7 @@ describe('Teacher Phase 5: Assignment Listing', () => {
     await pkg.save();
 
     const res = await request(app)
-      .get(`/api/v1/teachers/assignments?classId=${klass._id.toString()}`)
+      .get(`/api/v1/staff/assignments?classId=${klass._id.toString()}`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);
@@ -106,7 +106,7 @@ describe('Teacher Phase 5: Assignment Listing', () => {
     });
 
     const res = await request(app)
-      .get(`/api/v1/teachers/assignments?classId=${otherClass._id.toString()}`)
+      .get(`/api/v1/staff/assignments?classId=${otherClass._id.toString()}`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(404);

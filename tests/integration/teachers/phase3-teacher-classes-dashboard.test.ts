@@ -5,7 +5,7 @@ import ClassLevel from '../../../model/Academic/ClassLevel';
 import Student from '../../../model/Academic/Student';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';
@@ -30,7 +30,7 @@ const makePackage = (title: string, uploader?: string) => ({
   },
   createdBy: new mongoose.Types.ObjectId(uploader || teacherId),
   uploadedBy: new mongoose.Types.ObjectId(uploader || teacherId),
-  uploadedByModel: 'Teacher' as const,
+  uploadedByModel: 'Staff' as const,
   isPublished: true,
   status: 'published',
 });
@@ -42,10 +42,10 @@ describe('Teacher Phase 3: Classes & Dashboard', () => {
       await mongoose.connect(uri);
     }
 
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
 
-    await Teacher.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Teacher One',
       email: 'teacher1@example.com',
@@ -67,7 +67,7 @@ describe('Teacher Phase 3: Classes & Dashboard', () => {
     await Student.deleteMany({});
     await ScormAttempt.deleteMany({});
     await ScormPackage.deleteMany({});
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
     await mongoose.connection.close();
   });
@@ -129,7 +129,7 @@ describe('Teacher Phase 3: Classes & Dashboard', () => {
     ] as any);
 
     const classRes = await request(app)
-      .get('/api/v1/teachers/classes')
+      .get('/api/v1/staff/classes')
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(classRes.status).toBe(200);
@@ -138,7 +138,7 @@ describe('Teacher Phase 3: Classes & Dashboard', () => {
     expect(items[0].completion).toBeGreaterThan(0);
 
     const dashboardRes = await request(app)
-      .get('/api/v1/teachers/dashboard')
+      .get('/api/v1/staff/dashboard')
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(dashboardRes.status).toBe(200);

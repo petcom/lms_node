@@ -126,16 +126,16 @@ test('adminRouter uses unified isAuthenticated()', () => {
   }
 });
 
-test('teacherRouter uses unified isAuthenticated()', () => {
-  if (!fileExists('routes/staff/teacherRouter.js')) {
-    throw new Error('teacherRouter.js not found');
+test('staffRouter uses unified isAuthenticated()', () => {
+  if (!fileExists('routes/staff/staffRouter.js')) {
+    throw new Error('staffRouter.js not found');
   }
-  const content = readFile('routes/staff/teacherRouter.js');
+  const content = readFile('routes/staff/staffRouter.js');
   if (content.includes('isTeacherLogin') || content.includes('isAuthenticated(Teacher)')) {
-    throw new Error('teacherRouter still uses old authentication pattern');
+    throw new Error('staffRouter still uses old authentication pattern');
   }
   if (!content.includes('isAuthenticated()') || !content.includes('roleRestriction')) {
-    throw new Error('teacherRouter not using unified authentication');
+    throw new Error('staffRouter not using unified authentication');
   }
 });
 

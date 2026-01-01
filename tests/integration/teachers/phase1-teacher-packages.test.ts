@@ -2,7 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';
@@ -29,7 +29,7 @@ const makePackage = (overrides: Partial<any> = {}) => {
     },
     createdBy: uploader,
     uploadedBy: uploader,
-    uploadedByModel: overrides.uploadedByModel || 'Teacher',
+    uploadedByModel: overrides.uploadedByModel || 'Staff',
     isPublished: overrides.isPublished ?? false,
     status: overrides.status || 'draft',
   };
@@ -42,10 +42,10 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
       await mongoose.connect(uri);
     }
 
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
 
-    await Teacher.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Teacher One',
       email: 'teacher1@example.com',
@@ -64,7 +64,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
 
   afterAll(async () => {
     await ScormPackage.deleteMany({});
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
     await mongoose.connection.close();
   });
@@ -77,7 +77,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
     const pkg = await ScormPackage.create(makePackage());
 
     const res = await request(app)
-      .post(`/api/v1/teachers/packages/${pkg._id.toString()}/publish`)
+      .post(`/api/v1/staff/packages/${pkg._id.toString()}/publish`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);
@@ -91,7 +91,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
     const pkg = await ScormPackage.create(makePackage({ isPublished: true, status: 'published' }));
 
     const res = await request(app)
-      .post(`/api/v1/teachers/packages/${pkg.packageId}/publish`)
+      .post(`/api/v1/staff/packages/${pkg.packageId}/publish`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);
@@ -109,7 +109,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
     );
 
     const res = await request(app)
-      .post(`/api/v1/teachers/packages/${pkg._id.toString()}/publish`)
+      .post(`/api/v1/staff/packages/${pkg._id.toString()}/publish`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(404);
@@ -119,7 +119,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
     const pkg = await ScormPackage.create(makePackage({ isPublished: true, status: 'published' }));
 
     const res = await request(app)
-      .post(`/api/v1/teachers/packages/${pkg._id.toString()}/unpublish`)
+      .post(`/api/v1/staff/packages/${pkg._id.toString()}/unpublish`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);
@@ -133,7 +133,7 @@ describe('Teacher Phase 1: Publish/Unpublish', () => {
     const pkg = await ScormPackage.create(makePackage({ isPublished: false, status: 'draft' }));
 
     const res = await request(app)
-      .post(`/api/v1/teachers/packages/${pkg.packageId}/unpublish`)
+      .post(`/api/v1/staff/packages/${pkg.packageId}/unpublish`)
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(res.status).toBe(200);

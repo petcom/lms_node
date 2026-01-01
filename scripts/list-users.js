@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * List all admins, teachers, and students.
+ * List all admins, staff, and students.
  * Usage: node scripts/list-users.js [env-file]
  */
 
@@ -30,8 +30,8 @@ const Admin = mongoose.model(
   'Admin',
   new mongoose.Schema({}, { strict: false })
 );
-const Teacher = mongoose.model(
-  'Teacher',
+const Staff = mongoose.model(
+  'Staff',
   new mongoose.Schema({}, { strict: false })
 );
 const Student = mongoose.model(
@@ -48,7 +48,7 @@ const simplify = (doc, kind) => {
     createdAt: doc.createdAt,
   };
 
-  if (kind === 'teacher') {
+  if (kind === 'staff') {
     return { ...base, teacherId: doc.teacherId, applicationStatus: doc.applicationStatus };
   }
 
@@ -62,17 +62,17 @@ const simplify = (doc, kind) => {
 mongoose
   .connect(MONGO_URL)
   .then(async () => {
-    const [admins, teachers, students] = await Promise.all([
+    const [admins, staff, students] = await Promise.all([
       Admin.find({}).lean(),
-      Teacher.find({}).lean(),
+      Staff.find({}).lean(),
       Student.find({}).lean(),
     ]);
 
     console.log(`\nAdmins (${admins.length})`);
     admins.map((doc) => simplify(doc, 'admin')).forEach((doc) => console.log(doc));
 
-    console.log(`\nTeachers (${teachers.length})`);
-    teachers.map((doc) => simplify(doc, 'teacher')).forEach((doc) => console.log(doc));
+    console.log(`\nStaff (${staff.length})`);
+    staff.map((doc) => simplify(doc, 'staff')).forEach((doc) => console.log(doc));
 
     console.log(`\nStudents (${students.length})`);
     students.map((doc) => simplify(doc, 'student')).forEach((doc) => console.log(doc));

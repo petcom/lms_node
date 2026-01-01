@@ -3,12 +3,16 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Staff from '../../model/Staff/Staff';
+import StaffRole from '../../model/Staff/StaffRole';
 import Department from '../../model/Academic/Department';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Exam from '../../model/Academic/Exam';
 import Subject from '../../model/Academic/Subject';
+import Program from '../../model/Academic/Program';
+import ClassLevel from '../../model/Academic/ClassLevel';
+import AcademicYear from '../../model/Academic/AcademicYear';
 import { IDepartment } from '../../types/models';
-import { AuthorizationError, ValidationError } from '../../utils/errors';
+import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 type DepartmentSummary = {
   id: string;
@@ -132,6 +136,31 @@ const normalizeExamType = (
   return 'other';
 };
 
+const ensureDepartmentScope = (
+  scope: string[] | 'all' | undefined,
+  departmentId: string | null,
+  message: string
+): void => {
+  if (scope && scope !== 'all' && departmentId && !scope.includes(departmentId)) {
+    throw new AuthorizationError(message);
+  }
+};
+
+const resolveDepartmentId = async (
+  model: mongoose.Model<any>,
+  id: string,
+  label: string
+): Promise<string | null> => {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new ValidationError(`Invalid ${label} id`);
+  }
+  const doc = await model.findById(id).select('department').lean();
+  if (!doc) {
+    throw new NotFoundError(`${label} not found`);
+  }
+  return doc.department ? doc.department.toString() : null;
+};
+
 export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { type, departmentId } = req.query as { type?: string; departmentId?: string };
   const { departmentIds, departments } = await resolveDepartmentScope(req, departmentId);
@@ -188,7 +217,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
   } else if (type === 'dept-admin') {
     items = adminItems.filter((admin) => admin.role === 'dept-admin');
   } else if (type === 'staff') {
-    items = [...adminItems, ...staffItems];
+    items = staffItems;
   } else {
     items = [...adminItems, ...staffItems];
   }
@@ -237,12 +266,15 @@ export const listDepartmentContent = AsyncHandler(
     const subjectPromise = Subject.find(subjectFilter).select('_id department').lean();
 
     const [scormPackages, subjects] = await Promise.all([scormPromise, subjectPromise]);
-  const subjectIds = subjects.map((subject) => subject._id);
-  const subjectDepartmentMap = new Map<string, DepartmentSummary | null>();
-  subjects.forEach((subject) => {
-    const deptId = subject.department ? subject.department.toString() : null;
-    subjectDepartmentMap.set(subject._id.toString(), deptId ? departmentMap.get(deptId) || null : null);
-  });
+    const subjectIds = subjects.map((subject) => subject._id);
+    const subjectDepartmentMap = new Map<string, DepartmentSummary | null>();
+    subjects.forEach((subject) => {
+      const deptId = subject.department ? subject.department.toString() : null;
+      subjectDepartmentMap.set(
+        subject._id.toString(),
+        deptId ? departmentMap.get(deptId) || null : null
+      );
+    });
 
     const examFilter: Record<string, any> = {};
     if (subjectIds.length > 0) {
@@ -329,3 +361,710 @@ export const listDepartmentHierarchy = AsyncHandler(
     });
   }
 );
+
+export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const staffId = req.params.id;
+  const { roles } = req.body as { roles: string[] };
+
+  if (!mongoose.isValidObjectId(staffId)) {
+    throw new ValidationError('Invalid staff id');
+  }
+
+  const staff = await Staff.findById(staffId);
+  if (!staff) {
+    throw new NotFoundError('Staff member not found');
+  }
+
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  const staffDept = staff.department ? staff.department.toString() : null;
+  ensureDepartmentScope(scope, staffDept, 'Access denied for this staff member');
+
+  const requestedRoles = Array.isArray(roles)
+    ? roles.map((role) => role.trim()).filter(Boolean)
+    : [];
+  const uniqueRoles = Array.from(new Set(requestedRoles));
+
+  if (uniqueRoles.length > 0) {
+    const roleDocs = await StaffRole.find({ name: { $in: uniqueRoles } })
+      .select('name')
+      .lean();
+    const validRoles = new Set(roleDocs.map((role) => role.name));
+    const missing = uniqueRoles.filter((role) => !validRoles.has(role));
+    if (missing.length > 0) {
+      throw new ValidationError(`Unknown staff roles: ${missing.join(', ')}`);
+    }
+  }
+
+  staff.roles = uniqueRoles;
+  await staff.save();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Staff roles updated successfully',
+    data: staff,
+  });
+});
+
+export const updateStaffDepartment = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const staffId = req.params.id;
+    const { departmentId } = req.body as { departmentId: string | null };
+
+    if (!mongoose.isValidObjectId(staffId)) {
+      throw new ValidationError('Invalid staff id');
+    }
+
+    if (departmentId !== null && departmentId !== undefined) {
+      if (!mongoose.isValidObjectId(departmentId)) {
+        throw new ValidationError('Invalid department id');
+      }
+    }
+
+    const staff = await Staff.findById(staffId);
+    if (!staff) {
+      throw new NotFoundError('Staff member not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const staffDept = staff.department ? staff.department.toString() : null;
+    ensureDepartmentScope(scope, staffDept, 'Access denied for this staff member');
+
+    if (departmentId === null) {
+      if (scope && scope !== 'all') {
+        throw new AuthorizationError('Access denied for this department change');
+      }
+      staff.department = undefined;
+    } else if (departmentId) {
+      ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+      staff.department = new mongoose.Types.ObjectId(departmentId);
+    }
+
+    await staff.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Staff department updated successfully',
+      data: staff,
+    });
+  }
+);
+
+export const createDepartmentContent = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { type } = req.body as { type: 'scorm' | 'custom' };
+
+    if (type === 'scorm') {
+      throw new ValidationError('Use /api/v1/scorm/packages for SCORM uploads');
+    }
+
+    if (type !== 'custom') {
+      throw new ValidationError('type must be one of: scorm, custom');
+    }
+
+    const {
+      title,
+      description,
+      customType,
+      subject,
+      program,
+      classLevel,
+      academicTerm,
+      academicYear,
+      passMark,
+      totalMark,
+      duration,
+      examDate,
+      examTime,
+      examStatus,
+    } = req.body as Record<string, any>;
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
+    ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
+    const programDept = await resolveDepartmentId(Program, program, 'program');
+    ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+    const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
+    ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
+
+    if (!mongoose.isValidObjectId(academicTerm)) {
+      throw new ValidationError('Invalid academic term id');
+    }
+    if (!mongoose.isValidObjectId(academicYear)) {
+      throw new ValidationError('Invalid academic year id');
+    }
+
+    const exam = await Exam.create({
+      name: title,
+      description,
+      subject: new mongoose.Types.ObjectId(subject),
+      program: new mongoose.Types.ObjectId(program),
+      classLevel: new mongoose.Types.ObjectId(classLevel),
+      academicTerm: new mongoose.Types.ObjectId(academicTerm),
+      academicYear: new mongoose.Types.ObjectId(academicYear),
+      passMark,
+      totalMark,
+      duration,
+      examDate,
+      examTime,
+      examStatus,
+      examType: customType,
+      createdBy: req.userAuth?._id,
+    });
+
+    const departmentRecord = subjectDept ? await Department.findById(subjectDept).lean() : null;
+    const deptSummary = departmentRecord ? toDepartmentSummary(departmentRecord) : null;
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Content created successfully',
+      data: {
+        id: exam._id.toString(),
+        type: 'custom',
+        customType: normalizeExamType(exam.examType),
+        title: exam.name,
+        department: deptSummary,
+      },
+    });
+  }
+);
+
+export const updateDepartmentContent = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { type } = req.body as { type: 'scorm' | 'custom' };
+    const contentId = req.params.id;
+
+    if (!mongoose.isValidObjectId(contentId)) {
+      throw new ValidationError('Invalid content id');
+    }
+
+    if (type === 'scorm') {
+      const pkg = await ScormPackage.findById(contentId);
+      if (!pkg) {
+        throw new NotFoundError('Content not found');
+      }
+
+      const scope = req.departmentScope?.accessibleDepartmentIds;
+      const currentDept = pkg.department ? pkg.department.toString() : null;
+      ensureDepartmentScope(scope, currentDept, 'Access denied for this content');
+
+      const {
+        title,
+        description,
+        departmentId,
+        subject,
+        program,
+        classLevel,
+        academicTerm,
+      } = req.body as Record<string, any>;
+
+      if (departmentId !== undefined) {
+        if (departmentId === null) {
+          if (scope && scope !== 'all') {
+            throw new AuthorizationError('Access denied for this department change');
+          }
+          pkg.department = undefined;
+        } else {
+          if (!mongoose.isValidObjectId(departmentId)) {
+            throw new ValidationError('Invalid department id');
+          }
+          ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+          pkg.department = new mongoose.Types.ObjectId(departmentId);
+        }
+      }
+
+      if (subject) {
+        const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
+        ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
+        pkg.subject = new mongoose.Types.ObjectId(subject);
+      }
+
+      if (program) {
+        const programDept = await resolveDepartmentId(Program, program, 'program');
+        ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+        pkg.program = new mongoose.Types.ObjectId(program);
+      }
+
+      if (classLevel) {
+        const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
+        ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
+        pkg.classLevel = new mongoose.Types.ObjectId(classLevel);
+      }
+
+      if (academicTerm) {
+        if (!mongoose.isValidObjectId(academicTerm)) {
+          throw new ValidationError('Invalid academic term id');
+        }
+        pkg.academicTerm = new mongoose.Types.ObjectId(academicTerm);
+      }
+
+      if (title !== undefined) {
+        pkg.title = title;
+      }
+      if (description !== undefined) {
+        pkg.description = description;
+      }
+
+      await pkg.save();
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Content updated successfully',
+        data: pkg,
+      });
+      return;
+    }
+
+    if (type !== 'custom') {
+      throw new ValidationError('type must be one of: scorm, custom');
+    }
+
+    const exam = await Exam.findById(contentId);
+    if (!exam) {
+      throw new NotFoundError('Content not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const currentSubjectDept = await resolveDepartmentId(
+      Subject,
+      exam.subject.toString(),
+      'subject'
+    );
+    ensureDepartmentScope(scope, currentSubjectDept, 'Access denied for this content');
+
+    const {
+      title,
+      description,
+      customType,
+      subject,
+      program,
+      classLevel,
+      academicTerm,
+      academicYear,
+      passMark,
+      totalMark,
+      duration,
+      examDate,
+      examTime,
+      examStatus,
+    } = req.body as Record<string, any>;
+
+    if (subject) {
+      const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
+      ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
+      exam.subject = new mongoose.Types.ObjectId(subject);
+    }
+
+    if (program) {
+      const programDept = await resolveDepartmentId(Program, program, 'program');
+      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+      exam.program = new mongoose.Types.ObjectId(program);
+    }
+
+    if (classLevel) {
+      const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
+      ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
+      exam.classLevel = new mongoose.Types.ObjectId(classLevel);
+    }
+
+    if (academicTerm) {
+      if (!mongoose.isValidObjectId(academicTerm)) {
+        throw new ValidationError('Invalid academic term id');
+      }
+      exam.academicTerm = new mongoose.Types.ObjectId(academicTerm);
+    }
+
+    if (academicYear) {
+      if (!mongoose.isValidObjectId(academicYear)) {
+        throw new ValidationError('Invalid academic year id');
+      }
+      exam.academicYear = new mongoose.Types.ObjectId(academicYear);
+    }
+
+    if (title !== undefined) {
+      exam.name = title;
+    }
+    if (description !== undefined) {
+      exam.description = description;
+    }
+    if (customType !== undefined) {
+      exam.examType = customType;
+    }
+    if (passMark !== undefined) {
+      exam.passMark = passMark;
+    }
+    if (totalMark !== undefined) {
+      exam.totalMark = totalMark;
+    }
+    if (duration !== undefined) {
+      exam.duration = duration;
+    }
+    if (examDate !== undefined) {
+      exam.examDate = examDate;
+    }
+    if (examTime !== undefined) {
+      exam.examTime = examTime;
+    }
+    if (examStatus !== undefined) {
+      exam.examStatus = examStatus;
+    }
+
+    await exam.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Content updated successfully',
+      data: exam,
+    });
+  }
+);
+
+export const createDepartmentProgram = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { name, description, duration, code, departmentId } = req.body as Record<string, any>;
+
+    const existing = await Program.findOne({ name }).lean();
+    if (existing) {
+      throw new ValidationError('Program already exists');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    let resolvedDepartment =
+      departmentId ||
+      (req.userAuth as any)?.department?.toString() ||
+      MASTER_DEPARTMENT_ID;
+
+    if (resolvedDepartment) {
+      if (!mongoose.isValidObjectId(resolvedDepartment)) {
+        throw new ValidationError('Invalid department id');
+      }
+      ensureDepartmentScope(scope, resolvedDepartment, 'Access denied for this department');
+    }
+
+    const program = await Program.create({
+      name,
+      description,
+      duration,
+      code,
+      department: resolvedDepartment ? new mongoose.Types.ObjectId(resolvedDepartment) : undefined,
+      createdBy: req.userAuth?._id,
+    });
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Program created successfully',
+      data: program,
+    });
+  }
+);
+
+export const updateDepartmentProgram = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const programId = req.params.id;
+    if (!mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
+    }
+
+    const program = await Program.findById(programId);
+    if (!program) {
+      throw new NotFoundError('Program not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const programDept = program.department ? program.department.toString() : null;
+    ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+
+    const { name, description, duration, code } = req.body as Record<string, any>;
+    if (name && name !== program.name) {
+      const existing = await Program.findOne({ name }).lean();
+      if (existing) {
+        throw new ValidationError('Program already exists');
+      }
+      program.name = name;
+    }
+
+    if (description !== undefined) {
+      program.description = description;
+    }
+    if (duration !== undefined) {
+      program.duration = duration;
+    }
+    if (code !== undefined) {
+      program.code = code;
+    }
+
+    await program.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Program updated successfully',
+      data: program,
+    });
+  }
+);
+
+export const updateProgramDepartment = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const programId = req.params.id;
+    const { departmentId } = req.body as { departmentId: string | null };
+
+    if (!mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
+    }
+
+    const program = await Program.findById(programId);
+    if (!program) {
+      throw new NotFoundError('Program not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const programDept = program.department ? program.department.toString() : null;
+    ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+
+    if (departmentId === null) {
+      if (scope && scope !== 'all') {
+        throw new AuthorizationError('Access denied for this department change');
+      }
+      program.department = undefined;
+    } else {
+      if (!mongoose.isValidObjectId(departmentId)) {
+        throw new ValidationError('Invalid department id');
+      }
+      ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+      program.department = new mongoose.Types.ObjectId(departmentId);
+    }
+
+    await program.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Program department updated successfully',
+      data: program,
+    });
+  }
+);
+
+export const createDepartmentCourse = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { name, description, duration, academicYear, departmentId, programId } =
+      req.body as Record<string, any>;
+
+    const existing = await Subject.findOne({ name }).lean();
+    if (existing) {
+      throw new ValidationError('Course already exists');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    let resolvedDepartment =
+      departmentId ||
+      (req.userAuth as any)?.department?.toString() ||
+      MASTER_DEPARTMENT_ID;
+
+    if (resolvedDepartment) {
+      if (!mongoose.isValidObjectId(resolvedDepartment)) {
+        throw new ValidationError('Invalid department id');
+      }
+      ensureDepartmentScope(scope, resolvedDepartment, 'Access denied for this department');
+    }
+
+    if (!mongoose.isValidObjectId(academicYear)) {
+      throw new ValidationError('Invalid academic year id');
+    }
+    const yearExists = await AcademicYear.findById(academicYear).lean();
+    if (!yearExists) {
+      throw new NotFoundError('Academic year not found');
+    }
+
+    let programObjectId: mongoose.Types.ObjectId | undefined;
+    if (programId) {
+      if (!mongoose.isValidObjectId(programId)) {
+        throw new ValidationError('Invalid program id');
+      }
+      const programDept = await resolveDepartmentId(Program, programId, 'program');
+      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+      programObjectId = new mongoose.Types.ObjectId(programId);
+    }
+
+    const course = await Subject.create({
+      name,
+      description,
+      duration,
+      academicYear: new mongoose.Types.ObjectId(academicYear),
+      department: resolvedDepartment ? new mongoose.Types.ObjectId(resolvedDepartment) : undefined,
+      program: programObjectId,
+      createdBy: req.userAuth?._id,
+    });
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Course created successfully',
+      data: course,
+    });
+  }
+);
+
+export const updateDepartmentCourse = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const courseId = req.params.id;
+    if (!mongoose.isValidObjectId(courseId)) {
+      throw new ValidationError('Invalid course id');
+    }
+
+    const course = await Subject.findById(courseId);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const courseDept = course.department ? course.department.toString() : null;
+    ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
+
+    const { name, description, duration, academicYear } = req.body as Record<string, any>;
+
+    if (name && name !== course.name) {
+      const existing = await Subject.findOne({ name }).lean();
+      if (existing) {
+        throw new ValidationError('Course already exists');
+      }
+      course.name = name;
+    }
+
+    if (description !== undefined) {
+      course.description = description;
+    }
+    if (duration !== undefined) {
+      course.duration = duration;
+    }
+    if (academicYear !== undefined) {
+      if (!mongoose.isValidObjectId(academicYear)) {
+        throw new ValidationError('Invalid academic year id');
+      }
+      const yearExists = await AcademicYear.findById(academicYear).lean();
+      if (!yearExists) {
+        throw new NotFoundError('Academic year not found');
+      }
+      course.academicYear = new mongoose.Types.ObjectId(academicYear);
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course updated successfully',
+      data: course,
+    });
+  }
+);
+
+export const updateCourseDepartment = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const courseId = req.params.id;
+    const { departmentId } = req.body as { departmentId: string | null };
+
+    if (!mongoose.isValidObjectId(courseId)) {
+      throw new ValidationError('Invalid course id');
+    }
+
+    const course = await Subject.findById(courseId);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const courseDept = course.department ? course.department.toString() : null;
+    ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
+
+    if (departmentId === null) {
+      if (scope && scope !== 'all') {
+        throw new AuthorizationError('Access denied for this department change');
+      }
+      course.department = undefined;
+    } else {
+      if (!mongoose.isValidObjectId(departmentId)) {
+        throw new ValidationError('Invalid department id');
+      }
+      ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+      course.department = new mongoose.Types.ObjectId(departmentId);
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course department updated successfully',
+      data: course,
+    });
+  }
+);
+
+export const updateCourseProgram = AsyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const courseId = req.params.id;
+    const { programId } = req.body as { programId: string | null };
+
+    if (!mongoose.isValidObjectId(courseId)) {
+      throw new ValidationError('Invalid course id');
+    }
+
+    const course = await Subject.findById(courseId);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const courseDept = course.department ? course.department.toString() : null;
+    ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
+
+    if (programId === null) {
+      course.program = undefined;
+    } else {
+      if (!mongoose.isValidObjectId(programId)) {
+        throw new ValidationError('Invalid program id');
+      }
+      const programDept = await resolveDepartmentId(Program, programId, 'program');
+      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+      if (courseDept && programDept && courseDept !== programDept) {
+        throw new ValidationError('Program department must match course department');
+      }
+      course.program = new mongoose.Types.ObjectId(programId);
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course program updated successfully',
+      data: course,
+    });
+  }
+);
+
+export const updateDepartment = AsyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const departmentId = req.params.id;
+  if (!mongoose.isValidObjectId(departmentId)) {
+    throw new ValidationError('Invalid department id');
+  }
+
+  const department = await Department.findById(departmentId);
+  if (!department) {
+    throw new NotFoundError('Department not found');
+  }
+
+  const scope = req.departmentScope?.accessibleDepartmentIds;
+  ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+
+  const { name, code } = req.body as { name?: string; code?: string };
+  if (name !== undefined) {
+    department.name = name;
+  }
+  if (code !== undefined) {
+    department.code = code;
+  }
+
+  await department.save();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Department updated successfully',
+    data: department,
+  });
+});

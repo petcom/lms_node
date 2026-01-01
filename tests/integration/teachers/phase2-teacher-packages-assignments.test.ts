@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 import ClassLevel from '../../../model/Academic/ClassLevel';
 
@@ -31,7 +31,7 @@ const makePackage = (overrides: Partial<any> = {}) => {
     },
     createdBy: uploader,
     uploadedBy: uploader,
-    uploadedByModel: overrides.uploadedByModel || 'Teacher',
+    uploadedByModel: overrides.uploadedByModel || 'Staff',
     isPublished: overrides.isPublished ?? false,
     status: overrides.status || 'draft',
   };
@@ -44,10 +44,10 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
       await mongoose.connect(uri);
     }
 
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
 
-    await Teacher.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Teacher One',
       email: 'teacher1@example.com',
@@ -68,7 +68,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
     await ClassLevel.deleteMany({});
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
     await mongoose.connection.close();
   });
@@ -89,7 +89,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
       makePackage({
         title: 'Other teacher',
         uploadedBy: new mongoose.Types.ObjectId('0000000000000000000000ff'),
-        uploadedByModel: 'Teacher',
+        uploadedByModel: 'Staff',
       })
     );
 
@@ -111,7 +111,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     ] as any);
 
     const listRes = await request(app)
-      .get('/api/v1/teachers/packages?limit=5')
+      .get('/api/v1/staff/packages?limit=5')
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(listRes.status).toBe(200);
@@ -123,7 +123,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     expect(published.progressPct).toBe(100);
 
     const filterRes = await request(app)
-      .get('/api/v1/teachers/packages?status=draft')
+      .get('/api/v1/staff/packages?status=draft')
       .set('Authorization', `Bearer ${teacherToken}`);
 
     expect(filterRes.status).toBe(200);
@@ -143,7 +143,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
 
     const dueDate = new Date().toISOString();
     const res = await request(app)
-      .post('/api/v1/teachers/assignments/assign')
+      .post('/api/v1/staff/assignments/assign')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ packageId: pkg._id.toString(), classIds: [klass._id.toString()], dueDate });
 
@@ -172,13 +172,13 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     );
 
     const missing = await request(app)
-      .post('/api/v1/teachers/assignments/assign')
+      .post('/api/v1/staff/assignments/assign')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ classIds: [] });
     expect(missing.status).toBe(400);
 
     const unauthorizedClass = await request(app)
-      .post('/api/v1/teachers/assignments/assign')
+      .post('/api/v1/staff/assignments/assign')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ packageId: pkg._id.toString(), classIds: [klass._id.toString()] });
     expect(unauthorizedClass.status).toBe(404);
@@ -191,7 +191,7 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
     });
 
     const unauthorizedPackage = await request(app)
-      .post('/api/v1/teachers/assignments/assign')
+      .post('/api/v1/staff/assignments/assign')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ packageId: pkg._id.toString(), classIds: [ownedClass._id.toString()] });
     expect(unauthorizedPackage.status).toBe(404);

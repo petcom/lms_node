@@ -29,7 +29,7 @@ const basePackage = (overrides: Partial<any> = {}) => ({
   entryPoint: 'index.html',
   createdBy: teacherId,
   uploadedBy: teacherId,
-  uploadedByModel: 'Teacher',
+  uploadedByModel: 'Staff',
   status: 'draft',
   isPublished: false,
   department: masterDepartmentId,
@@ -107,7 +107,7 @@ describe('SCORM packages listing filters', () => {
       basePackage({
         title: 'Other Teacher Same Dept',
         uploadedBy: new mongoose.Types.ObjectId('0000000000000000000000ff'),
-        uploadedByModel: 'Teacher',
+        uploadedByModel: 'Staff',
       }),
       basePackage({
         title: 'Global Package',

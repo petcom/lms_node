@@ -15,7 +15,7 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 
 const makePackageData = (pkgId: string, title: string, uploaderId: string) => ({
   packageId: pkgId,
@@ -35,7 +35,7 @@ const makePackageData = (pkgId: string, title: string, uploaderId: string) => ({
   },
   createdBy: new mongoose.Types.ObjectId(uploaderId),
   uploadedBy: new mongoose.Types.ObjectId(uploaderId),
-  uploadedByModel: 'Teacher' as const,
+  uploadedByModel: 'Staff' as const,
   isPublished: true,
 });
 
@@ -57,8 +57,8 @@ describe('SCORM Phase 2: Package Management API', () => {
       await mongoose.connect(uri);
     }
     // Seed a teacher user so uploadedBy populate returns data
-    await Teacher.deleteMany({ email: 'teacher@example.com' });
-    const teacher = await Teacher.create({
+    await Staff.deleteMany({ email: 'teacher@example.com' });
+    const teacher = await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Test Teacher',
       email: 'teacher@example.com',
@@ -71,7 +71,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     // Cleanup
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
-    await Teacher.deleteMany({});
+    await Staff.deleteMany({});
     await mongoose.connection.close();
   });
 
@@ -149,7 +149,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.body.data).toBeInstanceOf(Array);
       expect(res.body.data.length).toBeGreaterThan(0);
       expect(res.body.data[0].uploadedBy._id).toBe(teacherId);
-      expect(res.body.data[0].uploadedByModel).toBe('Teacher');
+      expect(res.body.data[0].uploadedByModel).toBe('Staff');
     });
 
     it('should get single package by ID', async () => {
@@ -161,7 +161,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Test SCORM Package');
       expect(res.body.data.uploadedBy._id).toBe(teacherId);
-      expect(res.body.data.uploadedByModel).toBe('Teacher');
+      expect(res.body.data.uploadedByModel).toBe('Staff');
     });
 
     it('should update package (teacher/admin)', async () => {

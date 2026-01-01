@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Department from '../model/Academic/Department';
 import Admin from '../model/Staff/Admin';
-import Teacher from '../model/Staff/Teacher';
+import Staff from '../model/Staff/Staff';
 import Program from '../model/Academic/Program';
 import Subject from '../model/Academic/Subject';
 import ClassLevel from '../model/Academic/ClassLevel';
@@ -30,7 +30,7 @@ export const ensureMasterDepartment = async (): Promise<void> => {
     // Backfill existing records without department to master
     const bulkOps = [
       Admin.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
-      Teacher.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
+      Staff.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       Program.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       Subject.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       ClassLevel.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),

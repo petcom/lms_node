@@ -32,7 +32,7 @@ const makePackageData = (pkgId: string) => ({
   },
   createdBy: teacherId,
   uploadedBy: teacherId,
-  uploadedByModel: 'Teacher' as const,
+  uploadedByModel: 'Staff' as const,
   status: 'published',
   isActive: true,
   trackingOptions: {

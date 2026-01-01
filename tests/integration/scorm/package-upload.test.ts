@@ -5,7 +5,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
 import { StorageFactory } from '../../../utils/scorm/storage/StorageFactory';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';
@@ -53,10 +53,10 @@ describe('SCORM Package Upload API', () => {
       await mongoose.connect(uri);
     }
 
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await Admin.deleteMany({ _id: adminId });
 
-    await Teacher.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
       name: 'Teacher Upload',
       email: 'teacher-upload@example.com',

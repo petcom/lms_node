@@ -1,7 +1,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 import { hashPassword } from '../../../utils/helpers';
 
@@ -16,7 +16,7 @@ describe('Admin teacher status actions', () => {
     }
 
     await Admin.deleteMany({ _id: adminId });
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
 
     await Admin.create({
       _id: adminId,
@@ -26,7 +26,7 @@ describe('Admin teacher status actions', () => {
       role: 'admin',
     });
 
-    await Teacher.create({
+    await Staff.create({
       _id: teacherId,
       name: 'Teacher User',
       email: 'teacher@example.com',
@@ -39,7 +39,7 @@ describe('Admin teacher status actions', () => {
 
   afterAll(async () => {
     await Admin.deleteMany({ _id: adminId });
-    await Teacher.deleteMany({ _id: teacherId });
+    await Staff.deleteMany({ _id: teacherId });
     await mongoose.connection.close();
   });
 
@@ -47,7 +47,7 @@ describe('Admin teacher status actions', () => {
     const token = 'test-admin-token';
 
     const suspendRes = await request(app)
-      .put(`/api/v1/admins/suspend/teacher/${teacherId.toString()}`)
+      .put(`/api/v1/admins/suspend/staff/${teacherId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'policy' });
 
@@ -55,7 +55,7 @@ describe('Admin teacher status actions', () => {
     expect(suspendRes.body.data.isSuspended).toBe(true);
 
     const unsuspendRes = await request(app)
-      .put(`/api/v1/admins/unsuspend/teacher/${teacherId.toString()}`)
+      .put(`/api/v1/admins/unsuspend/staff/${teacherId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'reviewed' });
 
@@ -63,7 +63,7 @@ describe('Admin teacher status actions', () => {
     expect(unsuspendRes.body.data.isSuspended).toBe(false);
 
     const withdrawRes = await request(app)
-      .put(`/api/v1/admins/withdraw/teacher/${teacherId.toString()}`)
+      .put(`/api/v1/admins/withdraw/staff/${teacherId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'leave' });
 
@@ -71,7 +71,7 @@ describe('Admin teacher status actions', () => {
     expect(withdrawRes.body.data.isWithdrawn).toBe(true);
 
     const unwithdrawRes = await request(app)
-      .put(`/api/v1/admins/unwithdraw/teacher/${teacherId.toString()}`)
+      .put(`/api/v1/admins/unwithdraw/staff/${teacherId.toString()}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ reason: 'returned' });
 

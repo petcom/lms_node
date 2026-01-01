@@ -23,3 +23,203 @@ export const contentQuery = {
     limit: pagination.limit,
   }),
 };
+
+export const staffRolesUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    roles: Joi.array().items(Joi.string().trim()).required(),
+  }),
+};
+
+export const staffDepartmentUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    departmentId: objectId.allow(null).required(),
+  }),
+};
+
+export const contentCreate = {
+  body: Joi.object({
+    type: Joi.string().valid('scorm', 'custom').required(),
+    title: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().trim().required(),
+      otherwise: Joi.string().trim(),
+    }),
+    description: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().trim().required(),
+      otherwise: Joi.string().trim(),
+    }),
+    customType: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().valid('exam', 'quiz', 'practice', 'other').required(),
+      otherwise: Joi.forbidden(),
+    }),
+    subject: Joi.when('type', {
+      is: 'custom',
+      then: objectId.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    program: Joi.when('type', {
+      is: 'custom',
+      then: objectId.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    classLevel: Joi.when('type', {
+      is: 'custom',
+      then: objectId.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    academicTerm: Joi.when('type', {
+      is: 'custom',
+      then: objectId.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    academicYear: Joi.when('type', {
+      is: 'custom',
+      then: objectId.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    passMark: Joi.when('type', {
+      is: 'custom',
+      then: Joi.number().min(0).required(),
+      otherwise: Joi.forbidden(),
+    }),
+    totalMark: Joi.when('type', {
+      is: 'custom',
+      then: Joi.number().min(1).required(),
+      otherwise: Joi.forbidden(),
+    }),
+    duration: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().trim().required(),
+      otherwise: Joi.forbidden(),
+    }),
+    examDate: Joi.when('type', {
+      is: 'custom',
+      then: Joi.date().iso().required(),
+      otherwise: Joi.forbidden(),
+    }),
+    examTime: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().trim().required(),
+      otherwise: Joi.forbidden(),
+    }),
+    examStatus: Joi.when('type', {
+      is: 'custom',
+      then: Joi.string().valid('pending', 'live').optional(),
+      otherwise: Joi.forbidden(),
+    }),
+  }),
+};
+
+export const contentUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    type: Joi.string().valid('scorm', 'custom').required(),
+    title: Joi.string().trim(),
+    description: Joi.string().trim(),
+    departmentId: objectId.allow(null),
+    subject: objectId,
+    program: objectId,
+    classLevel: objectId,
+    academicTerm: objectId,
+    academicYear: objectId,
+    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    passMark: Joi.number().min(0),
+    totalMark: Joi.number().min(1),
+    duration: Joi.string().trim(),
+    examDate: Joi.date().iso(),
+    examTime: Joi.string().trim(),
+    examStatus: Joi.string().valid('pending', 'live'),
+  }).min(2),
+};
+
+export const programCreate = {
+  body: Joi.object({
+    name: Joi.string().trim().required(),
+    description: Joi.string().trim().required(),
+    duration: Joi.string().trim().required(),
+    code: Joi.string().trim(),
+    departmentId: objectId,
+  }),
+};
+
+export const programUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    name: Joi.string().trim(),
+    description: Joi.string().trim(),
+    duration: Joi.string().trim(),
+    code: Joi.string().trim(),
+  }).min(1),
+};
+
+export const programDepartmentUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    departmentId: objectId.allow(null).required(),
+  }),
+};
+
+export const courseCreate = {
+  body: Joi.object({
+    name: Joi.string().trim().required(),
+    description: Joi.string().trim().required(),
+    duration: Joi.string().trim().required(),
+    academicYear: objectId.required(),
+    departmentId: objectId,
+    programId: objectId,
+  }),
+};
+
+export const courseUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    name: Joi.string().trim(),
+    description: Joi.string().trim(),
+    duration: Joi.string().trim(),
+    academicYear: objectId,
+  }).min(1),
+};
+
+export const courseDepartmentUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    departmentId: objectId.allow(null).required(),
+  }),
+};
+
+export const courseProgramUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    programId: objectId.allow(null).required(),
+  }),
+};
+
+export const departmentUpdate = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    name: Joi.string().trim(),
+    code: Joi.string().trim(),
+  }).min(1),
+};

@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import Department from '../../../model/Academic/Department';
 import Admin from '../../../model/Staff/Admin';
-import Teacher from '../../../model/Staff/Staff';
+import Staff from '../../../model/Staff/Staff';
+import StaffRole from '../../../model/Staff/StaffRole';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import AcademicYear from '../../../model/Academic/AcademicYear';
 import AcademicTerm from '../../../model/Academic/AcademicTerm';
@@ -41,7 +42,8 @@ describe('Department Resources API', () => {
     await Promise.all([
       Department.deleteMany({}),
       Admin.deleteMany({}),
-      Teacher.deleteMany({}),
+      Staff.deleteMany({}),
+      StaffRole.deleteMany({}),
       ScormPackage.deleteMany({}),
       AcademicYear.deleteMany({}),
       AcademicTerm.deleteMany({}),
@@ -108,7 +110,7 @@ describe('Department Resources API', () => {
       },
     ]);
 
-    await Teacher.create([
+    await Staff.create([
       {
         name: 'Alpha Teacher',
         email: 'alpha.teacher@example.com',
@@ -211,7 +213,7 @@ describe('Department Resources API', () => {
       program: program._id,
     });
 
-    const teacher = await Teacher.findOne({ email: 'alpha.teacher@example.com' }).lean();
+    const teacher = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
     if (!teacher) {
       throw new Error('Teacher not found for exam setup');
     }
@@ -251,12 +253,12 @@ describe('Department Resources API', () => {
 
   it('filters staff users by role type', async () => {
     const res = await request(app)
-      .get('/api/v1/department-resources/staffusers?type=teacher')
+      .get('/api/v1/department-resources/staffusers?type=staff')
       .set('Authorization', `Bearer ${topAdminToken}`);
 
     expect(res.status).toBe(200);
     const roles = res.body.items.map((item: any) => item.role);
-    expect(roles.every((role: string) => role === 'teacher')).toBe(true);
+    expect(roles.every((role: string) => role === 'staff')).toBe(true);
   });
 
   it('lists department content scoped to the department hierarchy', async () => {
@@ -300,5 +302,185 @@ describe('Department Resources API', () => {
     const names = res.body.items.map((item: any) => item.name);
     expect(names).toContain('Beta Teacher');
     expect(names).not.toContain('Alpha Teacher');
+  });
+
+  it('updates staff roles within scope', async () => {
+    await StaffRole.create([
+      { name: 'instructor' },
+      { name: 'content-admin' },
+      { name: 'department-admin' },
+      { name: 'billing-admin' },
+    ]);
+
+    const staff = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
+    if (!staff) {
+      throw new Error('Staff member not found for role update');
+    }
+
+    const res = await request(app)
+      .patch(`/api/v1/department-resources/staffusers/${staff._id.toString()}/role`)
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({ roles: ['instructor', 'content-admin'] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.roles).toEqual(expect.arrayContaining(['instructor', 'content-admin']));
+  });
+
+  it('updates staff department within scope', async () => {
+    const staff = await Staff.findOne({ email: 'alpha.teacher@example.com' }).lean();
+    if (!staff) {
+      throw new Error('Staff member not found for department update');
+    }
+
+    const res = await request(app)
+      .patch(`/api/v1/department-resources/staffusers/${staff._id.toString()}/department`)
+      .set('Authorization', `Bearer ${masterToken}`)
+      .send({ departmentId: otherDepartmentId.toString() });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.department).toBe(otherDepartmentId.toString());
+  });
+
+  it('creates and updates custom content', async () => {
+    const subject = await Subject.findOne({ name: 'Alpha Subject' }).lean();
+    const program = await Program.findOne({ name: 'Alpha Program' }).lean();
+    const classLevel = await ClassLevel.findOne({ name: 'Grade 1' }).lean();
+    const academicTerm = await AcademicTerm.findOne({ name: '1st Term' }).lean();
+    const academicYear = await AcademicYear.findOne({ name: '2024-2025' }).lean();
+
+    if (!subject || !program || !classLevel || !academicTerm || !academicYear) {
+      throw new Error('Missing academic data for content setup');
+    }
+
+    const createRes = await request(app)
+      .post('/api/v1/department-resources/content')
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({
+        type: 'custom',
+        title: 'Alpha Practice',
+        description: 'Practice exam',
+        customType: 'practice',
+        subject: subject._id.toString(),
+        program: program._id.toString(),
+        classLevel: classLevel._id.toString(),
+        academicTerm: academicTerm._id.toString(),
+        academicYear: academicYear._id.toString(),
+        passMark: 30,
+        totalMark: 100,
+        duration: '30 minutes',
+        examDate: '2025-01-01T00:00:00Z',
+        examTime: '09:00',
+        examStatus: 'pending',
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.data.customType).toBe('practice');
+
+    const contentId = createRes.body.data.id;
+    const updateRes = await request(app)
+      .patch(`/api/v1/department-resources/content/${contentId}`)
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({ type: 'custom', title: 'Alpha Practice Updated', customType: 'quiz' });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.name).toBe('Alpha Practice Updated');
+    expect(updateRes.body.data.examType).toBe('quiz');
+  });
+
+  it('creates and updates programs', async () => {
+    const createRes = await request(app)
+      .post('/api/v1/department-resources/programs')
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({
+        name: 'Gamma Program',
+        description: 'Gamma department program',
+        duration: '2 years',
+        departmentId: topDepartmentId.toString(),
+      });
+
+    expect(createRes.status).toBe(201);
+
+    const existingProgram = await Program.findOne({ name: 'Alpha Program' }).lean();
+    if (!existingProgram) {
+      throw new Error('Alpha Program not found for update');
+    }
+
+    const updateRes = await request(app)
+      .patch(`/api/v1/department-resources/programs/${existingProgram._id.toString()}`)
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({ description: 'Updated program description' });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.description).toBe('Updated program description');
+
+    const deptRes = await request(app)
+      .patch(`/api/v1/department-resources/programs/${existingProgram._id.toString()}/department`)
+      .set('Authorization', `Bearer ${masterToken}`)
+      .send({ departmentId: otherDepartmentId.toString() });
+
+    expect(deptRes.status).toBe(200);
+    expect(deptRes.body.data.department).toBe(otherDepartmentId.toString());
+  });
+
+  it('creates and updates courses', async () => {
+    const academicYear = await AcademicYear.findOne({ name: '2024-2025' }).lean();
+    const program = await Program.findOne({ name: 'Alpha Program' }).lean();
+
+    if (!academicYear || !program) {
+      throw new Error('Missing academic data for course setup');
+    }
+
+    const createRes = await request(app)
+      .post('/api/v1/department-resources/courses')
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({
+        name: 'Alpha Course',
+        description: 'Course for Alpha',
+        duration: '3 months',
+        academicYear: academicYear._id.toString(),
+        departmentId: topDepartmentId.toString(),
+        programId: program._id.toString(),
+      });
+
+    expect(createRes.status).toBe(201);
+
+    const course = await Subject.findOne({ name: 'Alpha Subject' }).lean();
+    if (!course) {
+      throw new Error('Alpha Subject not found for update');
+    }
+
+    const updateRes = await request(app)
+      .patch(`/api/v1/department-resources/courses/${course._id.toString()}`)
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({ description: 'Updated course description' });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.description).toBe('Updated course description');
+
+    const programUpdateRes = await request(app)
+      .patch(`/api/v1/department-resources/courses/${course._id.toString()}/program`)
+      .set('Authorization', `Bearer ${topAdminToken}`)
+      .send({ programId: program._id.toString() });
+
+    expect(programUpdateRes.status).toBe(200);
+    expect(programUpdateRes.body.data.program).toBe(program._id.toString());
+
+    const deptRes = await request(app)
+      .patch(`/api/v1/department-resources/courses/${course._id.toString()}/department`)
+      .set('Authorization', `Bearer ${masterToken}`)
+      .send({ departmentId: otherDepartmentId.toString() });
+
+    expect(deptRes.status).toBe(200);
+    expect(deptRes.body.data.department).toBe(otherDepartmentId.toString());
+  });
+
+  it('updates department metadata', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/department-resources/departments/${topDepartmentId.toString()}`)
+      .set('Authorization', `Bearer ${masterToken}`)
+      .send({ name: 'Top Alpha Updated' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.name).toBe('Top Alpha Updated');
   });
 });

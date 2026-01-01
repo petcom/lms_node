@@ -1,6 +1,6 @@
 /**
- * Admin & Teacher Validation Schemas
- * Joi validation schemas for admin and teacher-related endpoints
+ * Admin & Staff Validation Schemas
+ * Joi validation schemas for admin and staff-related endpoints
  */
 
 import Joi from 'joi';
@@ -19,9 +19,9 @@ export const updateAdminProfile = {
 };
 
 /**
- * Update teacher profile validation
+ * Update staff profile validation
  */
-export const updateTeacherProfile = {
+export const updateStaffProfile = {
   body: Joi.object({
     name,
     email,
@@ -38,7 +38,7 @@ export const updateTeacherProfile = {
  */
 export const staffAction = {
   params: Joi.object({
-    teacherId: objectId.required(),
+    staffId: objectId.required(),
   }),
 };
 
@@ -68,11 +68,11 @@ export const promoteStudent = {
 };
 
 /**
- * Assign teacher to subject validation
+ * Assign staff to subject validation
  */
-export const assignTeacher = {
+export const assignStaff = {
   params: Joi.object({
-    teacherId: objectId.required(),
+    staffId: objectId.required(),
   }),
   body: Joi.object({
     subject: objectId.required(),

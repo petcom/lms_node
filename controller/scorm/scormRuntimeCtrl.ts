@@ -13,6 +13,8 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
+import LearnerProgress from '../../model/Content/LearnerProgress';
+import ContentAttempt from '../../model/Content/ContentAttempt';
 import {
   validateCMIElement,
   isReadOnly,
@@ -54,6 +56,68 @@ const logInteraction = (
     value,
     errorCode,
   });
+};
+
+const mapScormStatus = (status?: string): 'not_started' | 'in_progress' | 'completed' | 'failed' => {
+  if (!status || status === 'not_started') return 'not_started';
+  if (status === 'passed' || status === 'completed') return 'completed';
+  if (status === 'failed') return 'failed';
+  return 'in_progress';
+};
+
+const persistScormProgress = async (attempt: any): Promise<void> => {
+  const score = attempt.cmi?.score?.raw ?? 0;
+  const maxScore = attempt.cmi?.score?.max ?? 100;
+  const status = mapScormStatus(attempt.status);
+  const progressPercent = status === 'completed' ? 100 : 0;
+
+  await LearnerProgress.findOneAndUpdate(
+    {
+      learnerId: attempt.student,
+      contentId: attempt.package,
+      segmentId: attempt.attemptId,
+    },
+    {
+      learnerId: attempt.student,
+      contentId: attempt.package,
+      segmentId: attempt.attemptId,
+      contentType: 'scorm',
+      status,
+      progressPercent,
+      score,
+      maxScore,
+      passed: attempt.status === 'passed',
+      attemptCount: attempt.attemptNumber,
+      timeSpentSec: 0,
+      lastActivityAt: new Date(),
+      payload: attempt.cmi || {},
+    },
+    { upsert: true, new: true }
+  );
+
+  await ContentAttempt.findOneAndUpdate(
+    {
+      learnerId: attempt.student,
+      contentId: attempt.package,
+      attemptNumber: attempt.attemptNumber,
+    },
+    {
+      learnerId: attempt.student,
+      contentId: attempt.package,
+      segmentId: attempt.attemptId,
+      contentType: 'scorm',
+      attemptNumber: attempt.attemptNumber,
+      startedAt: attempt.startedAt || new Date(),
+      submittedAt: attempt.completedAt || attempt.lastAccessedAt || new Date(),
+      status: status === 'completed' ? 'completed' : 'in_progress',
+      score,
+      maxScore,
+      passed: attempt.status === 'passed',
+      timeSpentSec: 0,
+      payload: attempt.cmi || {},
+    },
+    { upsert: true, new: true }
+  );
 };
 
 /**
@@ -165,6 +229,12 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
 
   (attempt as any).lastAccessedAt = new Date();
   await attempt.save();
+
+  try {
+    await persistScormProgress(attempt as any);
+  } catch (error: any) {
+    console.error('SCORM progress persistence failed:', error?.message || error);
+  }
 
   // Get session
   const session = await getSession(attemptId);
@@ -413,6 +483,12 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
     (attempt as any).lastAccessedAt = new Date();
     logInteraction(attempt as any, 'SetValue', element, value, '0');
     await attempt.save();
+
+    try {
+      await persistScormProgress(attempt as any);
+    } catch (error: any) {
+      console.error('SCORM progress persistence failed:', error?.message || error);
+    }
 
     res.status(200).json({
       success: true,

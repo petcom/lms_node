@@ -17,12 +17,24 @@ const globalSetup = async (): Promise<void> => {
     await mongoose.disconnect();
   }
 
-  // Create in-memory MongoDB instance
-  const mongoServer = await MongoMemoryServer.create();
-  const mongoUri = mongoServer.getUri();
+  let mongoUri: string | undefined;
 
-  // Store the URI for use in tests
-  process.env.MONGO_TEST_URI = mongoUri;
+  if (!process.env.MONGO_TEST_URI) {
+    process.env.MONGOMS_IP = '127.0.0.1';
+    process.env.MONGOMS_PORT = process.env.MONGOMS_PORT || '27017';
+
+    // Create in-memory MongoDB instance
+    const mongoServer = await MongoMemoryServer.create({
+      instance: { ip: '127.0.0.1', port: Number(process.env.MONGOMS_PORT) },
+    });
+    mongoUri = mongoServer.getUri();
+
+    // Store the URI for use in tests
+    process.env.MONGO_TEST_URI = mongoUri;
+
+    // Store the server instance globally for teardown
+    (global as any).__MONGOSERVER__ = mongoServer;
+  }
   // Use a deterministic, long secret to satisfy generateToken length checks during tests
   process.env.JWT_SECRET =
     process.env.JWT_SECRET || 'test-secret-key-for-integration-suite-32chars';
@@ -30,11 +42,15 @@ const globalSetup = async (): Promise<void> => {
   process.env.MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
   process.env.NODE_ENV = 'test';
 
-  // Store the server instance globally for teardown
-  (global as any).__MONGOSERVER__ = mongoServer;
+  if (process.env.MONGO_TEST_URI) {
+    console.log('✓ Using MONGO_TEST_URI for integration tests');
+    console.log(`  URI: ${process.env.MONGO_TEST_URI}`);
+  }
 
-  console.log('✓ MongoDB Memory Server started');
-  console.log(`  URI: ${mongoUri}`);
+  if (mongoUri) {
+    console.log('✓ MongoDB Memory Server started');
+    console.log(`  URI: ${mongoUri}`);
+  }
 };
 
 export default globalSetup;

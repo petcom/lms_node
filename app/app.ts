@@ -36,6 +36,7 @@ import metricsRouter from '../routes/metricsRouter';
 import departmentRouter from '../routes/departments/departmentRoutes';
 import permissionsRouter from '../routes/permissionsRouter';
 import departmentResourcesRouter from '../routes/departmentResources/departmentResourcesRouter';
+import contentRouter from '../routes/content/contentRouter';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -165,10 +166,18 @@ app.use('/api/v1/scorm/runtime', scormRuntimeRouter); // SCORM runtime API
 app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
 app.use('/api/v1/scorm/reports', scormReportRouter); // SCORM tracking and reporting
 app.use('/api/v1/scorm', scormHealthRouter); // SCORM health and monitoring
+app.use('/api/v1/content/scorm/packages', scormPackageRouter); // Content SCORM package management
+app.use('/api/v1/content/scorm/content', scormContentRouter); // Content SCORM content delivery
+app.use('/api/v1/content/scorm/attempts', scormAttemptRouter); // Content SCORM attempt tracking
+app.use('/api/v1/content/scorm/runtime', scormRuntimeRouter); // Content SCORM runtime API
+app.use('/api/v1/content/scorm/player', scormPlayerRouter); // Content SCORM player interface
+app.use('/api/v1/content/scorm/reports', scormReportRouter); // Content SCORM tracking and reporting
+app.use('/api/v1/content/scorm', scormHealthRouter); // Content SCORM health and monitoring
 app.use('/api/v1/metrics', metricsRouter); // Platform metrics summary
 app.use('/api/v1/departments', departmentRouter); // Department hierarchy management
 app.use('/api/v1/department-resources', departmentResourcesRouter); // Department resources overview
 app.use('/api/v1/permissions', permissionsRouter); // Permissions matrix
+app.use('/api/v1/content', contentRouter); // Unified content API
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects
 app.get('/student/dashboard', (_req, res) => res.redirect('/'));

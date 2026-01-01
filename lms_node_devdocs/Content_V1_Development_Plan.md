@@ -75,6 +75,7 @@ Fields:
    - Normalizes into `LearnerProgress` + `Attempt`
 8) Normalize SCORM runtime events:
    - Map SCORM completion/score/time into `LearnerProgress` + `Attempt`
+   - Persist SCORM progress updates on runtime commit/terminate
 9) Add attempts + reporting endpoints:
    - `GET /api/v1/content/:id/attempts`
    - `GET /api/v1/content/reports`

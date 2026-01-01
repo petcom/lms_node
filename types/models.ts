@@ -321,3 +321,83 @@ export interface IRefreshTokenModel extends Model<IRefreshToken> {
   validateToken(token: string): Promise<IRefreshToken>;
   revokeAllUserTokens(userId: string): Promise<void>;
 }
+
+// Content: Custom content item
+export interface ICustomContent extends Document {
+  _id: Types.ObjectId;
+  title: string;
+  customType: 'exam' | 'quiz' | 'practice' | 'other';
+  payload?: any;
+  html?: string;
+  css?: string;
+  department?: Types.ObjectId;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ICourseSegment {
+  segmentId: string;
+  type: 'scorm' | 'custom';
+  contentId: Types.ObjectId;
+}
+
+export interface ICourse extends Document {
+  _id: Types.ObjectId;
+  title: string;
+  department?: Types.ObjectId;
+  segments: ICourseSegment[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IRenderedCourse extends Document {
+  _id: Types.ObjectId;
+  courseId: Types.ObjectId;
+  contentVersion: Date;
+  html: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILearnerProgress extends Document {
+  _id: Types.ObjectId;
+  learnerId: Types.ObjectId;
+  courseId?: Types.ObjectId;
+  contentId: Types.ObjectId;
+  segmentId: string;
+  contentType: 'scorm' | 'custom';
+  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  status: 'not_started' | 'in_progress' | 'completed' | 'failed';
+  progressPercent: number;
+  score: number;
+  maxScore: number;
+  passed?: boolean;
+  attemptCount: number;
+  timeSpentSec: number;
+  lastActivityAt?: Date;
+  payload?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IContentAttempt extends Document {
+  _id: Types.ObjectId;
+  learnerId: Types.ObjectId;
+  courseId?: Types.ObjectId;
+  contentId: Types.ObjectId;
+  segmentId: string;
+  contentType: 'scorm' | 'custom';
+  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  attemptNumber: number;
+  startedAt: Date;
+  submittedAt?: Date;
+  status: 'in_progress' | 'completed' | 'failed';
+  score?: number;
+  maxScore?: number;
+  passed?: boolean;
+  timeSpentSec: number;
+  payload?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}

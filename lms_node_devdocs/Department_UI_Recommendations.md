@@ -32,8 +32,8 @@
 ## API Integration Notes
 - Departments API (implemented): CRUD under `/api/v1/departments` with scope enforcement and counts for UI badges.
    - Create: POST `/api/v1/departments` body `{ name, code?, level: 'top'|'sub', parent?: deptId }`; Master can create top; Top can create sub under self. Master department is singleton and not creatable.
-   - List: GET `/api/v1/departments` returns a scoped flat list (Master sees all; Top sees self+subs; Sub sees self) with `counts` `{ staffCount, programCount, subjectCount, classLevelCount, packageCount, globalPackageCount }` for each item. Use `?limit=` to control pagination (default 2).
-   - Detail: GET `/api/v1/departments/:id` scoped similarly and includes the same `counts` payload.
+- List: GET `/api/v1/departments` returns a scoped flat list (Master sees all; Top sees self+subs; Sub sees self) with `counts` `{ staffCount, programCount, subjectCount, classLevelCount, packageCount, globalPackageCount }` and `passingStyleScore` for each item. Use `?limit=` to control pagination (default 2).
+- Detail: GET `/api/v1/departments/:id` scoped similarly and includes the same `counts` payload plus `passingStyleScore`.
    - Update: PUT `/api/v1/departments/:id` (rename/code change) scoped; no level/parent change allowed (backend rejects).
    - Delete: DELETE `/api/v1/departments/:id` only if no children/staff/content; Master cannot be deleted.
 - Content endpoints now emit `department`:

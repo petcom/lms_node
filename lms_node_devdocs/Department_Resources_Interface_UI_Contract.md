@@ -185,9 +185,55 @@ Response:
       "code": "DEPT",
       "parentId": "parent-id" | null,
       "level": 0 | 1 | 2,
+      "passingStyleScore": 80,
       "children": []
     }
   ]
+}
+```
+
+Example: `GET /api/v1/departments` item
+```
+{
+  "id": "dept-id",
+  "name": "Top Alpha",
+  "code": "ALPHA",
+  "parentId": null,
+  "level": 1,
+  "passingStyleScore": 80,
+  "counts": {
+    "staffCount": 12,
+    "programCount": 3,
+    "subjectCount": 8,
+    "classLevelCount": 4,
+    "packageCount": 15,
+    "globalPackageCount": 2
+  }
+}
+```
+
+Example: `GET /api/v1/departments/:id`
+```
+{
+  "status": "success",
+  "message": "Department fetched successfully",
+  "data": {
+    "_id": "dept-id",
+    "name": "Top Alpha",
+    "code": "ALPHA",
+    "level": "top",
+    "parent": null,
+    "ancestors": [],
+    "passingStyleScore": 80,
+    "counts": {
+      "staffCount": 12,
+      "programCount": 3,
+      "subjectCount": 8,
+      "classLevelCount": 4,
+      "packageCount": 15,
+      "globalPackageCount": 2
+    }
+  }
 }
 ```
 
@@ -270,5 +316,5 @@ PATCH `/departments/:id`
 
 Body:
 ```
-{ "name": "Department Name", "code": "DEPT" }
+{ "name": "Department Name", "code": "DEPT", "passingStyleScore": 80 }
 ```

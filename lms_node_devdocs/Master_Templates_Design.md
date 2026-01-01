@@ -22,6 +22,7 @@ Provide a master-template system that supports:
 ## Definitions
 - **Master Template**: A reusable layout + CSS + metadata that can be applied to custom content or mixed custom + SCORM sequences.
 - **Department Master CSS**: The approved base CSS for a department; templates are scored against it.
+- **Passing Style Score**: Threshold stored on the Department; children inherit from parent (master provides the default).
 - **Hybrid Template**: Contains structural placeholders for both custom HTML blocks and SCORM embeds.
 
 ## Template Types
@@ -79,6 +80,7 @@ Provide a master-template system that supports:
   },
   score: {
     value: number,
+    passingStyleScore: number,
     comparedToVersion: number,
     diffs: Array<{ selector: string, property: string, expected?: string, actual?: string }>
   },
@@ -108,7 +110,7 @@ Base: `/api/v1/templates`
 ### Rating
 - POST `/templates/score`
   - Body: `{ departmentId, css }`
-  - Response: `{ score: { value, diffs } }`
+  - Response: `{ score: { value, passingStyleScore, diffs } }`
 
 ## Rating Algorithm (Proposed)
 1) Normalize CSS:
@@ -123,6 +125,7 @@ Base: `/api/v1/templates`
    - Value mismatches: medium penalty
 4) Score:
    - `score = max(0, 100 - (missing*2 + extra*1 + mismatch*3))`
+   - `passingStyleScore = department.passingStyleScore (inherited; default 80 when unset)`
 5) Return top diffs (by weight) for UI hints.
 
 ## Preview Rendering

@@ -43,11 +43,13 @@ export type CssDiff = {
   weight: number;
 };
 
+export const PASSING_STYLE_SCORE = 80;
+
 export const scoreCss = (
   masterCss: string,
   candidateCss: string,
   comparedToVersion: number
-): { value: number; diffs: CssDiff[]; comparedToVersion: number } => {
+): { value: number; diffs: CssDiff[]; comparedToVersion: number; passingStyleScore: number } => {
   const masterMap = parseRules(masterCss);
   const candidateMap = parseRules(candidateCss);
 
@@ -99,5 +101,5 @@ export const scoreCss = (
   const score = Math.max(0, 100 - (missing * 2 + extra * 1 + mismatch * 3));
   const sortedDiffs = diffs.sort((a, b) => b.weight - a.weight).slice(0, 10);
 
-  return { value: score, diffs: sortedDiffs, comparedToVersion };
+  return { value: score, diffs: sortedDiffs, comparedToVersion, passingStyleScore: PASSING_STYLE_SCORE };
 };

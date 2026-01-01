@@ -20,6 +20,7 @@ type DepartmentSummary = {
   code: string | null;
   parentId: string | null;
   level: number;
+  passingStyleScore?: number | null;
 };
 
 type StaffUser = {
@@ -50,12 +51,16 @@ const getLevelNumber = (level: IDepartment['level']): number => {
   return 2;
 };
 
-const toDepartmentSummary = (dept: IDepartment): DepartmentSummary => ({
+const toDepartmentSummary = (
+  dept: IDepartment,
+  passingStyleScore?: number | null
+): DepartmentSummary => ({
   id: dept._id.toString(),
   name: dept.name,
   code: dept.code ?? null,
   parentId: dept.parent ? dept.parent.toString() : null,
   level: getLevelNumber(dept.level),
+  passingStyleScore,
 });
 
 const parsePagination = (req: Request): { skip: number; limit: number } | null => {
@@ -103,18 +108,58 @@ const resolveDepartmentScope = async (
   return { isGlobalScope, departmentIds, departments };
 };
 
-const buildDepartmentMap = (departments: IDepartment[]): Map<string, DepartmentSummary> => {
-  const map = new Map<string, DepartmentSummary>();
-  departments.forEach((dept) => {
-    map.set(dept._id.toString(), toDepartmentSummary(dept));
-  });
-  return map;
-};
-
 const buildDepartmentRecordMap = (departments: IDepartment[]): Map<string, IDepartment> => {
   const map = new Map<string, IDepartment>();
   departments.forEach((dept) => {
     map.set(dept._id.toString(), dept);
+  });
+  return map;
+};
+
+const resolvePassingStyleScore = (
+  department: IDepartment,
+  departmentMap: Map<string, IDepartment>,
+  masterFallback: number | null
+): number | null => {
+  if (typeof department.passingStyleScore === 'number') {
+    return department.passingStyleScore;
+  }
+
+  let parentId = department.parent ? department.parent.toString() : null;
+  while (parentId) {
+    const parent = departmentMap.get(parentId);
+    if (!parent) break;
+    if (typeof parent.passingStyleScore === 'number') {
+      return parent.passingStyleScore;
+    }
+    parentId = parent.parent ? parent.parent.toString() : null;
+  }
+
+  return masterFallback;
+};
+
+const resolveMasterPassingStyleScore = async (
+  departments: IDepartment[]
+): Promise<number | null> => {
+  const localMaster = departments.find((dept) => dept.level === 'master');
+  if (typeof localMaster?.passingStyleScore === 'number') {
+    return localMaster.passingStyleScore;
+  }
+  const master = await Department.findById(MASTER_DEPARTMENT_ID)
+    .select('passingStyleScore')
+    .lean();
+  return typeof master?.passingStyleScore === 'number' ? master.passingStyleScore : null;
+};
+
+const buildDepartmentMap = async (
+  departments: IDepartment[]
+): Promise<Map<string, DepartmentSummary>> => {
+  const recordMap = buildDepartmentRecordMap(departments);
+  const masterFallback = await resolveMasterPassingStyleScore(departments);
+  const map = new Map<string, DepartmentSummary>();
+  departments.forEach((dept) => {
+    const passingStyleScore = resolvePassingStyleScore(dept, recordMap, masterFallback);
+    map.set(dept._id.toString(), toDepartmentSummary(dept, passingStyleScore));
   });
   return map;
 };
@@ -165,7 +210,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
   const { type, departmentId } = req.query as { type?: string; departmentId?: string };
   const { departmentIds, departments } = await resolveDepartmentScope(req, departmentId);
 
-  const departmentMap = buildDepartmentMap(departments);
+  const departmentMap = await buildDepartmentMap(departments);
   const departmentRecordMap = buildDepartmentRecordMap(departments);
   const masterDeptId =
     departments.find((dept) => dept.level === 'master')?._id.toString() || MASTER_DEPARTMENT_ID;
@@ -251,7 +296,7 @@ export const listDepartmentContent = AsyncHandler(
     };
     const { departmentIds, departments } = await resolveDepartmentScope(req, departmentId);
 
-    const departmentMap = buildDepartmentMap(departments);
+    const departmentMap = await buildDepartmentMap(departments);
 
     const departmentObjectIds =
       departmentIds?.map((id) => new mongoose.Types.ObjectId(id)) ?? null;
@@ -338,9 +383,10 @@ export const listDepartmentHierarchy = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { departments } = await resolveDepartmentScope(req);
     const nodes = new Map<string, DepartmentNode>();
+    const departmentMap = await buildDepartmentMap(departments);
 
     departments.forEach((dept) => {
-      const summary = toDepartmentSummary(dept);
+      const summary = departmentMap.get(dept._id.toString()) || toDepartmentSummary(dept);
       nodes.set(summary.id, { ...summary, children: [] });
     });
 
@@ -1052,12 +1098,30 @@ export const updateDepartment = AsyncHandler(async (req: Request, res: Response)
   const scope = req.departmentScope?.accessibleDepartmentIds;
   ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
 
-  const { name, code } = req.body as { name?: string; code?: string };
+  const { name, code, passingStyleScore } = req.body as {
+    name?: string;
+    code?: string;
+    passingStyleScore?: number | null;
+  };
   if (name !== undefined) {
     department.name = name;
   }
   if (code !== undefined) {
     department.code = code;
+  }
+  if (passingStyleScore !== undefined) {
+    if (passingStyleScore === null) {
+      (department as any).passingStyleScore = null;
+    } else if (
+      typeof passingStyleScore !== 'number' ||
+      Number.isNaN(passingStyleScore) ||
+      passingStyleScore < 0 ||
+      passingStyleScore > 100
+    ) {
+      throw new ValidationError('passingStyleScore must be a number between 0 and 100');
+    } else {
+      (department as any).passingStyleScore = passingStyleScore;
+    }
   }
 
   await department.save();

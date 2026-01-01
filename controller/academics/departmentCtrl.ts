@@ -28,6 +28,7 @@ interface CreateDepartmentBody {
 interface UpdateDepartmentBody {
   name?: string;
   code?: string;
+  passingStyleScore?: number | null;
 }
 
 type DepartmentWithCounts = IDepartment & {
@@ -48,6 +49,7 @@ type DepartmentItem = {
   parentId: string | null;
   level: number;
   counts?: DepartmentWithCounts['counts'];
+  passingStyleScore?: number | null;
   children?: DepartmentItem[];
 };
 
@@ -88,10 +90,33 @@ const getLevelNumber = (level: IDepartment['level']): number => {
   return 2;
 };
 
+const resolvePassingStyleScore = (
+  dept: IDepartment,
+  map: Map<string, IDepartment>,
+  masterFallback: number | null
+): number | null => {
+  if (typeof dept.passingStyleScore === 'number') {
+    return dept.passingStyleScore;
+  }
+
+  let parentId = dept.parent ? dept.parent.toString() : null;
+  while (parentId) {
+    const parent = map.get(parentId);
+    if (!parent) break;
+    if (typeof parent.passingStyleScore === 'number') {
+      return parent.passingStyleScore;
+    }
+    parentId = parent.parent ? parent.parent.toString() : null;
+  }
+
+  return masterFallback;
+};
+
 const toDepartmentItem = (
   dept: IDepartment,
   counts?: DepartmentWithCounts['counts'],
-  includeChildren: boolean = false
+  includeChildren: boolean = false,
+  passingStyleScore?: number | null
 ): DepartmentItem => {
   const item: DepartmentItem = {
     id: dept._id.toString(),
@@ -103,6 +128,10 @@ const toDepartmentItem = (
 
   if (counts) {
     item.counts = counts;
+  }
+
+  if (passingStyleScore !== undefined) {
+    item.passingStyleScore = passingStyleScore;
   }
 
   if (includeChildren) {
@@ -206,11 +235,23 @@ export const getDepartments = AsyncHandler(async (_req: Request, res: Response):
   const departmentsToProcess =
     departments.length > 0 ? departments : await Department.find({}).lean();
 
+  const departmentMap = new Map<string, IDepartment>();
+  departmentsToProcess.forEach((dept) => {
+    departmentMap.set(dept._id.toString(), dept);
+  });
+
+  const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
+    .select('passingStyleScore')
+    .lean();
+  const masterPassingStyleScore =
+    typeof masterRecord?.passingStyleScore === 'number' ? masterRecord.passingStyleScore : null;
+
   const items = await Promise.all(
     departmentsToProcess.map(async (dept) => {
       const raw = (dept.toObject ? dept.toObject() : dept) as IDepartment;
       const counts = await buildCounts(raw._id as mongoose.Types.ObjectId);
-      return toDepartmentItem(raw, counts);
+      const passingStyleScore = resolvePassingStyleScore(raw, departmentMap, masterPassingStyleScore);
+      return toDepartmentItem(raw, counts, false, passingStyleScore);
     })
   );
 
@@ -235,11 +276,25 @@ export const getDepartmentHierarchy = AsyncHandler(
 
     const departments = (await Department.find(query).lean()) as IDepartment[];
     const nodes = new Map<string, DepartmentItem>();
+    const departmentMap = new Map<string, IDepartment>();
+    departments.forEach((dept) => {
+      departmentMap.set(dept._id.toString(), dept);
+    });
+    const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
+      .select('passingStyleScore')
+      .lean();
+    const masterPassingStyleScore =
+      typeof masterRecord?.passingStyleScore === 'number' ? masterRecord.passingStyleScore : null;
 
     await Promise.all(
       departments.map(async (dept) => {
         const counts = await buildCounts(dept._id as mongoose.Types.ObjectId);
-        nodes.set(dept._id.toString(), toDepartmentItem(dept, counts, true));
+        const passingStyleScore = resolvePassingStyleScore(
+          dept,
+          departmentMap,
+          masterPassingStyleScore
+        );
+        nodes.set(dept._id.toString(), toDepartmentItem(dept, counts, true, passingStyleScore));
       })
     );
 
@@ -270,19 +325,42 @@ export const getDepartment = AsyncHandler(
 
     ensureScope(req, department._id.toString());
 
+    const departmentMap = new Map<string, IDepartment>();
+    departmentMap.set(department._id.toString(), department as IDepartment);
+    const ancestorIds = [
+      department.parent,
+      ...(department.ancestors || []),
+    ].filter(Boolean) as mongoose.Types.ObjectId[];
+    if (ancestorIds.length > 0) {
+      const ancestors = await Department.find({ _id: { $in: ancestorIds } }).lean();
+      ancestors.forEach((ancestor) => {
+        departmentMap.set(ancestor._id.toString(), ancestor as IDepartment);
+      });
+    }
+    const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
+      .select('passingStyleScore')
+      .lean();
+    const masterPassingStyleScore =
+      typeof masterRecord?.passingStyleScore === 'number' ? masterRecord.passingStyleScore : null;
+
     const counts = await buildCounts(department._id as mongoose.Types.ObjectId);
+    const passingStyleScore = resolvePassingStyleScore(
+      department as IDepartment,
+      departmentMap,
+      masterPassingStyleScore
+    );
 
     res.status(200).json({
       status: 'success',
       message: 'Department fetched successfully',
-      data: { ...department, counts },
+      data: { ...department, counts, passingStyleScore },
     });
   }
 );
 
 export const updateDepartment = AsyncHandler(
   async (req: Request<{ id: string }, any, UpdateDepartmentBody>, res: Response): Promise<void> => {
-    const { name, code } = req.body;
+    const { name, code, passingStyleScore } = req.body;
 
     const department = await Department.findById(req.params.id);
     if (!department) {
@@ -308,15 +386,41 @@ export const updateDepartment = AsyncHandler(
 
     if (name !== undefined) department.name = name;
     if (code !== undefined) department.code = code;
+    if (passingStyleScore !== undefined) {
+      if (passingStyleScore === null) {
+        (department as any).passingStyleScore = null;
+      } else if (
+        typeof passingStyleScore !== 'number' ||
+        Number.isNaN(passingStyleScore) ||
+        passingStyleScore < 0 ||
+        passingStyleScore > 100
+      ) {
+        throw new ValidationError('passingStyleScore must be a number between 0 and 100');
+      } else {
+        (department as any).passingStyleScore = passingStyleScore;
+      }
+    }
 
     await department.save();
 
+    const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
+      .select('passingStyleScore')
+      .lean();
+    const masterPassingStyleScore =
+      typeof masterRecord?.passingStyleScore === 'number' ? masterRecord.passingStyleScore : null;
+    const departmentMap = new Map<string, IDepartment>();
+    departmentMap.set(department._id.toString(), department as any);
+    const passingStyleScoreResolved = resolvePassingStyleScore(
+      department as any,
+      departmentMap,
+      masterPassingStyleScore
+    );
     const counts = await buildCounts(department._id as mongoose.Types.ObjectId);
 
     res.status(200).json({
       status: 'success',
       message: 'Department updated successfully',
-      data: { ...department.toObject(), counts },
+      data: { ...department.toObject(), counts, passingStyleScore: passingStyleScoreResolved },
     });
   }
 );

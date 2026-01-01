@@ -5,7 +5,9 @@ import DepartmentMasterCSS from '../../model/Content/DepartmentMasterCSS';
 import MasterTemplate from '../../model/Content/MasterTemplate';
 import Department from '../../model/Academic/Department';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
-import { scoreCss } from '../../utils/templates/cssRating';
+import { PASSING_STYLE_SCORE, scoreCss } from '../../utils/templates/cssRating';
+
+const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
 
 const isSystemAdmin = (req: Request): boolean =>
   req.departmentScope?.accessibleDepartmentIds === 'all';
@@ -56,6 +58,69 @@ const resolveMasterCss = async (
     return { css: '', version: 0 };
   }
   return { css: record.css, version: record.version };
+};
+
+const formatScore = (
+  score: {
+    value: number;
+    comparedToVersion: number;
+    diffs?: Array<{ selector: string; property: string; expected?: string; actual?: string }>;
+  } | null,
+  passingStyleScore: number
+) => {
+  if (!score) return null;
+  return {
+    value: score.value,
+    comparedToVersion: score.comparedToVersion,
+    diffs: score.diffs,
+    passingStyleScore,
+  };
+};
+
+const resolvePassingStyleScore = async (departmentId?: string | null): Promise<number> => {
+  const targetId = departmentId || MASTER_DEPARTMENT_ID;
+  if (!mongoose.isValidObjectId(targetId)) {
+    return PASSING_STYLE_SCORE;
+  }
+
+  const department = await Department.findById(targetId)
+    .select('passingStyleScore parent ancestors')
+    .lean();
+  if (!department) {
+    return PASSING_STYLE_SCORE;
+  }
+
+  if (typeof department.passingStyleScore === 'number') {
+    return department.passingStyleScore;
+  }
+
+  const ancestorIds = [department.parent, ...(department.ancestors || [])]
+    .filter(Boolean)
+    .map((id) => id.toString());
+
+  if (ancestorIds.length > 0) {
+    const ancestors = await Department.find({ _id: { $in: ancestorIds } })
+      .select('passingStyleScore')
+      .lean();
+    const ancestorMap = new Map(ancestors.map((a) => [a._id.toString(), a]));
+    for (const ancestorId of ancestorIds) {
+      const ancestor = ancestorMap.get(ancestorId);
+      if (ancestor && typeof ancestor.passingStyleScore === 'number') {
+        return ancestor.passingStyleScore;
+      }
+    }
+  }
+
+  if (targetId !== MASTER_DEPARTMENT_ID) {
+    const master = await Department.findById(MASTER_DEPARTMENT_ID)
+      .select('passingStyleScore')
+      .lean();
+    if (typeof master?.passingStyleScore === 'number') {
+      return master.passingStyleScore;
+    }
+  }
+
+  return PASSING_STYLE_SCORE;
 };
 
 export const getMasterCss = asyncHandler(async (req: Request, res: Response) => {
@@ -163,6 +228,7 @@ export const scoreTemplateCss = asyncHandler(async (req: Request, res: Response)
 
   const master = await resolveMasterCss(departmentId);
   const score = scoreCss(master.css, css, master.version);
+  const passingStyleScore = await resolvePassingStyleScore(departmentId);
 
   res.status(200).json({
     status: 'success',
@@ -175,6 +241,7 @@ export const scoreTemplateCss = asyncHandler(async (req: Request, res: Response)
         expected,
         actual,
       })),
+      passingStyleScore,
     },
   });
 });
@@ -215,23 +282,35 @@ export const listTemplates = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const templates = await MasterTemplate.find(filter).sort({ updatedAt: -1 }).lean();
+  const passingStyleScoreCache = new Map<string, number>();
 
-  const items = templates.map((template) => ({
-    id: template._id.toString(),
-    name: template.name,
-    type: template.type,
-    status: template.status,
-    departmentId: template.departmentId ? template.departmentId.toString() : null,
-    isGlobal: template.isGlobal,
-    score: template.score
-      ? {
-          value: template.score.value,
-          comparedToVersion: template.score.comparedToVersion,
-        }
-      : null,
-    overrideStatus: template.overrideStatus,
-    updatedAt: template.updatedAt,
-  }));
+  const items = [];
+  for (const template of templates) {
+    const deptId = template.departmentId ? template.departmentId.toString() : null;
+    const cacheKey = deptId || MASTER_DEPARTMENT_ID;
+    let passingStyleScore = passingStyleScoreCache.get(cacheKey);
+    if (passingStyleScore === undefined) {
+      passingStyleScore = await resolvePassingStyleScore(deptId);
+      passingStyleScoreCache.set(cacheKey, passingStyleScore);
+    }
+    items.push({
+      id: template._id.toString(),
+      name: template.name,
+      type: template.type,
+      status: template.status,
+      departmentId: template.departmentId ? template.departmentId.toString() : null,
+      isGlobal: template.isGlobal,
+      score: template.score
+        ? {
+            value: template.score.value,
+            comparedToVersion: template.score.comparedToVersion,
+            passingStyleScore,
+          }
+        : null,
+      overrideStatus: template.overrideStatus,
+      updatedAt: template.updatedAt,
+    });
+  }
 
   res.status(200).json({ status: 'success', items });
 });
@@ -254,6 +333,10 @@ export const getTemplate = asyncHandler(async (req: Request, res: Response) => {
     throw new AuthorizationError('Only system admins can update global templates');
   }
 
+  const passingStyleScore = await resolvePassingStyleScore(
+    template.departmentId ? template.departmentId.toString() : null
+  );
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -266,7 +349,7 @@ export const getTemplate = asyncHandler(async (req: Request, res: Response) => {
       isGlobal: template.isGlobal,
       css: template.css,
       layout: template.layout,
-      score: template.score,
+      score: formatScore(template.score as any, passingStyleScore),
       overrideStatus: template.overrideStatus,
       createdBy: template.createdBy.toString(),
       createdAt: template.createdAt,
@@ -306,11 +389,17 @@ export const createTemplate = asyncHandler(async (req: Request, res: Response) =
     ensureDepartmentScope(req, resolvedDepartmentId, 'Access denied for this department');
   }
 
+  const passingStyleScore = await resolvePassingStyleScore(resolvedDepartmentId);
   const master = resolvedDepartmentId ? await resolveMasterCss(resolvedDepartmentId) : null;
   const score =
     master && css !== undefined
       ? scoreCss(master.css, css || '', master.version)
-      : { value: 0, diffs: [], comparedToVersion: master?.version || 0 };
+      : {
+          value: 0,
+          diffs: [],
+          comparedToVersion: master?.version || 0,
+          passingStyleScore,
+        };
 
   const overrideStatus =
     css && css.length > 0
@@ -327,7 +416,9 @@ export const createTemplate = asyncHandler(async (req: Request, res: Response) =
     isGlobal: globalFlag,
     css: css || '',
     layout,
-    score: score ? { value: score.value, comparedToVersion: score.comparedToVersion, diffs: score.diffs } : undefined,
+    score: score
+      ? { value: score.value, comparedToVersion: score.comparedToVersion, diffs: score.diffs }
+      : undefined,
     overrideStatus,
     status: 'draft',
     createdBy: req.userAuth?._id,
@@ -345,7 +436,7 @@ export const createTemplate = asyncHandler(async (req: Request, res: Response) =
       isGlobal: template.isGlobal,
       css: template.css,
       layout: template.layout,
-      score: template.score,
+      score: formatScore(template.score as any, passingStyleScore),
       overrideStatus: template.overrideStatus,
       createdBy: template.createdBy.toString(),
       createdAt: template.createdAt,
@@ -408,6 +499,9 @@ export const updateTemplate = asyncHandler(async (req: Request, res: Response) =
   }
 
   await template.save();
+  const passingStyleScore = await resolvePassingStyleScore(
+    template.departmentId ? template.departmentId.toString() : null
+  );
 
   res.status(200).json({
     status: 'success',
@@ -421,7 +515,7 @@ export const updateTemplate = asyncHandler(async (req: Request, res: Response) =
       isGlobal: template.isGlobal,
       css: template.css,
       layout: template.layout,
-      score: template.score,
+      score: formatScore(template.score as any, passingStyleScore),
       overrideStatus: template.overrideStatus,
       createdBy: template.createdBy.toString(),
       createdAt: template.createdAt,

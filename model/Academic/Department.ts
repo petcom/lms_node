@@ -28,6 +28,12 @@ const departmentSchema = new Schema<IDepartment>(
         ref: 'Department',
       },
     ],
+    passingStyleScore: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+    },
   },
   { timestamps: true }
 );

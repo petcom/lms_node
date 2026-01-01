@@ -21,7 +21,8 @@ Base URL: `/api/v1/templates`
   "overrideStatus": "inherited" | "pending" | "approved",
   "score": {
     "value": 87,
-    "comparedToVersion": 3
+    "comparedToVersion": 3,
+    "passingStyleScore": 80
   },
   "updatedAt": "ISO-8601"
 }
@@ -48,6 +49,7 @@ Base URL: `/api/v1/templates`
   "score": {
     "value": 87,
     "comparedToVersion": 3,
+    "passingStyleScore": 80,
     "diffs": [
       { "selector": ".btn", "property": "background-color", "expected": "#000", "actual": "#111" }
     ]
@@ -77,12 +79,14 @@ Base URL: `/api/v1/templates`
   "score": {
     "value": 87,
     "comparedToVersion": 3,
+    "passingStyleScore": 80,
     "diffs": [
       { "selector": ".btn", "property": "background-color", "expected": "#000", "actual": "#111" }
     ]
   }
 }
 ```
+Note: `passingStyleScore` is inherited from the department (parent chain, master fallback).
 
 ## Endpoints
 

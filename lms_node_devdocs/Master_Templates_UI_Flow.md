@@ -46,7 +46,9 @@ Show how closely the template CSS matches the department’s master CSS.
 
 ### Output
 - Score (0–100)
+- Passing style score threshold (default 80)
 - Top diffs (selector/property/value mismatches)
+ - Passing style score is inherited from the department (parent chain, master fallback)
 
 ### Algorithm (Summary)
 1) Normalize CSS (strip comments, collapse whitespace)
@@ -57,6 +59,7 @@ Show how closely the template CSS matches the department’s master CSS.
    - Mismatched values: penalty
 4) Score:
    - `score = max(0, 100 - (missing*2 + extra*1 + mismatch*3))`
+   - `passingStyleScore = department.passingStyleScore (inherited; default 80 when unset)`
 5) Display top diffs (highest penalty first)
 
 ## Approval UX

@@ -88,6 +88,7 @@ export interface IMasterTemplate extends Document {
   score?: {
     value: number;
     comparedToVersion: number;
+    passingStyleScore?: number;
     diffs: Array<{
       selector: string;
       property: string;
@@ -226,6 +227,7 @@ export interface IDepartment extends Document {
   level: 'master' | 'top' | 'sub';
   parent?: Types.ObjectId | null;
   ancestors?: Types.ObjectId[];
+  passingStyleScore?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -221,5 +221,6 @@ export const departmentUpdate = {
   body: Joi.object({
     name: Joi.string().trim(),
     code: Joi.string().trim(),
+    passingStyleScore: Joi.number().min(0).max(100).allow(null),
   }).min(1),
 };

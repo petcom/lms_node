@@ -49,10 +49,10 @@ describe('Teacher Phase 2: Packages & Assignments', () => {
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
-      name: 'Teacher One',
+      name: 'Staff One',
       email: 'teacher1@example.com',
       password: 'password',
-      role: 'teacher',
+      role: 'staff',
     });
 
     await Admin.create({

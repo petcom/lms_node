@@ -62,7 +62,7 @@ export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   if (
     studentRef &&
     studentRef.toString() !== userId.toString() &&
-    userRole !== 'teacher' &&
+    userRole !== 'staff' &&
     userRole !== 'admin'
   ) {
     res.status(403);

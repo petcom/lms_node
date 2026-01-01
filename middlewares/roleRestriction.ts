@@ -13,7 +13,7 @@ import { UserRole } from '../types/auth';
  * router.get('/admin-only', isAuthenticated(), roleRestriction('admin'), controller);
  *
  * // Multiple roles
- * router.get('/staff-only', isAuthenticated(), roleRestriction('admin', 'teacher'), controller);
+ * router.get('/staff-only', isAuthenticated(), roleRestriction('admin', 'staff'), controller);
  */
 const roleRestriction = (...roles: UserRole[]) => {
   // Validate that all provided roles are valid
@@ -45,7 +45,7 @@ const roleRestriction = (...roles: UserRole[]) => {
 /**
  * Shorthand middleware for Teacher or Admin access
  */
-export const isTeacherOrAdmin = roleRestriction('teacher', 'admin');
+export const isTeacherOrAdmin = roleRestriction('staff', 'admin');
 
 /**
  * Shorthand middleware for Admin only access

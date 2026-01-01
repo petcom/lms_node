@@ -25,7 +25,7 @@ const serializePackage = (pkg: any) => {
 const ensureOwnership = (pkg: any, req: Request) => {
   const role = req.userAuth!.role;
   const userId = req.userAuth!._id?.toString();
-  if (role === 'teacher' && pkg.uploadedBy?.toString() !== userId) {
+  if (role === 'staff' && pkg.uploadedBy?.toString() !== userId) {
     throw new NotFoundError('SCORM package not found');
   }
 };
@@ -93,7 +93,7 @@ export const listTeacherClasses = asyncHandler(async (req: Request, res: Respons
   if (search) {
     classFilter.name = { $regex: search, $options: 'i' };
   }
-  if (role === 'teacher') {
+  if (role === 'staff') {
     classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
   }
 
@@ -187,7 +187,7 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
-  if (role === 'teacher') {
+  if (role === 'staff') {
     classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
   }
 
@@ -212,7 +212,7 @@ export const teacherDashboard = asyncHandler(async (req: Request, res: Response)
   const passRate = totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0;
 
   const activePackages = await ScormPackage.countDocuments(
-    role === 'teacher'
+    role === 'staff'
       ? { uploadedBy: new mongoose.Types.ObjectId(teacherId), isPublished: true }
       : { isPublished: true }
   );
@@ -234,7 +234,7 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
-  if (role === 'teacher') {
+  if (role === 'staff') {
     classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
   }
 
@@ -242,7 +242,7 @@ export const listTeacherAttempts = asyncHandler(async (req: Request, res: Respon
   const allowedClassIds = classes.map((c) => c._id.toString());
 
   const filterClassId = req.query.classId as string | undefined;
-  if (filterClassId && !allowedClassIds.includes(filterClassId) && role === 'teacher') {
+  if (filterClassId && !allowedClassIds.includes(filterClassId) && role === 'staff') {
     throw new NotFoundError('Class not found');
   }
 
@@ -312,7 +312,7 @@ export const listTeacherAssignments = asyncHandler(async (req: Request, res: Res
   const role = req.userAuth!.role;
 
   const classFilter: any = {};
-  if (role === 'teacher') {
+  if (role === 'staff') {
     classFilter.teachers = new mongoose.Types.ObjectId(teacherId);
   }
 
@@ -324,14 +324,14 @@ export const listTeacherAssignments = asyncHandler(async (req: Request, res: Res
   }, {});
 
   const filterClassId = req.query.classId as string | undefined;
-  if (filterClassId && !allowedClassIds.includes(filterClassId) && role === 'teacher') {
+  if (filterClassId && !allowedClassIds.includes(filterClassId) && role === 'staff') {
     throw new NotFoundError('Class not found');
   }
 
   const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
 
   const pkgFilter: any = { 'assignedTo.classLevels': { $in: classIdsToUse } };
-  if (role === 'teacher') {
+  if (role === 'staff') {
     pkgFilter.uploadedBy = new mongoose.Types.ObjectId(teacherId);
   }
 
@@ -379,7 +379,7 @@ export const listTeacherPackages = asyncHandler(async (req: Request, res: Respon
   const userId = req.userAuth!._id?.toString();
 
   const filters: any = {};
-  if (role === 'teacher') {
+  if (role === 'staff') {
     filters.uploadedBy = asObjectId(userId);
   }
 
@@ -482,7 +482,7 @@ export const assignTeacherPackage = asyncHandler(async (req: Request, res: Respo
   );
 
   if (ownedClasses.length !== classIds.length) {
-    throw new NotFoundError('One or more classes not found for this teacher');
+    throw new NotFoundError('One or more classes not found for this staff member');
   }
 
   const assigned = pkg.assignedTo || { students: [], classLevels: [], programs: [] };

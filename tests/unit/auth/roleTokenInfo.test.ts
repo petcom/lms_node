@@ -16,11 +16,11 @@ describe('Auth role propagation', () => {
   });
 
   it('returns role from token-info endpoint', async () => {
-    const token = generateToken('user-456', 'teacher');
+    const token = generateToken('user-456', 'staff');
 
     const req = {
       token,
-      userAuth: { role: 'teacher' },
+      userAuth: { role: 'staff' },
     } as unknown as Request;
 
     const json = jest.fn();
@@ -33,7 +33,7 @@ describe('Auth role propagation', () => {
     expect(json).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'success',
-        data: expect.objectContaining({ role: 'teacher', userId: 'user-456' }),
+        data: expect.objectContaining({ role: 'staff', userId: 'user-456' }),
       })
     );
   });

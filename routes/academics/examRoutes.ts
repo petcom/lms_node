@@ -60,10 +60,10 @@ const examRouter: Router = express.Router();
  */
 examRouter
   .route('/')
-  .post(isAuthenticated(), roleRestriction('teacher'), createExam)
+  .post(isAuthenticated(), roleRestriction('staff'), createExam)
   .get(
     isAuthenticated(),
-    roleRestriction('teacher'),
+    roleRestriction('staff'),
     advancedResults(Exam, {
       path: 'questions',
       populate: {
@@ -123,8 +123,8 @@ examRouter
  */
 examRouter
   .route('/:id')
-  .get(isAuthenticated(), roleRestriction('teacher'), getExam)
-  .put(isAuthenticated(), roleRestriction('teacher'), updateExam)
-  .delete(isAuthenticated(), roleRestriction('teacher'), deleteExam);
+  .get(isAuthenticated(), roleRestriction('staff'), getExam)
+  .put(isAuthenticated(), roleRestriction('staff'), updateExam)
+  .delete(isAuthenticated(), roleRestriction('staff'), deleteExam);
 
 export default examRouter;

@@ -2,7 +2,7 @@
 import { Document, Types, Model } from 'mongoose';
 
 // User role types
-export type UserRole = 'admin' | 'teacher' | 'student';
+export type UserRole = 'admin' | 'staff' | 'student';
 
 // Admin Interface
 export interface IAdmin extends Document {
@@ -34,7 +34,7 @@ export interface IStaff extends Document {
   teacherId?: string;
   isWithdrawn: boolean;
   isSuspended: boolean;
-  role: 'teacher';
+  role: 'staff';
   roles?: string[];
   subject?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
@@ -53,6 +53,51 @@ export interface IStaffRole extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Department Master CSS Interface
+export interface IDepartmentMasterCSS extends Document {
+  _id: Types.ObjectId;
+  departmentId: Types.ObjectId;
+  css: string;
+  version: number;
+  updatedBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Master Template Interface
+export interface IMasterTemplate extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  type: 'scorm' | 'custom' | 'hybrid';
+  departmentId?: Types.ObjectId;
+  isGlobal: boolean;
+  css?: string;
+  layout?: {
+    grid?: string;
+    regions: Array<{
+      id: string;
+      kind: 'scorm' | 'custom';
+      title: string;
+    }>;
+  };
+  score?: {
+    value: number;
+    comparedToVersion: number;
+    diffs: Array<{
+      selector: string;
+      property: string;
+      expected?: string;
+      actual?: string;
+    }>;
+  };
+  overrideStatus: 'inherited' | 'pending' | 'approved';
+  status: 'draft' | 'published' | 'archived';
+  createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

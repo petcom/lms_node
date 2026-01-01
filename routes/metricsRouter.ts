@@ -5,6 +5,6 @@ import { getMetricsSummary } from '../controller/metricsCtrl';
 
 const metricsRouter = express.Router();
 
-metricsRouter.get('/', isAuthenticated(), roleRestriction('admin', 'teacher'), getMetricsSummary);
+metricsRouter.get('/', isAuthenticated(), roleRestriction('admin', 'staff'), getMetricsSummary);
 
 export default metricsRouter;

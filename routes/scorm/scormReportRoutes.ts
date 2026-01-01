@@ -20,7 +20,7 @@ import roleRestriction, { isTeacherOrAdmin } from '../../middlewares/roleRestric
 import { cachePrivate } from '../../middlewares/caching';
 import departmentScope from '../../middlewares/departmentScope';
 
-const isTeacher = roleRestriction('teacher');
+const isTeacher = roleRestriction('staff');
 
 const router = express.Router();
 
@@ -29,7 +29,7 @@ const router = express.Router();
  * GET /api/v1/scorm/reports/student/:studentId
  *
  * Get progress across all SCORM packages for a student
- * Students can view their own, Teachers/Admins can view any
+ * Students can view their own, Staff/Admins can view any
  * Cached for 2 minutes (student data changes frequently)
  */
 router.get(
@@ -44,7 +44,7 @@ router.get(
  * Package Analytics
  * GET /api/v1/scorm/reports/package/:packageId/analytics
  *
- * Get analytics for a specific package (teacher/admin only)
+ * Get analytics for a specific package (staff/admin only)
  * Includes completion rates, score distribution, time analysis
  * Cached for 5 minutes (analytics data doesn't change rapidly)
  */
@@ -78,7 +78,7 @@ router.get(
  * GET /api/v1/scorm/reports/export
  *
  * Export tracking data in various formats (JSON, CSV, XLSX)
- * Teacher/Admin only
+ * Staff/Admin only
  * No caching (generates fresh export each time)
  */
 router.get('/export', isAuthenticated, departmentScope(), isTeacherOrAdmin, exportTrackingData);
@@ -88,7 +88,7 @@ router.get('/export', isAuthenticated, departmentScope(), isTeacherOrAdmin, expo
  * GET /api/v1/scorm/reports/completion/:packageId
  *
  * Get completion rates over time for a package
- * Teacher/Admin only
+ * Staff/Admin only
  * Cached for 5 minutes
  */
 router.get(
@@ -105,7 +105,7 @@ router.get(
  * GET /api/v1/scorm/reports/scores/:packageId
  *
  * Get score distribution and statistics for a package
- * Teacher/Admin only
+ * Staff/Admin only
  * Cached for 5 minutes
  */
 router.get(

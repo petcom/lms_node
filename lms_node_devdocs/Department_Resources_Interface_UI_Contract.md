@@ -10,7 +10,7 @@ Base URL: `/api/v1/department-resources`
 GET `/staffusers`
 
 Query:
-- `type=teacher|dept-admin|staff` (optional)
+- `type=teacher|dept-admin|staff` (optional; `teacher` is an alias for staff users)
 - `departmentId=<ObjectId>` (optional; system admin only)
 - `page`, `limit` (optional)
 
@@ -24,7 +24,7 @@ Response:
       "id": "user-id",
       "name": "Full Name",
       "email": "email@example.com",
-      "role": "admin" | "dept-admin" | "teacher" | "staff",
+      "role": "admin" | "dept-admin" | "staff",
       "department": {
         "id": "dept-id",
         "name": "Department Name",
@@ -51,15 +51,12 @@ Response:
   "status": "success",
   "message": "Staff department updated successfully",
   "data": {
-    "id": "user-id",
-    "role": "admin" | "dept-admin" | "teacher" | "staff",
-    "department": {
-      "id": "dept-id",
-      "name": "Department Name",
-      "code": "DEPT",
-      "parentId": "parent-id" | null,
-      "level": 0 | 1 | 2
-    } | null
+    "_id": "user-id",
+    "name": "Full Name",
+    "email": "email@example.com",
+    "role": "staff",
+    "roles": ["instructor","content-admin","department-admin","billing-admin"],
+    "department": "<ObjectId>" | null
   }
 }
 ```
@@ -69,7 +66,7 @@ PATCH `/staffusers/:id/role`
 
 Body:
 ```
-{ "role": "dept-admin" | "teacher" | "staff" }
+{ "roles": ["instructor","content-admin","department-admin","billing-admin"] }
 ```
 
 Response:
@@ -78,15 +75,12 @@ Response:
   "status": "success",
   "message": "Staff role updated successfully",
   "data": {
-    "id": "user-id",
-    "role": "admin" | "dept-admin" | "teacher" | "staff",
-    "department": {
-      "id": "dept-id",
-      "name": "Department Name",
-      "code": "DEPT",
-      "parentId": "parent-id" | null,
-      "level": 0 | 1 | 2
-    } | null
+    "_id": "user-id",
+    "name": "Full Name",
+    "email": "email@example.com",
+    "role": "staff",
+    "roles": ["instructor","content-admin","department-admin","billing-admin"],
+    "department": "<ObjectId>" | null
   }
 }
 ```
@@ -127,6 +121,55 @@ Notes:
 - `customType` is present only when `type=custom`.
 - `type=scorm` items omit `customType`.
 
+## Content (Create)
+POST `/content`
+
+Body (custom exam only):
+```
+{
+  "type": "custom",
+  "title": "Content Title",
+  "description": "Content description",
+  "customType": "exam" | "quiz" | "practice" | "other",
+  "subject": "<ObjectId>",
+  "program": "<ObjectId>",
+  "classLevel": "<ObjectId>",
+  "academicTerm": "<ObjectId>",
+  "academicYear": "<ObjectId>",
+  "passMark": 30,
+  "totalMark": 100,
+  "duration": "30 minutes",
+  "examDate": "2025-01-01T00:00:00Z",
+  "examTime": "10:00",
+  "examStatus": "pending" | "live"
+}
+```
+
+## Content (Update)
+PATCH `/content/:id`
+
+Body:
+```
+{
+  "type": "scorm" | "custom",
+  "title": "Content Title",
+  "description": "Content description",
+  "departmentId": "<ObjectId>" | null,
+  "subject": "<ObjectId>",
+  "program": "<ObjectId>",
+  "classLevel": "<ObjectId>",
+  "academicTerm": "<ObjectId>",
+  "academicYear": "<ObjectId>",
+  "customType": "exam" | "quiz" | "practice" | "other",
+  "passMark": 30,
+  "totalMark": 100,
+  "duration": "30 minutes",
+  "examDate": "2025-01-01T00:00:00Z",
+  "examTime": "10:00",
+  "examStatus": "pending" | "live"
+}
+```
+
 ## Departments (Tree)
 GET `/departments`
 
@@ -148,3 +191,84 @@ Response:
 }
 ```
 
+## Programs
+POST `/programs`
+
+Body:
+```
+{
+  "name": "Program Name",
+  "description": "Program description",
+  "duration": "4 years",
+  "code": "PRG01",
+  "departmentId": "<ObjectId>"
+}
+```
+
+PATCH `/programs/:id`
+
+Body:
+```
+{
+  "name": "Program Name",
+  "description": "Program description",
+  "duration": "4 years",
+  "code": "PRG01"
+}
+```
+
+PATCH `/programs/:id/department`
+
+Body:
+```
+{ "departmentId": "<ObjectId>" | null }
+```
+
+## Courses (Subjects)
+POST `/courses`
+
+Body:
+```
+{
+  "name": "Course Name",
+  "description": "Course description",
+  "duration": "3 months",
+  "academicYear": "<ObjectId>",
+  "departmentId": "<ObjectId>",
+  "programId": "<ObjectId>"
+}
+```
+
+PATCH `/courses/:id`
+
+Body:
+```
+{
+  "name": "Course Name",
+  "description": "Course description",
+  "duration": "3 months",
+  "academicYear": "<ObjectId>"
+}
+```
+
+PATCH `/courses/:id/department`
+
+Body:
+```
+{ "departmentId": "<ObjectId>" | null }
+```
+
+PATCH `/courses/:id/program`
+
+Body:
+```
+{ "programId": "<ObjectId>" | null }
+```
+
+## Departments (Update)
+PATCH `/departments/:id`
+
+Body:
+```
+{ "name": "Department Name", "code": "DEPT" }
+```

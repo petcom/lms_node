@@ -52,7 +52,7 @@ const staffSchema = new Schema<IStaff>(
     },
     role: {
       type: String,
-      default: 'teacher',
+      default: 'staff',
     },
     roles: {
       type: [String],

@@ -23,7 +23,7 @@ const tokenBlacklistSchema = new Schema<ITokenBlacklist, ITokenBlacklistModel>(
     userType: {
       type: String,
       required: true,
-      enum: ['admin', 'teacher', 'student'],
+      enum: ['admin', 'staff', 'student'],
     },
     reason: {
       type: String,
@@ -55,7 +55,7 @@ tokenBlacklistSchema.statics.blacklistToken = async function (
   this: ITokenBlacklistModel,
   token: string,
   userId: string,
-  userType: 'admin' | 'teacher' | 'student',
+  userType: 'admin' | 'staff' | 'student',
   reason:
     | 'logout'
     | 'password_change'

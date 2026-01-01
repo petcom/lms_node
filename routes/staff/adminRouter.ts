@@ -226,7 +226,7 @@ adminRouter.put(
  * @swagger
  * /api/v1/admins/suspend/staff/{id}:
  *   put:
- *     summary: Suspend a teacher
+ *     summary: Suspend a staff member
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -258,7 +258,7 @@ adminRouter.put(
  * @swagger
  * /api/v1/admins/unsuspend/staff/{id}:
  *   put:
- *     summary: Unsuspend a teacher
+ *     summary: Unsuspend a staff member
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -290,7 +290,7 @@ adminRouter.put(
  * @swagger
  * /api/v1/admins/withdraw/staff/{id}:
  *   put:
- *     summary: Withdraw a teacher
+ *     summary: Withdraw a staff member
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -322,7 +322,7 @@ adminRouter.put(
  * @swagger
  * /api/v1/admins/unwithdraw/staff/{id}:
  *   put:
- *     summary: Unwithdraw a teacher
+ *     summary: Unwithdraw a staff member
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []

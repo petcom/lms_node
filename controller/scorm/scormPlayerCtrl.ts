@@ -46,8 +46,8 @@ export const launchPlayer = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if package is published (unless admin/teacher)
-    if (scormPackage.status !== 'published' && !['admin', 'teacher'].includes(userRole)) {
+    // Check if package is published (unless admin/staff)
+    if (scormPackage.status !== 'published' && !['admin', 'staff'].includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: 'Package is not published',

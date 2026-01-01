@@ -5,9 +5,9 @@ import { UserRole } from '../types/auth';
  * Centralized definition of all system roles
  * Use these constants throughout the application for consistency
  */
-export const ROLES: Record<'ADMIN' | 'TEACHER' | 'STUDENT', UserRole> = {
+export const ROLES: Record<'ADMIN' | 'STAFF' | 'STUDENT', UserRole> = {
   ADMIN: 'admin',
-  TEACHER: 'teacher',
+  STAFF: 'staff',
   STUDENT: 'student',
 } as const;
 
@@ -17,7 +17,7 @@ export const ROLES: Record<'ADMIN' | 'TEACHER' | 'STUDENT', UserRole> = {
  */
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   student: 1,
-  teacher: 2,
+  staff: 2,
   admin: 3,
 };
 
@@ -70,7 +70,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'suspend_users',
     'withdraw_users',
   ],
-  teacher: [
+  staff: [
     'create_exams',
     'update_own_exams',
     'delete_own_exams',

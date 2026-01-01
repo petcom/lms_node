@@ -28,10 +28,10 @@ describe('Admin teacher status actions', () => {
 
     await Staff.create({
       _id: teacherId,
-      name: 'Teacher User',
+      name: 'Staff User',
       email: 'teacher@example.com',
       password: await hashPassword('Password123!'),
-      role: 'teacher',
+      role: 'staff',
       isSuspended: false,
       isWithdrawn: false,
     });

@@ -281,7 +281,7 @@ test('roleRestriction accepts multiple roles', () => {
   if (typeof roleRestriction !== 'function') {
     throw new Error('roleRestriction should export a function');
   }
-  const middleware = roleRestriction('admin', 'teacher');
+  const middleware = roleRestriction('admin', 'staff');
   if (typeof middleware !== 'function') {
     throw new Error('roleRestriction(...roles) should return middleware function');
   }
@@ -292,7 +292,7 @@ test('roles.js exports required constants', () => {
   if (!roles.ROLES || !roles.ROLE_HIERARCHY || !roles.ROLE_PERMISSIONS) {
     throw new Error('roles.js missing required exports');
   }
-  if (roles.ROLES.ADMIN !== 'admin' || roles.ROLES.TEACHER !== 'teacher' || roles.ROLES.STUDENT !== 'student') {
+  if (roles.ROLES.ADMIN !== 'admin' || roles.ROLES.STAFF !== 'staff' || roles.ROLES.STUDENT !== 'student') {
     throw new Error('ROLES constants have incorrect values');
   }
 });
@@ -315,8 +315,8 @@ test('isValidRole correctly validates roles', () => {
   if (!isValidRole('admin')) {
     throw new Error('admin should be a valid role');
   }
-  if (!isValidRole('teacher')) {
-    throw new Error('teacher should be a valid role');
+  if (!isValidRole('staff')) {
+    throw new Error('staff should be a valid role');
   }
   if (!isValidRole('student')) {
     throw new Error('student should be a valid role');
@@ -335,7 +335,7 @@ test('getAllRoles returns all role values', () => {
   if (allRoles.length !== 3) {
     throw new Error('Should have exactly 3 roles');
   }
-  if (!allRoles.includes('admin') || !allRoles.includes('teacher') || !allRoles.includes('student')) {
+  if (!allRoles.includes('admin') || !allRoles.includes('staff') || !allRoles.includes('student')) {
     throw new Error('getAllRoles missing required role values');
   }
 });

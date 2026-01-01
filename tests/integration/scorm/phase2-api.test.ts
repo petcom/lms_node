@@ -56,14 +56,14 @@ describe('SCORM Phase 2: Package Management API', () => {
         process.env.MONGO_TEST_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/lms-test';
       await mongoose.connect(uri);
     }
-    // Seed a teacher user so uploadedBy populate returns data
+    // Seed a staff user so uploadedBy populate returns data
     await Staff.deleteMany({ email: 'teacher@example.com' });
     const teacher = await Staff.create({
       _id: new mongoose.Types.ObjectId(teacherId),
-      name: 'Test Teacher',
+      name: 'Test Staff',
       email: 'teacher@example.com',
       password: 'password123',
-      role: 'teacher',
+      role: 'staff',
     });
   });
 
@@ -89,7 +89,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       expect(adminToken).toBeDefined();
     });
 
-    it('should create teacher user and get token', async () => {
+    it('should create staff user and get token', async () => {
       teacherToken = 'test-teacher-token';
       expect(teacherToken).toBeDefined();
     });

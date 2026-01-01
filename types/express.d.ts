@@ -14,7 +14,7 @@ declare global {
       };
 
       // User type for multi-tenant auth
-      userType?: 'admin' | 'teacher' | 'student';
+      userType?: 'admin' | 'staff' | 'student';
 
       // JWT token from authorization header
       token?: string;

@@ -24,7 +24,7 @@ interface ChangePasswordRequestBody {
 
 interface ForgotPasswordRequestBody {
   email: string;
-  userType: 'admin' | 'teacher' | 'student';
+  userType: 'admin' | 'staff' | 'student';
 }
 
 interface ResetPasswordRequestBody {
@@ -38,7 +38,7 @@ interface ValidatePasswordRequestBody {
 
 interface ResetTokenData {
   userId: Types.ObjectId;
-  userType: 'admin' | 'teacher' | 'student';
+  userType: 'admin' | 'staff' | 'student';
   expiresAt: number;
 }
 
@@ -181,7 +181,7 @@ export const forgotPassword = AsyncHandler(
       case 'admin':
         user = await Admin.findOne({ email });
         break;
-      case 'teacher':
+      case 'staff':
         user = await Staff.findOne({ email });
         break;
       case 'student':
@@ -190,7 +190,7 @@ export const forgotPassword = AsyncHandler(
       default:
         res.status(400).json({
           status: 'failed',
-          message: 'Invalid user type. Must be: admin, teacher, or student',
+          message: 'Invalid user type. Must be: admin, staff, or student',
         });
         return;
     }
@@ -297,7 +297,7 @@ export const resetPassword = AsyncHandler(
       case 'admin':
         user = await Admin.findById(tokenData.userId);
         break;
-      case 'teacher':
+      case 'staff':
         user = await Staff.findById(tokenData.userId);
         break;
       case 'student':

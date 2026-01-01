@@ -15,12 +15,12 @@ const questionsRouter: Router = express.Router();
 questionsRouter.get(
   '/',
   isAuthenticated(),
-  roleRestriction('teacher'),
+  roleRestriction('staff'),
   advancedResults(Question),
   getQuestions
 );
-questionsRouter.get('/:id', isAuthenticated(), roleRestriction('teacher'), getQuestion);
-questionsRouter.post('/:examID', isAuthenticated(), roleRestriction('teacher'), createQuestion);
-questionsRouter.put('/:id', isAuthenticated(), roleRestriction('teacher'), updateQuestion);
+questionsRouter.get('/:id', isAuthenticated(), roleRestriction('staff'), getQuestion);
+questionsRouter.post('/:examID', isAuthenticated(), roleRestriction('staff'), createQuestion);
+questionsRouter.put('/:id', isAuthenticated(), roleRestriction('staff'), updateQuestion);
 
 export default questionsRouter;

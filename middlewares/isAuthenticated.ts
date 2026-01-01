@@ -37,7 +37,7 @@ const isAuthenticated = () => {
             department: bypassDepartmentId,
           },
           'test-teacher-token': {
-            role: 'teacher',
+            role: 'staff',
             id: '0000000000000000000000b1',
             department: bypassDepartmentId,
           },

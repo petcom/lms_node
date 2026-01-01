@@ -21,7 +21,7 @@ import {
 const scormRuntimeRouter = express.Router();
 
 scormRuntimeRouter.use(isAuthenticated());
-scormRuntimeRouter.use(roleRestriction('admin', 'teacher', 'student'));
+scormRuntimeRouter.use(roleRestriction('admin', 'staff', 'student'));
 
 // Initialize session
 scormRuntimeRouter.post('/:attemptId/initialize', initializeSession);

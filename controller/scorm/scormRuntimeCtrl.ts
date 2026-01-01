@@ -150,7 +150,7 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
     return;
   }
 
-  // Allow unauthenticated/admin/teacher to bypass ownership while testing
+  // Allow unauthenticated/admin/staff to bypass ownership while testing
   const skipOwnership = !user || (userRole && userRole !== 'student');
 
   // Verify student owns this attempt when required

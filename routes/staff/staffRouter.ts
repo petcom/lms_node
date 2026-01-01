@@ -31,56 +31,56 @@ const staffRouter: Router = express.Router();
 staffRouter.post(
   '/packages/:id/publish',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   publishTeacherPackage
 );
 
 staffRouter.post(
   '/packages/:id/unpublish',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   unpublishTeacherPackage
 );
 
 staffRouter.get(
   '/packages',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   listTeacherPackages
 );
 
 staffRouter.post(
   '/assignments/assign',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   assignTeacherPackage
 );
 
 staffRouter.get(
   '/classes',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   listTeacherClasses
 );
 
 staffRouter.get(
   '/dashboard',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   teacherDashboard
 );
 
 staffRouter.get(
   '/attempts',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   listTeacherAttempts
 );
 
 staffRouter.get(
   '/assignments',
   isAuthenticated(),
-  roleRestriction('teacher', 'admin'),
+  roleRestriction('staff', 'admin'),
   listTeacherAssignments
 );
 
@@ -168,7 +168,7 @@ staffRouter.post(
  *                       type: string
  *                     role:
  *                       type: string
- *                       enum: [teacher]
+ *                       enum: [staff]
  *       400:
  *         description: Invalid credentials
  */
@@ -201,7 +201,7 @@ staffRouter.get(
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-staffRouter.get('/profile', isAuthenticated(), roleRestriction('teacher'), getStaffProfile);
+staffRouter.get('/profile', isAuthenticated(), roleRestriction('staff'), getStaffProfile);
 
 staffRouter.get(
   '/:staffID/admin',
@@ -213,7 +213,7 @@ staffRouter.put(
   '/:staffID/update',
   isAuthenticated(),
   departmentScope(),
-  roleRestriction('teacher'),
+  roleRestriction('staff'),
   staffUpdateProfile
 );
 staffRouter.put(

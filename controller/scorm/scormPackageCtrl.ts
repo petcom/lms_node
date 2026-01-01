@@ -91,12 +91,12 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   // Generate unique package ID
   const packageId = uuidv4();
 
-  const roleModelMap: Record<string, 'Admin' | 'Staff' | 'Teacher' | 'Student'> = {
+  const roleModelMap: Record<string, 'Admin' | 'Staff' | 'Student'> = {
     admin: 'Admin',
-    teacher: 'Staff',
+    staff: 'Staff',
     student: 'Student',
   };
-  const uploadedByModel = roleModelMap[req.userAuth?.role || 'teacher'] || 'Staff';
+  const uploadedByModel = roleModelMap[req.userAuth?.role || 'staff'] || 'Staff';
 
   try {
     // Extract package
@@ -284,7 +284,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     if (!ownerValue || !mongoose.isValidObjectId(ownerValue)) {
       throw new ValidationError('Invalid owner');
     }
-    if (role === 'teacher' && ownerValue !== userId) {
+    if (role === 'staff' && ownerValue !== userId) {
       throw new AuthorizationError('Access denied for this owner filter');
     }
     query.uploadedBy = new mongoose.Types.ObjectId(ownerValue);
@@ -300,16 +300,16 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     query.department = new mongoose.Types.ObjectId(department as any);
   }
 
-  // Teacher registry scoping: only own packages or global, plus optional department scope
-  if (role === 'teacher' && userId) {
-    const teacherScope: any = {
+  // Staff registry scoping: only own packages or global, plus optional department scope
+  if (role === 'staff' && userId) {
+    const staffScope: any = {
       $or: [{ uploadedBy: new mongoose.Types.ObjectId(userId) }, { isGlobal: true }],
     };
     if (scope && scope !== 'all') {
-      teacherScope.$or.push({ department: { $in: scope } });
+      staffScope.$or.push({ department: { $in: scope } });
     }
     query.$and = query.$and || [];
-    query.$and.push(teacherScope);
+    query.$and.push(staffScope);
   }
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -659,8 +659,8 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response): 
     throw new AuthorizationError('Access to this package is not permitted for your department');
   }
 
-  // Visibility/ownership check for teachers
-  if (role === 'teacher' && scormPackage.uploadedBy?.toString() !== userId) {
+  // Visibility/ownership check for staff
+  if (role === 'staff' && scormPackage.uploadedBy?.toString() !== userId) {
     throw new NotFoundError('SCORM package not found');
   }
 
@@ -701,8 +701,8 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
     throw new AuthorizationError('Access to this package is not permitted for your department');
   }
 
-  // Visibility/ownership check for teachers
-  if (role === 'teacher' && scormPackage.uploadedBy?.toString() !== userId) {
+  // Visibility/ownership check for staff
+  if (role === 'staff' && scormPackage.uploadedBy?.toString() !== userId) {
     throw new NotFoundError('SCORM package not found');
   }
 

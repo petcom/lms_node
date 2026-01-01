@@ -114,7 +114,7 @@ export const loginStaff = expressAsyncHandler(
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
     } else {
-      const role = staff.role || 'teacher';
+      const role = staff.role || 'staff';
       const accessToken = generateToken(staff._id.toString(), role);
 
       res.status(200).json({

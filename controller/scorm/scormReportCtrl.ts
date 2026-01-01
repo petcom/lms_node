@@ -43,7 +43,7 @@ const isPackageAccessible = (
     return !!pkgDept && scope.includes(pkgDept);
   }
 
-  if (role === 'teacher') {
+  if (role === 'staff') {
     const owner = pkg.uploadedBy?.toString?.();
     if (owner && owner === userId) return true;
     if (scope && scope !== 'all') {
@@ -238,7 +238,7 @@ export const getStudentProgress = async (req: Request, res: Response) => {
 };
 
 /**
- * Get package analytics for teachers
+ * Get package analytics for staff
  * GET /api/v1/scorm/reports/package/:packageId/analytics
  */
 export const getPackageAnalytics = async (req: Request, res: Response) => {
@@ -437,7 +437,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
       throw new AuthorizationError('Access denied for this attempt');
     }
 
-    if ((role === 'teacher' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+    if ((role === 'staff' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
       throw new AuthorizationError('Access denied for this package');
     }
 
@@ -488,8 +488,8 @@ export const exportTrackingData = async (req: Request, res: Response) => {
     const userId = req.userAuth?._id?.toString();
     const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
-    if (role !== 'teacher' && role !== 'admin') {
-      throw new AuthorizationError('Only teachers or admins can export tracking data');
+    if (role !== 'staff' && role !== 'admin') {
+      throw new AuthorizationError('Only staff or admins can export tracking data');
     }
 
     const { start, end } = parseDateRange(startDate as string, endDate as string);
@@ -892,7 +892,7 @@ export const getInteractionData = async (req: Request, res: Response) => {
     }
 
     const pkg = attempt.package as any;
-    if ((role === 'teacher' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
+    if ((role === 'staff' || role === 'admin') && !isPackageAccessible(pkg, role, userId, scope)) {
       throw new AuthorizationError('Access denied for this package');
     }
 

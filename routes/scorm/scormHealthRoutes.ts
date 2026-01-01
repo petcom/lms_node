@@ -13,7 +13,7 @@ const router = express.Router();
 router.get('/health', getHealthStatus);
 
 // Protected metrics endpoints
-router.get('/metrics', isAuthenticated(), roleRestriction('admin', 'teacher'), getMetrics);
+router.get('/metrics', isAuthenticated(), roleRestriction('admin', 'staff'), getMetrics);
 router.post('/metrics/reset', isAuthenticated(), roleRestriction('admin'), resetMetrics);
 
 export default router;

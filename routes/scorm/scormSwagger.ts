@@ -414,7 +414,7 @@
  *
  * /api/v1/scorm/reports/package/{packageId}/analytics:
  *   get:
- *     summary: Get package analytics (teacher/admin)
+ *     summary: Get package analytics (staff/admin)
  *     tags: [SCORM - Reports]
  *     security:
  *       - bearerAuth: []

@@ -1,4 +1,4 @@
-# Department Resources UI Contract
+# Department Resources Interface UI Contract
 
 Base URL: `/api/v1/department-resources`
 
@@ -6,11 +6,11 @@ Base URL: `/api/v1/department-resources`
 - Requires `Authorization: Bearer <token>`
 - Roles: system admin or department admin (scoped)
 
-## Staff Users
+## Staff Users (List)
 GET `/staffusers`
 
 Query:
-- `type=staff` (optional)
+- `type=teacher|dept-admin|staff` (optional)
 - `departmentId=<ObjectId>` (optional; system admin only)
 - `page`, `limit` (optional)
 
@@ -24,7 +24,7 @@ Response:
       "id": "user-id",
       "name": "Full Name",
       "email": "email@example.com",
-      "roles": ["instructor","content-admin","department-admin","billing-admin"],
+      "role": "admin" | "dept-admin" | "teacher" | "staff",
       "department": {
         "id": "dept-id",
         "name": "Department Name",
@@ -37,7 +37,61 @@ Response:
 }
 ```
 
-## Content
+## Staff Users (Update Department)
+PATCH `/staffusers/:id/department`
+
+Body:
+```
+{ "departmentId": "<ObjectId>" | null }
+```
+
+Response:
+```
+{
+  "status": "success",
+  "message": "Staff department updated successfully",
+  "data": {
+    "id": "user-id",
+    "role": "admin" | "dept-admin" | "teacher" | "staff",
+    "department": {
+      "id": "dept-id",
+      "name": "Department Name",
+      "code": "DEPT",
+      "parentId": "parent-id" | null,
+      "level": 0 | 1 | 2
+    } | null
+  }
+}
+```
+
+## Staff Users (Update Role/Admin Privileges)
+PATCH `/staffusers/:id/role`
+
+Body:
+```
+{ "role": "dept-admin" | "teacher" | "staff" }
+```
+
+Response:
+```
+{
+  "status": "success",
+  "message": "Staff role updated successfully",
+  "data": {
+    "id": "user-id",
+    "role": "admin" | "dept-admin" | "teacher" | "staff",
+    "department": {
+      "id": "dept-id",
+      "name": "Department Name",
+      "code": "DEPT",
+      "parentId": "parent-id" | null,
+      "level": 0 | 1 | 2
+    } | null
+  }
+}
+```
+
+## Content (List)
 GET `/content`
 
 Query:
@@ -94,60 +148,3 @@ Response:
 }
 ```
 
-## Related Endpoints (Existing)
-- `GET /api/v1/departments` returns `{ items: [...] }` (flat list)
-- `GET /api/v1/departments/hierarchy` returns `{ items: [...] }` (tree)
-
-## Staff Users (Update Department)
-PATCH `/staffusers/:id/department`
-
-Body:
-```
-{ "departmentId": "<ObjectId>" | null }
-```
-
-Response:
-```
-{
-  "status": "success",
-  "message": "Staff department updated successfully",
-  "data": {
-    "id": "user-id",
-    "roles": ["instructor","content-admin","department-admin","billing-admin"],
-    "department": {
-      "id": "dept-id",
-      "name": "Department Name",
-      "code": "DEPT",
-      "parentId": "parent-id" | null,
-      "level": 0 | 1 | 2
-    } | null
-  }
-}
-```
-
-## Staff Users (Update Roles)
-PATCH `/staffusers/:id/roles`
-
-Body:
-```
-{ "roles": ["instructor","content-admin","department-admin","billing-admin"] }
-```
-
-Response:
-```
-{
-  "status": "success",
-  "message": "Staff roles updated successfully",
-  "data": {
-    "id": "user-id",
-    "roles": ["instructor","content-admin","department-admin","billing-admin"],
-    "department": {
-      "id": "dept-id",
-      "name": "Department Name",
-      "code": "DEPT",
-      "parentId": "parent-id" | null,
-      "level": 0 | 1 | 2
-    } | null
-  }
-}
-```

@@ -14,7 +14,7 @@ import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import LearnerProgress from '../../model/Content/LearnerProgress';
-import ContentAttempt from '../../model/Content/ContentAttempt';
+import { syncContentAttemptFromScorm } from '../../utils/scorm/contentAttemptSync';
 import {
   validateCMIElement,
   isReadOnly,
@@ -95,29 +95,7 @@ const persistScormProgress = async (attempt: any): Promise<void> => {
     { upsert: true, new: true }
   );
 
-  await ContentAttempt.findOneAndUpdate(
-    {
-      learnerId: attempt.learner,
-      contentId: attempt.package,
-      attemptNumber: attempt.attemptNumber,
-    },
-    {
-      learnerId: attempt.learner,
-      contentId: attempt.package,
-      segmentId: attempt.attemptId,
-      contentType: 'scorm',
-      attemptNumber: attempt.attemptNumber,
-      startedAt: attempt.startedAt || new Date(),
-      submittedAt: attempt.completedAt || attempt.lastAccessedAt || new Date(),
-      status: status === 'completed' ? 'completed' : 'in_progress',
-      score,
-      maxScore,
-      passed: attempt.status === 'passed',
-      timeSpentSec: 0,
-      payload: attempt.cmi || {},
-    },
-    { upsert: true, new: true }
-  );
+  await syncContentAttemptFromScorm({ attempt });
 };
 
 /**

@@ -21,6 +21,7 @@
 - Content course rendering uses CourseContent ordering; progress payload now expects `courseContentId`.
 - Course model updated to ERD-aligned schema in `model/Content/Course.ts`.
 - Validation updated for program level, course, course content, and content progress payloads.
+- SCORM runtime now syncs attempts into unified `ContentAttempt` records.
 - Added new contract: `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
 - Updated existing contract docs with Phase 4 change notes.
 

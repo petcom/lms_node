@@ -6,7 +6,7 @@ import Course from '../../model/Content/Course';
 import CourseContent from '../../model/Academic/CourseContent';
 import RenderedCourse from '../../model/Content/RenderedCourse';
 import LearnerProgress from '../../model/Content/LearnerProgress';
-import ContentAttempt from '../../model/Content/ContentAttempt';
+import ContentAttempt from '../../model/Academic/ContentAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import Department from '../../model/Academic/Department';
@@ -538,21 +538,18 @@ export const recordCustomProgress = asyncHandler(async (req: Request, res: Respo
   );
 
   await ContentAttempt.create({
-    learnerId,
-    courseId: courseObjectId,
-    contentId: custom._id,
-    segmentId: courseContentId,
+    learner: learnerId,
+    courseContent: courseContent._id,
     contentType: 'custom',
     customType: custom.customType,
-    attemptNumber: attemptCount,
-    startedAt: new Date(),
-    submittedAt: new Date(),
     status: status === 'completed' ? 'completed' : 'in_progress',
     score,
     maxScore,
     passed: maxScore > 0 ? score >= maxScore * 0.6 : undefined,
     timeSpentSec: payload?.durationSec || 0,
     payload,
+    startedAt: new Date(),
+    completedAt: status === 'completed' ? new Date() : undefined,
   });
 
   res.status(200).json({
@@ -569,11 +566,37 @@ export const listAttempts = asyncHandler(async (req: Request, res: Response) => 
 
   const custom = await CustomContent.findById(contentId).lean();
   if (custom) {
-    const attempts = await ContentAttempt.find({ contentId }).lean();
+    const courseContents = await CourseContent.find({
+      contentType: 'custom',
+      customContentId: custom._id,
+    })
+      .select('_id')
+      .lean();
+    const courseContentIds = courseContents.map((item: any) => item._id);
+    const attempts = await ContentAttempt.find({
+      courseContent: { $in: courseContentIds },
+      contentType: 'custom',
+    }).lean();
+    const items = attempts.map((attempt: any) => ({
+      id: attempt._id.toString(),
+      learnerId: attempt.learner?.toString(),
+      courseContentId: attempt.courseContent?.toString(),
+      contentId: custom._id.toString(),
+      contentType: 'custom',
+      customType: attempt.customType || custom.customType,
+      startedAt: attempt.startedAt,
+      submittedAt: attempt.completedAt || null,
+      status: attempt.status,
+      score: attempt.score ?? 0,
+      maxScore: attempt.maxScore ?? 100,
+      passed: attempt.passed,
+      timeSpentSec: attempt.timeSpentSec ?? 0,
+      payload: attempt.payload || {},
+    }));
     res.status(200).json({
       status: 'success',
       message: 'Attempts fetched successfully',
-      items: attempts,
+      items,
     });
     return;
   }
@@ -583,24 +606,30 @@ export const listAttempts = asyncHandler(async (req: Request, res: Response) => 
     throw new NotFoundError('Content not found');
   }
 
-  const scormAttempts = await ScormAttempt.find({ package: scorm._id }).lean();
-  const items = scormAttempts.map((attempt: any) => ({
+  const courseContent = await CourseContent.findOne({
+    contentType: 'scorm',
+    scormPackageId: scorm._id,
+  })
+    .select('_id')
+    .lean();
+  const attempts = courseContent
+    ? await ContentAttempt.find({ courseContent: courseContent._id, contentType: 'scorm' }).lean()
+    : [];
+  const items = attempts.map((attempt: any) => ({
     id: attempt._id.toString(),
     learnerId: attempt.learner?.toString(),
-    courseId: null,
+    courseContentId: attempt.courseContent?.toString(),
     contentId: scorm._id.toString(),
-    segmentId: attempt.attemptId,
     contentType: 'scorm',
     customType: null,
-    attemptNumber: attempt.attemptNumber,
     startedAt: attempt.startedAt,
-    submittedAt: attempt.completedAt || attempt.lastAccessedAt,
-    status: mapScormStatus(attempt.status),
-    score: attempt.cmi?.score?.raw ?? 0,
-    maxScore: attempt.cmi?.score?.max ?? 100,
-    passed: attempt.status === 'passed',
-    timeSpentSec: 0,
-    payload: attempt.cmi || {},
+    submittedAt: attempt.completedAt || null,
+    status: attempt.status,
+    score: attempt.score ?? 0,
+    maxScore: attempt.maxScore ?? 100,
+    passed: attempt.passed,
+    timeSpentSec: attempt.timeSpentSec ?? 0,
+    payload: attempt.payload || {},
   }));
 
   res.status(200).json({

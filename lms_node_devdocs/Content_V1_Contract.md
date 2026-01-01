@@ -189,12 +189,10 @@ Example Response:
     {
       "id": "attempt-id",
       "learnerId": "user-id",
-      "courseId": "course-id",
       "contentId": "content-id",
-      "segmentId": "segment-id",
+      "courseContentId": "course-content-id",
       "contentType": "custom",
       "customType": "quiz",
-      "attemptNumber": 2,
       "startedAt": "2025-01-01T00:00:00.000Z",
       "submittedAt": "2025-01-01T00:10:00.000Z",
       "status": "completed",
@@ -254,6 +252,7 @@ Example Response:
 ## Changes (Phase 4)
 - New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
 - Course updates now reference `programLevel` and `departmentId`; progress payload uses `courseContentId`.
+- Attempts are emitted from unified `ContentAttempt` records and include `courseContentId`.
 
 ## Normalized Progress + Attempts
 These shapes are used to normalize SCORM and custom progress data into a shared reporting model.

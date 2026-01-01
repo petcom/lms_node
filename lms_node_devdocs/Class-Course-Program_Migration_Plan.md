@@ -162,6 +162,7 @@ Scripts (migration/data seeding):
 - Add: `scripts/migrate-teacherid-to-instructorid.js`
 
 ## Phase 2: Schema/Model Migration
+Status: ✅ completed
 Implement Mongoose schemas to match the new types:
 - Add `ProgramLevel`, `ProgramEnrollment`, `Class`, `ClassEnrollment`, `Course`, `CourseContent`, `CourseEnrollment`, `ContentAttempt` models.
 - Update existing models:
@@ -175,6 +176,7 @@ Deliverables:
 - Indexes for enrollment and attempt uniqueness
 
 ## Phase 3: Data Migration Scripts
+Status: ✅ completed
 Create one-time scripts to migrate existing data:
 1) **ProgramLevel**
    - Convert existing `ClassLevel` documents to `ProgramLevel` scoped to Program.
@@ -192,6 +194,7 @@ Deliverables:
 - Dry-run and verification mode for each script
 
 ### Phase 3.1: Mapping Files (Required Inputs)
+Status: ✅ completed
 Create mapping files to drive the migration scripts:
 - `lms_node_devdocs/migrations/classlevel-to-programlevel.map.json`
   - Maps `ClassLevel` ids → `{ programId, order, name }`
@@ -203,6 +206,7 @@ Deliverables:
 - Minimal validation tests to ensure JSON files are present and parseable
 
 ## Phase 4: API/Controller Refactor
+Status: ✅ completed
 Update API endpoints and controllers to use new entities:
 - Learner progress endpoints should aggregate:
   - `ProgramEnrollment` + `CourseEnrollment` + `ContentAttempt`
@@ -216,6 +220,7 @@ Deliverables:
 - New endpoints for ProgramLevel, Course, CourseContent if needed
 
 ### Phase 4.1: Contract Alignment
+Status: ✅ completed
 After refactors:
 - Review all `*_Contract.md` docs for current shapes/paths/roles.
 - Add any missing contract docs for new endpoints (ProgramLevel/Course/CourseContent).
@@ -262,8 +267,10 @@ Deliverables:
 - SCORM and custom attempts unified under ContentAttempt.
 
 ## Next Steps (Post Phase 4.1)
-- Update academic workflows to use `ProgramLevel` and `Course` (replace `ClassLevel` + `Subject` references).
-- Refactor SCORM/custom content endpoints to resolve `CourseContent` and emit `ContentAttempt`.
-- Add enrollment endpoints for `ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`.
-- Add reporting endpoints for program/course progress.
-- Deprecate and remove legacy collections after migration validation.
+- In-progress order:
+  1) ContentAttempt/SCORM attempt unification (in progress)
+  2) Enrollment endpoints (`ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`)
+  3) Reporting endpoints for program/course progress
+- Remaining:
+  - Update academic workflows to use `ProgramLevel` and `Course` (replace `ClassLevel` + `Subject` references).
+  - Deprecate and remove legacy collections after migration validation.

@@ -292,6 +292,12 @@ export interface IContentAttempt extends Document {
   contentType: 'scorm' | 'custom';
   status: 'in_progress' | 'completed' | 'abandoned';
   score?: number;
+  maxScore?: number;
+  passed?: boolean;
+  timeSpentSec?: number;
+  payload?: any;
+  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  scormAttemptId?: Types.ObjectId;
   startedAt: Date;
   completedAt?: Date;
   updatedAt: Date;

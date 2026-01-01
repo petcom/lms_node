@@ -31,10 +31,32 @@ const contentAttemptSchema = new Schema<IContentAttempt>(
       default: 'in_progress',
       index: true,
     },
+    scormAttemptId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ScormAttempt',
+    },
     score: {
       type: Number,
       min: 0,
       max: 100,
+    },
+    maxScore: {
+      type: Number,
+      min: 0,
+    },
+    passed: {
+      type: Boolean,
+    },
+    timeSpentSec: {
+      type: Number,
+      default: 0,
+    },
+    payload: {
+      type: Schema.Types.Mixed,
+    },
+    customType: {
+      type: String,
+      enum: ['exam', 'quiz', 'practice', 'other'],
     },
     startedAt: {
       type: Date,
@@ -50,6 +72,7 @@ const contentAttemptSchema = new Schema<IContentAttempt>(
 
 contentAttemptSchema.index({ learner: 1, courseContent: 1, startedAt: -1 });
 contentAttemptSchema.index({ courseContent: 1, status: 1 });
+contentAttemptSchema.index({ scormAttemptId: 1 }, { unique: true, sparse: true });
 
 const ContentAttempt = mongoose.model<IContentAttempt>('ContentAttempt', contentAttemptSchema);
 

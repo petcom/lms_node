@@ -94,4 +94,4 @@ create a collection of roles separately, and then use that to validate the staff
 
 3) Should content create/update for SCORM remain on existing SCORM routes?
 
-now complete development similar to the previous pattern, create tests for each task - complete development, and then revisit the test and correct until it is passing/successful.  Do that for all items in the upload-change document
+now complete development similar to the previous pattern, create tests for each task - complete development, and then revisit the test and correct until it is passing/successful.  Do that for all items in the upload-change document test

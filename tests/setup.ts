@@ -42,7 +42,7 @@ const globalSetup = async (): Promise<void> => {
   process.env.MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
   process.env.NODE_ENV = 'test';
 
-  if (process.env.MONGO_TEST_URI) {
+  if (process.env.MONGO_TEST_URI && process.env.SKIP_DB_SETUP !== 'true') {
     console.log('✓ Using MONGO_TEST_URI for integration tests');
     console.log(`  URI: ${process.env.MONGO_TEST_URI}`);
   }
@@ -52,7 +52,7 @@ const globalSetup = async (): Promise<void> => {
     console.log(`  URI: ${mongoUri}`);
   }
 
-  if (process.env.MONGO_TEST_URI) {
+  if (process.env.MONGO_TEST_URI && process.env.SKIP_DB_SETUP !== 'true') {
     await mongoose.connect(process.env.MONGO_TEST_URI);
     const staffCollection = mongoose.connection.collection('staffs');
     const indexes = await staffCollection.indexes();

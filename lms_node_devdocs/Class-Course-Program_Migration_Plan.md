@@ -191,6 +191,17 @@ Deliverables:
 - Migration scripts in `scripts/`
 - Dry-run and verification mode for each script
 
+### Phase 3.1: Mapping Files (Required Inputs)
+Create mapping files to drive the migration scripts:
+- `lms_node_devdocs/migrations/classlevel-to-programlevel.map.json`
+  - Maps `ClassLevel` ids → `{ programId, order, name }`
+- `lms_node_devdocs/migrations/scorm-to-coursecontent.map.json`
+  - Maps `ScormPackage` ids → `CourseContent` ids for attempt migration
+
+Deliverables:
+- Sample mapping files checked into `lms_node_devdocs/migrations/`
+- Minimal validation tests to ensure JSON files are present and parseable
+
 ## Phase 4: API/Controller Refactor
 Update API endpoints and controllers to use new entities:
 - Learner progress endpoints should aggregate:
@@ -203,6 +214,12 @@ Deliverables:
 - Updated controllers
 - Updated validators
 - New endpoints for ProgramLevel, Course, CourseContent if needed
+
+### Phase 4.1: Contract Alignment
+After refactors:
+- Review all `*_Contract.md` docs for current shapes/paths/roles.
+- Add any missing contract docs for new endpoints (ProgramLevel/Course/CourseContent).
+- Append a “Changes (Phase 4)” section to each updated contract.
 
 ## Phase 5: Test Migration
 Update integration and unit tests:

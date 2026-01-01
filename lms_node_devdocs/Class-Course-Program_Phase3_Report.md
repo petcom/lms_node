@@ -10,6 +10,7 @@
   - `scripts/migrate-content-to-coursecontent.js`
   - `scripts/migrate-scormattempt-to-contentattempt.js`
 - Added Phase 3 change notes to contract docs (no functional changes).
+- Test setup can skip DB wiring with `SKIP_DB_SETUP=true` for unit-only suites.
 
 ## Tests
 - `tests/integration/department-resources/department-resources.test.ts` (PASS)

@@ -146,8 +146,8 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     uploadedByModel: {
       type: String,
-      enum: ['Admin', 'Teacher', 'Student'],
-      default: 'Teacher',
+      enum: ['Admin', 'Staff', 'Teacher', 'Student'],
+      default: 'Staff',
     },
     assignedTo: {
       students: [
@@ -198,8 +198,8 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     publishedByModel: {
       type: String,
-      enum: ['Admin', 'Teacher'],
-      default: 'Teacher',
+      enum: ['Admin', 'Staff', 'Teacher'],
+      default: 'Staff',
     },
     unpublishedAt: {
       type: Date,
@@ -210,8 +210,8 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
     unpublishedByModel: {
       type: String,
-      enum: ['Admin', 'Teacher'],
-      default: 'Teacher',
+      enum: ['Admin', 'Staff', 'Teacher'],
+      default: 'Staff',
     },
     isActive: {
       type: Boolean,
@@ -378,7 +378,7 @@ interface IScormPackageModel extends Model<IScormPackage> {
 scormPackageSchema.index({ status: 1, createdAt: -1 }); // List packages by status and date
 scormPackageSchema.index({ 'assignedTo.students': 1, status: 1 }); // Find packages for student
 scormPackageSchema.index({ subject: 1, status: 1 }); // Filter by subject
-scormPackageSchema.index({ createdBy: 1, status: 1 }); // Teacher's packages
+scormPackageSchema.index({ createdBy: 1, status: 1 }); // Staff packages
 
 const ScormPackage = mongoose.model<IScormPackage, IScormPackageModel>(
   'ScormPackage',

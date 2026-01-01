@@ -49,7 +49,7 @@ const programSchema = new Schema<IProgram>(
     teachers: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Teacher',
+        ref: 'Staff',
       },
     ],
     students: [

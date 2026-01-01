@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import Department from '../../../model/Academic/Department';
 import Admin from '../../../model/Staff/Admin';
-import Teacher from '../../../model/Staff/Teacher';
+import Teacher from '../../../model/Staff/Staff';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import AcademicYear from '../../../model/Academic/AcademicYear';
 import AcademicTerm from '../../../model/Academic/AcademicTerm';

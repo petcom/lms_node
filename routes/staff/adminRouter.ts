@@ -224,7 +224,7 @@ adminRouter.put(
 
 /**
  * @swagger
- * /api/v1/admins/suspend/teacher/{id}:
+ * /api/v1/admins/suspend/staff/{id}:
  *   put:
  *     summary: Suspend a teacher
  *     tags: [Admin]
@@ -236,10 +236,10 @@ adminRouter.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: Teacher ID
+ *         description: Staff ID
  *     responses:
  *       200:
- *         description: Teacher suspended successfully
+ *         description: Staff member suspended successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:
@@ -248,7 +248,7 @@ adminRouter.put(
  *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put(
-  '/suspend/teacher/:id',
+  '/suspend/staff/:id',
   isAuthenticated(),
   roleRestriction('admin'),
   adminSuspendTeacherCtrl
@@ -256,7 +256,7 @@ adminRouter.put(
 
 /**
  * @swagger
- * /api/v1/admins/unsuspend/teacher/{id}:
+ * /api/v1/admins/unsuspend/staff/{id}:
  *   put:
  *     summary: Unsuspend a teacher
  *     tags: [Admin]
@@ -268,10 +268,10 @@ adminRouter.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: Teacher ID
+ *         description: Staff ID
  *     responses:
  *       200:
- *         description: Teacher unsuspended successfully
+ *         description: Staff member unsuspended successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:
@@ -280,7 +280,7 @@ adminRouter.put(
  *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put(
-  '/unsuspend/teacher/:id',
+  '/unsuspend/staff/:id',
   isAuthenticated(),
   roleRestriction('admin'),
   adminUnsuspendteacherCtrl
@@ -288,7 +288,7 @@ adminRouter.put(
 
 /**
  * @swagger
- * /api/v1/admins/withdraw/teacher/{id}:
+ * /api/v1/admins/withdraw/staff/{id}:
  *   put:
  *     summary: Withdraw a teacher
  *     tags: [Admin]
@@ -300,10 +300,10 @@ adminRouter.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: Teacher ID
+ *         description: Staff ID
  *     responses:
  *       200:
- *         description: Teacher withdrawn successfully
+ *         description: Staff member withdrawn successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:
@@ -312,7 +312,7 @@ adminRouter.put(
  *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put(
-  '/withdraw/teacher/:id',
+  '/withdraw/staff/:id',
   isAuthenticated(),
   roleRestriction('admin'),
   adminWithdrawTeacherCtrl
@@ -320,7 +320,7 @@ adminRouter.put(
 
 /**
  * @swagger
- * /api/v1/admins/unwithdraw/teacher/{id}:
+ * /api/v1/admins/unwithdraw/staff/{id}:
  *   put:
  *     summary: Unwithdraw a teacher
  *     tags: [Admin]
@@ -332,10 +332,10 @@ adminRouter.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: Teacher ID
+ *         description: Staff ID
  *     responses:
  *       200:
- *         description: Teacher unwithdrawn successfully
+ *         description: Staff member unwithdrawn successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:
@@ -344,7 +344,7 @@ adminRouter.put(
  *         $ref: '#/components/responses/NotFoundError'
  */
 adminRouter.put(
-  '/unwithdraw/teacher/:id',
+  '/unwithdraw/staff/:id',
   isAuthenticated(),
   roleRestriction('admin'),
   adminUnwithdrawTeacherCtrl

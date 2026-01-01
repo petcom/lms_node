@@ -112,13 +112,13 @@ test('Student model has studentId index', () => {
 });
 
 test('Teacher model has email index', () => {
-  const Teacher = require('../model/Staff/Teacher');
+  const Teacher = require('../model/Staff/Staff');
   const indexes = Teacher.schema.indexes();
   return indexes.some(idx => idx[0].email !== undefined);
 });
 
 test('Teacher model has teacherId index', () => {
-  const Teacher = require('../model/Staff/Teacher');
+  const Teacher = require('../model/Staff/Staff');
   const indexes = Teacher.schema.indexes();
   return indexes.some(idx => idx[0].teacherId !== undefined);
 });
@@ -207,7 +207,7 @@ test('Response utilities use consistent structure', () => {
 
 test('Models have timestamps enabled', () => {
   const Student = require('../model/Academic/Student');
-  const Teacher = require('../model/Staff/Teacher');
+  const Teacher = require('../model/Staff/Staff');
   const Admin = require('../model/Staff/Admin');
   return Student.schema.options.timestamps && 
          Teacher.schema.options.timestamps && 

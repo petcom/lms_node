@@ -37,7 +37,7 @@ const academicYearSchema = new Schema<IAcademicYear>(
     teachers: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Teacher',
+        ref: 'Staff',
       },
     ],
   },

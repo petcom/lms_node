@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 import Admin from '../../model/Staff/Admin';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
@@ -9,26 +9,26 @@ import mongoose from 'mongoose';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
 
 // Request body interfaces
-interface RegisterTeacherBody {
+interface RegisterStaffBody {
   name: string;
   email: string;
   password: string;
   department?: string;
 }
 
-interface LoginTeacherBody {
+interface LoginStaffBody {
   email: string;
   password: string;
 }
 
-interface UpdateTeacherProfileBody {
+interface UpdateStaffProfileBody {
   email?: string;
   name?: string;
   password?: string;
   department?: string;
 }
 
-interface AdminUpdateTeacherBody {
+interface AdminUpdateStaffBody {
   program?: Types.ObjectId;
   classLevel?: Types.ObjectId;
   academicYear?: Types.ObjectId;
@@ -37,12 +37,12 @@ interface AdminUpdateTeacherBody {
 }
 
 /**
- * @description Admin Register Teacher
- * @route       POST /api/teachers/admins/register
+ * @description Admin Register Staff
+ * @route       POST /api/staff/admins/register
  * @access      Private
  */
-export const adminRegisterTeacher = expressAsyncHandler(
-  async (req: Request<{}, {}, RegisterTeacherBody>, res: Response): Promise<void> => {
+export const adminRegisterStaff = expressAsyncHandler(
+  async (req: Request<{}, {}, RegisterStaffBody>, res: Response): Promise<void> => {
     const { name, email, password, department } = req.body;
 
     // find the admin
@@ -51,10 +51,10 @@ export const adminRegisterTeacher = expressAsyncHandler(
       throw new Error('Admin not found');
     }
 
-    // check if the teacher already exists
-    const teacher = await Teacher.findOne({ email: email }).lean();
-    if (teacher) {
-      throw new Error('Teacher already employed');
+    // check if the staff member already exists
+    const existingStaff = await Staff.findOne({ email: email }).lean();
+    if (existingStaff) {
+      throw new Error('Staff member already employed');
     }
 
     // hash password
@@ -72,54 +72,54 @@ export const adminRegisterTeacher = expressAsyncHandler(
       }
     }
 
-    // teacher created
-    const teacherCreated = await Teacher.create({
+    // staff created
+    const staffCreated = await Staff.create({
       name,
       email,
       password: hashedPassword,
       department: chosenDept ? new mongoose.Types.ObjectId(chosenDept) : undefined,
     });
 
-    // push teacher into admin
-    adminFound.teachers?.push(teacherCreated._id);
+    // push staff into admin
+    adminFound.teachers?.push(staffCreated._id);
     await adminFound.save();
 
     // send response
     res.status(201).json({
       status: 'success',
-      message: 'Teacher registered Successfuly',
-      data: teacherCreated,
+      message: 'Staff registered Successfuly',
+      data: staffCreated,
     });
   }
 );
 
 /**
- * @description Login a Teacher
- * @route       POST /api/teachers/login
+ * @description Login a Staff member
+ * @route       POST /api/staff/login
  * @access      Public
  */
-export const loginTeacher = expressAsyncHandler(
-  async (req: Request<{}, {}, LoginTeacherBody>, res: Response): Promise<void> => {
+export const loginStaff = expressAsyncHandler(
+  async (req: Request<{}, {}, LoginStaffBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
-    // find the teacher user obj
-    const teacher = await Teacher.findOne({ email });
-    if (!teacher) {
+    // find the staff user obj
+    const staff = await Staff.findOne({ email });
+    if (!staff) {
       res.json({ message: 'Invalid login credentials' });
       return;
     }
 
     // verify the password
-    const isMatched = await isPassMatched(password, teacher.password);
+    const isMatched = await isPassMatched(password, staff.password);
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
     } else {
-      const role = teacher.role || 'teacher';
-      const accessToken = generateToken(teacher._id.toString(), role);
+      const role = staff.role || 'teacher';
+      const accessToken = generateToken(staff._id.toString(), role);
 
       res.status(200).json({
         status: 'success',
-        message: 'Teacher logged in successfully',
+        message: 'Staff logged in successfully',
         data: {
           accessToken,
           role,
@@ -130,48 +130,48 @@ export const loginTeacher = expressAsyncHandler(
 );
 
 /**
- * @description Get All Teachers
- * @route       GET /api/v1/admin/teachers
+ * @description Get All Staff
+ * @route       GET /api/v1/admin/staff
  * @access      Private admin only
  */
-export const getAllTeachersAdmin = expressAsyncHandler(
+export const getAllStaffAdmin = expressAsyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
     res.status(200).json(res.results);
   }
 );
 
 /**
- * @description Get Single a Teacher
- * @route       GET /api/teachers/:teacherID/admin
+ * @description Get Single Staff member
+ * @route       GET /api/staff/:staffID/admin
  * @access      Private admin only
  */
-export const getTeacherByAdmin = expressAsyncHandler(
-  async (req: Request<{ teacherID: string }>, res: Response): Promise<void> => {
-    const teacherID = req.params.teacherID;
+export const getStaffByAdmin = expressAsyncHandler(
+  async (req: Request<{ staffID: string }>, res: Response): Promise<void> => {
+    const staffID = req.params.staffID;
 
     try {
-      // Try to find the teacher by ID
-      const teacher = await Teacher.findById(teacherID);
+      // Try to find the staff member by ID
+      const staff = await Staff.findById(staffID);
 
-      // Check if the teacher was found
-      if (!teacher) {
+      // Check if the staff member was found
+      if (!staff) {
         res.status(404).json({
           status: 'error',
-          message: 'Teacher not found',
+          message: 'Staff member not found',
         });
         return;
       }
 
       res.status(200).json({
         status: 'success',
-        message: 'Teacher fetched successfully',
-        data: teacher,
+        message: 'Staff member fetched successfully',
+        data: staff,
       });
     } catch (error) {
       // If an error occurs (e.g., CastError for invalid ObjectId)
       res.status(400).json({
         status: 'error',
-        message: 'Invalid teacher ID format',
+        message: 'Invalid staff ID format',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
@@ -179,40 +179,40 @@ export const getTeacherByAdmin = expressAsyncHandler(
 );
 
 /**
- * @description Teacher Profile
- * @route       GET /api/teachers/profile
- * @access      Private Teacher only
+ * @description Staff Profile
+ * @route       GET /api/staff/profile
+ * @access      Private staff only
  */
-export const getTeacherProfile = expressAsyncHandler(
+export const getStaffProfile = expressAsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const teacher = await Teacher.findById(req.userAuth?._id).select(
+    const staff = await Staff.findById(req.userAuth?._id).select(
       '-password -createdAt -updatedAt'
     );
 
-    if (!teacher) {
-      throw new Error('Teacher not found');
+    if (!staff) {
+      throw new Error('Staff member not found');
     }
 
     res.status(200).json({
       status: 'success',
-      data: teacher,
-      message: 'Teacher profile fetched successfully',
+      data: staff,
+      message: 'Staff profile fetched successfully',
     });
   }
 );
 
 /**
- * @description Teacher updating profile
- * @route       UPDATE /api/v1/teachers/:teacherID/update
- * @access      Private Teacher Only
+ * @description Staff updating profile
+ * @route       UPDATE /api/v1/staff/:staffID/update
+ * @access      Private staff only
  */
-export const teacherUpdateProfile = expressAsyncHandler(
-  async (req: Request<{}, {}, UpdateTeacherProfileBody>, res: Response): Promise<void> => {
+export const staffUpdateProfile = expressAsyncHandler(
+  async (req: Request<{}, {}, UpdateStaffProfileBody>, res: Response): Promise<void> => {
     const { email, name, password, department } = req.body;
 
     // if email is taken
     if (email) {
-      const emailExists = await Teacher.findOne({ email });
+      const emailExists = await Staff.findOne({ email });
       if (emailExists) {
         throw new Error('This email already exists');
       }
@@ -232,7 +232,7 @@ export const teacherUpdateProfile = expressAsyncHandler(
     // check if user is updating password
     if (password) {
       // update user
-      const teacher = await Teacher.findByIdAndUpdate(
+      const staff = await Staff.findByIdAndUpdate(
         req.userAuth?._id,
         {
           email,
@@ -246,17 +246,16 @@ export const teacherUpdateProfile = expressAsyncHandler(
       );
       res.status(200).json({
         success: 'success',
-        data: teacher,
-        message: 'Teacher profile updated successfully',
+        data: staff,
+        message: 'Staff profile updated successfully',
       });
     } else {
       // update user email and name
-      const teacher = await Teacher.findByIdAndUpdate(
+      const staff = await Staff.findByIdAndUpdate(
         req.userAuth?._id,
         {
           email,
           name,
-          department: department ? new mongoose.Types.ObjectId(department) : undefined,
           department: department ? new mongoose.Types.ObjectId(department) : undefined,
         },
         {
@@ -266,34 +265,34 @@ export const teacherUpdateProfile = expressAsyncHandler(
       );
       res.status(200).json({
         success: 'success',
-        data: teacher,
-        message: 'Teacher profile updated successfully',
+        data: staff,
+        message: 'Staff profile updated successfully',
       });
     }
   }
 );
 
 /**
- * @description Admin updating Teacher Profile
- * @route       UPDATE /api/v1/teachers/:teacherID/update/admin
- * @access      Private Admin Only
+ * @description Admin updating Staff Profile
+ * @route       UPDATE /api/v1/staff/:staffID/update/admin
+ * @access      Private admin only
  */
-export const adminUpdateTeacher = expressAsyncHandler(
+export const adminUpdateStaff = expressAsyncHandler(
   async (
-    req: Request<{ teacherID: string }, {}, AdminUpdateTeacherBody>,
+    req: Request<{ staffID: string }, {}, AdminUpdateStaffBody>,
     res: Response
   ): Promise<void> => {
     const { program, classLevel, academicYear, subject, department } = req.body;
 
-    // find teacher
-    const teacherFound = await Teacher.findById(req.params.teacherID);
-    if (!teacherFound) {
-      throw new Error('Teacher Not found');
+    // find staff
+    const staffFound = await Staff.findById(req.params.staffID);
+    if (!staffFound) {
+      throw new Error('Staff member not found');
     }
 
-    // check if teacher is withdrawn
-    if (teacherFound.isWithdrawn) {
-      throw new Error('Action denied, teacher is withdrawn');
+    // check if staff member is withdrawn
+    if (staffFound.isWithdrawn) {
+      throw new Error('Action denied, staff member is withdrawn');
     }
 
     // department reassignment with scope checks
@@ -305,58 +304,58 @@ export const adminUpdateTeacher = expressAsyncHandler(
       if (scope && scope !== 'all' && !scope.includes(department)) {
         throw new AuthorizationError('Access denied for this department');
       }
-      teacherFound.department = new mongoose.Types.ObjectId(department);
-      await teacherFound.save();
+      staffFound.department = new mongoose.Types.ObjectId(department);
+      await staffFound.save();
     }
 
     // assign a program
     if (program) {
-      teacherFound.program = program;
-      await teacherFound.save();
+      staffFound.program = program;
+      await staffFound.save();
 
       res.status(200).json({
         success: 'success',
-        data: teacherFound,
-        message: 'Teacher profile updated successfully',
+        data: staffFound,
+        message: 'Staff profile updated successfully',
       });
       return;
     }
 
     // assign class level
     if (classLevel) {
-      teacherFound.classLevel = classLevel;
-      await teacherFound.save();
+      staffFound.classLevel = classLevel;
+      await staffFound.save();
 
       res.status(200).json({
         success: 'success',
-        data: teacherFound,
-        message: 'Teacher profile updated successfully',
+        data: staffFound,
+        message: 'Staff profile updated successfully',
       });
       return;
     }
 
     // assign academic year
     if (academicYear) {
-      teacherFound.academicYear = academicYear;
-      await teacherFound.save();
+      staffFound.academicYear = academicYear;
+      await staffFound.save();
 
       res.status(200).json({
         success: 'success',
-        data: teacherFound,
-        message: 'Teacher profile updated successfully',
+        data: staffFound,
+        message: 'Staff profile updated successfully',
       });
       return;
     }
 
     // assign subject
     if (subject) {
-      teacherFound.subject = subject;
-      await teacherFound.save();
+      staffFound.subject = subject;
+      await staffFound.save();
 
       res.status(200).json({
         success: 'success',
-        data: teacherFound,
-        message: 'Teacher subject updated successfully',
+        data: staffFound,
+        message: 'Staff subject updated successfully',
       });
       return;
     }
@@ -364,8 +363,8 @@ export const adminUpdateTeacher = expressAsyncHandler(
     // default response when department only update
     res.status(200).json({
       success: 'success',
-      data: teacherFound,
-      message: 'Teacher profile updated successfully',
+      data: staffFound,
+      message: 'Staff profile updated successfully',
     });
   }
 );

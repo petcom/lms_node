@@ -3,9 +3,9 @@ import AsyncHandler from 'express-async-handler';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 import Admin from '../../model/Staff/Admin';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 import Student from '../../model/Academic/Student';
-import { IAdmin, ITeacher, IStudent } from '../../types/models';
+import { IAdmin, IStaff, IStudent } from '../../types/models';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import {
   validatePasswordConfirmation,
@@ -87,10 +87,10 @@ export const changePassword = AsyncHandler(
     }
 
     // Find user (check all collections)
-    let user: IAdmin | ITeacher | IStudent | null = await Admin.findById(userId);
+    let user: IAdmin | IStaff | IStudent | null = await Admin.findById(userId);
 
     if (!user) {
-      user = await Teacher.findById(userId);
+      user = await Staff.findById(userId);
     }
 
     if (!user) {
@@ -175,14 +175,14 @@ export const forgotPassword = AsyncHandler(
     }
 
     // Find user based on type
-    let user: IAdmin | ITeacher | IStudent | null = null;
+    let user: IAdmin | IStaff | IStudent | null = null;
 
     switch (userType) {
       case 'admin':
         user = await Admin.findOne({ email });
         break;
       case 'teacher':
-        user = await Teacher.findOne({ email });
+        user = await Staff.findOne({ email });
         break;
       case 'student':
         user = await Student.findOne({ email });
@@ -291,14 +291,14 @@ export const resetPassword = AsyncHandler(
     }
 
     // Find user
-    let user: IAdmin | ITeacher | IStudent | null = null;
+    let user: IAdmin | IStaff | IStudent | null = null;
 
     switch (tokenData.userType) {
       case 'admin':
         user = await Admin.findById(tokenData.userId);
         break;
       case 'teacher':
-        user = await Teacher.findById(tokenData.userId);
+        user = await Staff.findById(tokenData.userId);
         break;
       case 'student':
         user = await Student.findById(tokenData.userId);

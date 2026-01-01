@@ -20,7 +20,7 @@ import classLevelRouter from '../routes/academics/classLevel';
 import programRouter from '../routes/academics/program';
 import subjectRouter from '../routes/academics/subject';
 import yearGroupRouter from '../routes/academics/yearGroup';
-import teachersRouter from '../routes/staff/teacherRouter';
+import staffRouter from '../routes/staff/staffRouter';
 import examRouter from '../routes/academics/examRoutes';
 import studentRouter from '../routes/students/studentRouter';
 import questionsRouter from '../routes/academics/questionRoutes';
@@ -154,7 +154,7 @@ app.use('/api/v1/class-levels', classLevelRouter); // Class level routes
 app.use('/api/v1/programs', programRouter); // Program routes
 app.use('/api/v1/subjects', subjectRouter); // Subject routes
 app.use('/api/v1/year-groups', yearGroupRouter); // Year Group routes
-app.use('/api/v1/teachers', teachersRouter); // Teachers routes
+app.use('/api/v1/staff', staffRouter); // Staff routes
 app.use('/api/v1/exams', examRouter); // Exams routes
 app.use('/api/v1/students', studentRouter); // Student routes
 app.use('/api/v1/questions', questionsRouter); // Question routes

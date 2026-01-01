@@ -24,8 +24,8 @@ export interface IAdmin extends Document {
   updatedAt: Date;
 }
 
-// Teacher Interface
-export interface ITeacher extends Document {
+// Staff Interface
+export interface IStaff extends Document {
   _id: Types.ObjectId;
   name: string;
   email: string;
@@ -35,6 +35,7 @@ export interface ITeacher extends Document {
   isWithdrawn: boolean;
   isSuspended: boolean;
   role: 'teacher';
+  roles?: string[];
   subject?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
   program?: Types.ObjectId;
@@ -43,6 +44,15 @@ export interface ITeacher extends Document {
   examsCreated?: Types.ObjectId[];
   department?: Types.ObjectId;
   createdBy?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Staff Role Interface
+export interface IStaffRole extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }

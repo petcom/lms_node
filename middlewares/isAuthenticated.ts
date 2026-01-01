@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import verifyToken from '../utils/verifyToken';
 import Admin from '../model/Staff/Admin';
-import Teacher from '../model/Staff/Teacher';
+import Staff from '../model/Staff/Staff';
 import Student from '../model/Academic/Student';
 import { AuthenticationError, NotFoundError } from '../utils/errors';
 
@@ -104,7 +104,7 @@ const isAuthenticated = () => {
         .lean()) as UserAuth | null;
 
       if (!user) {
-        user = (await Teacher.findById(verifiedToken.id)
+        user = (await Staff.findById(verifiedToken.id)
           .select('name email role department')
           .lean()) as UserAuth | null;
       }

@@ -5,7 +5,7 @@ import ClassLevel from '../../../model/Academic/ClassLevel';
 import Student from '../../../model/Academic/Student';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
-import Teacher from '../../../model/Staff/Teacher';
+import Teacher from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';

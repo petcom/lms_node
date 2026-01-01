@@ -48,7 +48,7 @@ export const publishTeacherPackage = asyncHandler(
     (pkg as any).status = 'published';
     (pkg as any).publishedAt = new Date();
     (pkg as any).publishedBy = req.userAuth!._id;
-    (pkg as any).publishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
+    (pkg as any).publishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Staff';
 
     await pkg.save();
 
@@ -74,7 +74,7 @@ export const unpublishTeacherPackage = asyncHandler(
     (pkg as any).status = 'draft';
     (pkg as any).unpublishedAt = new Date();
     (pkg as any).unpublishedBy = req.userAuth!._id;
-    (pkg as any).unpublishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Teacher';
+    (pkg as any).unpublishedByModel = req.userAuth!.role === 'admin' ? 'Admin' : 'Staff';
 
     await pkg.save();
 

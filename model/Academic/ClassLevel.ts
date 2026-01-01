@@ -40,7 +40,7 @@ const classLevelSchema = new Schema<IClassLevel>(
     teachers: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Teacher',
+        ref: 'Staff',
       },
     ],
     archived: {

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import Exam from '../../model/Academic/Exam';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 
 interface CreateExamBody {
   name: string;
@@ -56,10 +56,10 @@ export const createExam = AsyncHandler(
     } = req.body;
 
     // find teacher
-    const teacherFound = await Teacher.findById(req.userAuth?._id);
+    const teacherFound = await Staff.findById(req.userAuth?._id);
 
     if (!teacherFound) {
-      throw new Error('Teacher not found');
+      throw new Error('Staff member not found');
     }
 
     // check if exam exists
@@ -135,7 +135,7 @@ export const getExam = AsyncHandler(
 /**
  * @description Update Exam
  * @route PUT /api/admins/exams/:id
- * @access Private Teacher Only
+ * @access Private staff only
  */
 export const updateExam = AsyncHandler(
   async (req: Request<{ id: string }, any, UpdateExamBody>, res: Response): Promise<void> => {

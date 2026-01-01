@@ -38,7 +38,7 @@ const questionSchema = new Schema<IQuestion>(
     },
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'Teacher',
+      ref: 'Staff',
       required: true,
     },
   },

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 import Department from '../../model/Academic/Department';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Exam from '../../model/Academic/Exam';
@@ -22,7 +22,7 @@ type StaffUser = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'dept-admin' | 'teacher' | 'staff';
+  role: 'admin' | 'dept-admin' | 'staff';
   department: DepartmentSummary | null;
 };
 
@@ -150,9 +150,9 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
       ? {}
       : { department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) } };
 
-  const [admins, teachers] = await Promise.all([
+  const [admins, staffMembers] = await Promise.all([
     Admin.find(adminFilter).select('name email department').lean(),
-    Teacher.find(teacherFilter).select('name email department').lean(),
+    Staff.find(teacherFilter).select('name email department').lean(),
   ]);
 
   const adminItems: StaffUser[] = admins.map((admin) => {
@@ -170,27 +170,27 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
     };
   });
 
-  const teacherItems: StaffUser[] = teachers.map((teacher) => {
-    const deptId = teacher.department ? teacher.department.toString() : null;
+  const staffItems: StaffUser[] = staffMembers.map((staff) => {
+    const deptId = staff.department ? staff.department.toString() : null;
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
     return {
-      id: teacher._id.toString(),
-      name: teacher.name,
-      email: teacher.email,
-      role: 'teacher',
+      id: staff._id.toString(),
+      name: staff.name,
+      email: staff.email,
+      role: 'staff',
       department: deptSummary,
     };
   });
 
   let items: StaffUser[] = [];
   if (type === 'teacher') {
-    items = teacherItems;
+    items = staffItems;
   } else if (type === 'dept-admin') {
     items = adminItems.filter((admin) => admin.role === 'dept-admin');
   } else if (type === 'staff') {
-    items = [...adminItems, ...teacherItems];
+    items = [...adminItems, ...staffItems];
   } else {
-    items = [...adminItems, ...teacherItems];
+    items = [...adminItems, ...staffItems];
   }
 
   items.sort((a, b) => a.name.localeCompare(b.name));

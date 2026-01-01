@@ -1,7 +1,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import Teacher from '../../../model/Staff/Teacher';
+import Teacher from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 import { hashPassword } from '../../../utils/helpers';
 

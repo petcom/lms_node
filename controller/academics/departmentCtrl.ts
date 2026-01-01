@@ -3,7 +3,7 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Department from '../../model/Academic/Department';
 import Admin from '../../model/Staff/Admin';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 import Program from '../../model/Academic/Program';
 import Subject from '../../model/Academic/Subject';
 import ClassLevel from '../../model/Academic/ClassLevel';
@@ -64,7 +64,7 @@ const buildCounts = async (
     globalPackageCount,
   ] = await Promise.all([
     Admin.countDocuments({ department: departmentId }),
-    Teacher.countDocuments({ department: departmentId }),
+    Staff.countDocuments({ department: departmentId }),
     Program.countDocuments({ department: departmentId }),
     Subject.countDocuments({ department: departmentId }),
     ClassLevel.countDocuments({ department: departmentId }),
@@ -339,7 +339,7 @@ export const deleteDepartment = AsyncHandler(
         Department.countDocuments({ parent: department._id }),
         Promise.all([
           Admin.countDocuments({ department: department._id }),
-          Teacher.countDocuments({ department: department._id }),
+          Staff.countDocuments({ department: department._id }),
         ]),
         Program.countDocuments({ department: department._id }),
         Subject.countDocuments({ department: department._id }),

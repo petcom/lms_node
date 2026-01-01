@@ -1,11 +1,11 @@
 import mongoose, { Schema } from 'mongoose';
-import { ITeacher } from '../../types/models';
+import { IStaff } from '../../types/models';
 
 /**
- * Teacher Schema
- * Represents teachers in the LMS system
+ * Staff Schema
+ * Represents staff members in the LMS system
  */
-const teacherSchema = new Schema<ITeacher>(
+const staffSchema = new Schema<IStaff>(
   {
     name: {
       type: String,
@@ -23,11 +23,11 @@ const teacherSchema = new Schema<ITeacher>(
       type: Date,
       default: Date.now,
     },
-    // Randomizes a number between 1 and 999 to make the id unique for each teacher
+    // Randomizes a number between 1 and 999 to make the id unique for each staff member
     teacherId: {
       type: String,
       required: true,
-      default: function (this: ITeacher) {
+      default: function (this: IStaff) {
         return (
           'TEA' +
           Math.floor(100 + Math.random() * 900) +
@@ -40,12 +40,12 @@ const teacherSchema = new Schema<ITeacher>(
         );
       },
     },
-    // If withdrawn, the teacher will not be able to login
+    // If withdrawn, the staff member will not be able to login
     isWithdrawn: {
       type: Boolean,
       default: false,
     },
-    // If suspended, the teacher can login but cannot perform any task
+    // If suspended, the staff member can login but cannot perform any task
     isSuspended: {
       type: Boolean,
       default: false,
@@ -54,10 +54,14 @@ const teacherSchema = new Schema<ITeacher>(
       type: String,
       default: 'teacher',
     },
+    roles: {
+      type: [String],
+      default: [],
+    },
     subject: {
       type: String,
     },
-    // When you are registered, teacher goes through approval stage
+    // When you are registered, staff goes through approval stage
     applicationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
@@ -92,19 +96,19 @@ const teacherSchema = new Schema<ITeacher>(
 );
 
 // Indexes for query performance
-teacherSchema.index({ email: 1 }, { unique: true });
-teacherSchema.index({ teacherId: 1 }, { unique: true });
-teacherSchema.index({ subject: 1 });
-teacherSchema.index({ classLevel: 1 });
-teacherSchema.index({ applicationStatus: 1 });
-teacherSchema.index({ isSuspended: 1 });
-teacherSchema.index({ isWithdrawn: 1 });
-teacherSchema.index({ createdAt: -1 });
+staffSchema.index({ email: 1 }, { unique: true });
+staffSchema.index({ teacherId: 1 }, { unique: true });
+staffSchema.index({ subject: 1 });
+staffSchema.index({ classLevel: 1 });
+staffSchema.index({ applicationStatus: 1 });
+staffSchema.index({ isSuspended: 1 });
+staffSchema.index({ isWithdrawn: 1 });
+staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
-teacherSchema.index({ subject: 1, classLevel: 1 });
-teacherSchema.index({ applicationStatus: 1, createdAt: -1 });
+staffSchema.index({ subject: 1, classLevel: 1 });
+staffSchema.index({ applicationStatus: 1, createdAt: -1 });
 
 // Model
-const Teacher = mongoose.model<ITeacher>('Teacher', teacherSchema);
+const Staff = mongoose.model<IStaff>('Staff', staffSchema);
 
-export default Teacher;
+export default Staff;

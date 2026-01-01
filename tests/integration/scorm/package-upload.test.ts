@@ -5,7 +5,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
 import { StorageFactory } from '../../../utils/scorm/storage/StorageFactory';
-import Teacher from '../../../model/Staff/Teacher';
+import Teacher from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
 
 const teacherId = '0000000000000000000000b1';

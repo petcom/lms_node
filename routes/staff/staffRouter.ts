@@ -1,14 +1,14 @@
 import express, { Router } from 'express';
 
 import {
-  adminRegisterTeacher,
-  loginTeacher,
-  getAllTeachersAdmin,
-  getTeacherByAdmin,
-  getTeacherProfile,
-  teacherUpdateProfile,
-  adminUpdateTeacher,
-} from '../../controller/staff/teachersCtrl';
+  adminRegisterStaff,
+  loginStaff,
+  getAllStaffAdmin,
+  getStaffByAdmin,
+  getStaffProfile,
+  staffUpdateProfile,
+  adminUpdateStaff,
+} from '../../controller/staff/staffCtrl';
 import {
   publishTeacherPackage,
   unpublishTeacherPackage,
@@ -20,64 +20,64 @@ import {
   listTeacherAssignments,
 } from '../../controller/teachers/teacherPackageCtrl';
 import advancedResults from '../../middlewares/advancedResults';
-import Teacher from '../../model/Staff/Teacher';
+import Staff from '../../model/Staff/Staff';
 import isAuthenticated from '../../middlewares/isAuthenticated';
 import roleRestriction from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 
-const teachersRouter: Router = express.Router();
+const staffRouter: Router = express.Router();
 
-// Teacher SCORM package controls (phase 1)
-teachersRouter.post(
+// Staff SCORM package controls (phase 1)
+staffRouter.post(
   '/packages/:id/publish',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   publishTeacherPackage
 );
 
-teachersRouter.post(
+staffRouter.post(
   '/packages/:id/unpublish',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   unpublishTeacherPackage
 );
 
-teachersRouter.get(
+staffRouter.get(
   '/packages',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   listTeacherPackages
 );
 
-teachersRouter.post(
+staffRouter.post(
   '/assignments/assign',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   assignTeacherPackage
 );
 
-teachersRouter.get(
+staffRouter.get(
   '/classes',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   listTeacherClasses
 );
 
-teachersRouter.get(
+staffRouter.get(
   '/dashboard',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   teacherDashboard
 );
 
-teachersRouter.get(
+staffRouter.get(
   '/attempts',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
   listTeacherAttempts
 );
 
-teachersRouter.get(
+staffRouter.get(
   '/assignments',
   isAuthenticated(),
   roleRestriction('teacher', 'admin'),
@@ -86,10 +86,10 @@ teachersRouter.get(
 
 /**
  * @swagger
- * /api/v1/teachers/admin/register:
+ * /api/v1/staff/admin/register:
  *   post:
- *     summary: Admin registers a new teacher
- *     tags: [Teachers]
+ *     summary: Admin registers a new staff member
+ *     tags: [Staff]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -113,26 +113,26 @@ teachersRouter.get(
  *                 format: password
  *     responses:
  *       201:
- *         description: Teacher registered successfully
+ *         description: Staff registered successfully
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:
  *         $ref: '#/components/responses/ForbiddenError'
  */
-teachersRouter.post(
+staffRouter.post(
   '/admin/register',
   isAuthenticated(),
   departmentScope(),
   roleRestriction('admin'),
-  adminRegisterTeacher
+  adminRegisterStaff
 );
 
 /**
  * @swagger
- * /api/v1/teachers/login:
+ * /api/v1/staff/login:
  *   post:
- *     summary: Teacher login
- *     tags: [Teachers]
+ *     summary: Staff login
+ *     tags: [Staff]
  *     requestBody:
  *       required: true
  *       content:
@@ -172,56 +172,56 @@ teachersRouter.post(
  *       400:
  *         description: Invalid credentials
  */
-teachersRouter.post('/login', loginTeacher);
+staffRouter.post('/login', loginStaff);
 
-teachersRouter.get(
+staffRouter.get(
   '/admin',
   isAuthenticated(),
   roleRestriction('admin'),
-  advancedResults(Teacher, {
+  advancedResults(Staff, {
     path: 'examsCreated',
     populate: {
       path: 'questions', // inside exam created, we want to populate questions
     },
   }), // model first, then data IDs you want populate
-  getAllTeachersAdmin
+  getAllStaffAdmin
 );
 
 /**
  * @swagger
- * /api/v1/teachers/profile:
+ * /api/v1/staff/profile:
  *   get:
- *     summary: Get teacher profile
- *     tags: [Teachers]
+ *     summary: Get staff profile
+ *     tags: [Staff]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Teacher profile retrieved
+ *         description: Staff profile retrieved
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-teachersRouter.get('/profile', isAuthenticated(), roleRestriction('teacher'), getTeacherProfile);
+staffRouter.get('/profile', isAuthenticated(), roleRestriction('teacher'), getStaffProfile);
 
-teachersRouter.get(
-  '/:teacherID/admin',
+staffRouter.get(
+  '/:staffID/admin',
   isAuthenticated(),
   roleRestriction('admin'),
-  getTeacherByAdmin
+  getStaffByAdmin
 );
-teachersRouter.put(
-  '/:teacherID/update',
+staffRouter.put(
+  '/:staffID/update',
   isAuthenticated(),
   departmentScope(),
   roleRestriction('teacher'),
-  teacherUpdateProfile
+  staffUpdateProfile
 );
-teachersRouter.put(
-  '/:teacherID/update/admin',
+staffRouter.put(
+  '/:staffID/update/admin',
   isAuthenticated(),
   departmentScope(),
   roleRestriction('admin'),
-  adminUpdateTeacher
+  adminUpdateStaff
 );
 
-export default teachersRouter;
+export default staffRouter;

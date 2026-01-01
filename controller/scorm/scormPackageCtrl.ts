@@ -91,12 +91,12 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   // Generate unique package ID
   const packageId = uuidv4();
 
-  const roleModelMap: Record<string, 'Admin' | 'Teacher' | 'Student'> = {
+  const roleModelMap: Record<string, 'Admin' | 'Staff' | 'Teacher' | 'Student'> = {
     admin: 'Admin',
-    teacher: 'Teacher',
+    teacher: 'Staff',
     student: 'Student',
   };
-  const uploadedByModel = roleModelMap[req.userAuth?.role || 'teacher'] || 'Teacher';
+  const uploadedByModel = roleModelMap[req.userAuth?.role || 'teacher'] || 'Staff';
 
   try {
     // Extract package
@@ -674,7 +674,7 @@ export const publishPackage = asyncHandler(async (req: Request, res: Response): 
   (scormPackage as any).status = 'published';
   (scormPackage as any).publishedAt = new Date();
   (scormPackage as any).publishedBy = req.userAuth!._id;
-  (scormPackage as any).publishedByModel = role === 'admin' ? 'Admin' : 'Teacher';
+  (scormPackage as any).publishedByModel = role === 'admin' ? 'Admin' : 'Staff';
 
   await scormPackage.save();
 
@@ -716,7 +716,7 @@ export const unpublishPackage = asyncHandler(async (req: Request, res: Response)
   (scormPackage as any).status = 'draft';
   (scormPackage as any).unpublishedAt = new Date();
   (scormPackage as any).unpublishedBy = req.userAuth!._id;
-  (scormPackage as any).unpublishedByModel = role === 'admin' ? 'Admin' : 'Teacher';
+  (scormPackage as any).unpublishedByModel = role === 'admin' ? 'Admin' : 'Staff';
 
   await scormPackage.save();
 

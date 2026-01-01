@@ -42,7 +42,7 @@ const subjectSchema = new Schema<ISubject>(
     teachers: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Teacher',
+        ref: 'Staff',
       },
     ],
     archived: {

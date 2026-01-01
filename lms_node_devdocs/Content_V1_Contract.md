@@ -249,6 +249,9 @@ Example Response:
 ## Changes (Phase 2)
 - No contract changes in this phase.
 
+## Changes (Phase 3)
+- No contract changes in this phase.
+
 ## Normalized Progress + Attempts
 These shapes are used to normalize SCORM and custom progress data into a shared reporting model.
 

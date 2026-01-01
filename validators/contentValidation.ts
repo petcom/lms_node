@@ -49,13 +49,8 @@ export const courseUpdate = {
   body: Joi.object({
     title: Joi.string().min(2).max(200),
     departmentId: objectId.allow(null),
-    segments: Joi.array().items(
-      Joi.object({
-        segmentId: Joi.string(),
-        type: Joi.string().valid('scorm', 'custom').required(),
-        contentId: objectId.required(),
-      })
-    ),
+    description: Joi.string().max(1000),
+    programLevel: objectId.allow(null),
   }).min(1),
 };
 
@@ -71,7 +66,7 @@ export const customProgress = {
   }),
   body: Joi.object({
     courseId: objectId.required(),
-    segmentId: Joi.string().required(),
+    courseContentId: objectId.required(),
     eventType: Joi.string().valid('answer', 'quiz_complete', 'section_complete').required(),
     payload: Joi.object({
       score: Joi.number().min(0),

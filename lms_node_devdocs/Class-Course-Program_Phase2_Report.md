@@ -9,7 +9,7 @@
 - Added models:
   - `model/Academic/ProgramLevel.ts`
   - `model/Academic/Class.ts`
-  - `model/Academic/Course.ts`
+  - `model/Content/Course.ts`
   - `model/Academic/CourseContent.ts`
   - `model/Academic/ProgramEnrollment.ts`
   - `model/Academic/ClassEnrollment.ts`

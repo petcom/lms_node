@@ -133,10 +133,9 @@ Body:
 ```
 {
   "title": "Course Title",
-  "segments": [
-    { "type": "custom", "contentId": "custom-content-id" },
-    { "type": "scorm", "contentId": "scorm-package-id" }
-  ]
+  "description": "Optional course description",
+  "programLevel": "<ObjectId>" | null,
+  "departmentId": "<ObjectId>" | null
 }
 ```
 
@@ -168,7 +167,7 @@ Body:
 ```
 {
   "courseId": "course-id",
-  "segmentId": "segment-id",
+  "courseContentId": "course-content-id",
   "eventType": "answer" | "quiz_complete" | "section_complete",
   "payload": { "score": 85, "maxScore": 100, "durationSec": 420 }
 }
@@ -251,6 +250,10 @@ Example Response:
 
 ## Changes (Phase 3)
 - No contract changes in this phase.
+
+## Changes (Phase 4)
+- New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
+- Course updates now reference `programLevel` and `departmentId`; progress payload uses `courseContentId`.
 
 ## Normalized Progress + Attempts
 These shapes are used to normalize SCORM and custom progress data into a shared reporting model.

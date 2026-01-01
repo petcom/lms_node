@@ -112,7 +112,7 @@ Key rename targets:
 Models to add:
 - `model/Academic/ProgramLevel.ts`
 - `model/Academic/Class.ts`
-- `model/Academic/Course.ts`
+- `model/Content/Course.ts`
 - `model/Academic/CourseContent.ts`
 - `model/Academic/ProgramEnrollment.ts`
 - `model/Academic/ClassEnrollment.ts`
@@ -260,3 +260,10 @@ Deliverables:
 - Program completion is per-program (no global graduation).
 - Course progress and class progress are derived correctly.
 - SCORM and custom attempts unified under ContentAttempt.
+
+## Next Steps (Post Phase 4.1)
+- Update academic workflows to use `ProgramLevel` and `Course` (replace `ClassLevel` + `Subject` references).
+- Refactor SCORM/custom content endpoints to resolve `CourseContent` and emit `ContentAttempt`.
+- Add enrollment endpoints for `ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`.
+- Add reporting endpoints for program/course progress.
+- Deprecate and remove legacy collections after migration validation.

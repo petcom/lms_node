@@ -2,11 +2,14 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
 import Department from '../../../model/Academic/Department';
+import Program from '../../../model/Academic/Program';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import CustomContent from '../../../model/Content/CustomContent';
 import Course from '../../../model/Content/Course';
+import CourseContent from '../../../model/Academic/CourseContent';
 
 const adminToken = 'test-global-admin-token';
+const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
 const masterDepartmentId = new mongoose.Types.ObjectId(
   process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
 );
@@ -28,9 +31,11 @@ describe('Content v1 API', () => {
   beforeEach(async () => {
     await Promise.all([
       Department.deleteMany({}),
+      Program.deleteMany({}),
       ScormPackage.deleteMany({}),
       CustomContent.deleteMany({}),
       Course.deleteMany({}),
+      CourseContent.deleteMany({}),
     ]);
 
     await Department.create({
@@ -38,6 +43,14 @@ describe('Content v1 API', () => {
       name: 'Master Department',
       code: 'MASTER',
       level: 'master',
+    });
+
+    await Program.create({
+      name: 'Program Alpha',
+      description: 'Alpha program',
+      duration: '4 years',
+      createdBy: masterAdminId,
+      department: masterDepartmentId,
     });
   });
 
@@ -122,16 +135,26 @@ describe('Content v1 API', () => {
       createdBy: new mongoose.Types.ObjectId('0000000000000000000000a1'),
     });
 
+    const program = await Program.findOne({ name: 'Program Alpha' }).lean();
+    if (!program) {
+      throw new Error('Program not found for course setup');
+    }
+
     const course = await Course.create({
       title: 'Course Alpha',
+      description: 'Course description',
+      program: program._id,
       department: masterDepartmentId,
-      segments: [
-        {
-          segmentId: new mongoose.Types.ObjectId().toString(),
-          type: 'custom',
-          contentId: custom._id,
-        },
-      ],
+      createdBy: masterAdminId,
+    });
+
+    await CourseContent.create({
+      course: course._id,
+      contentType: 'custom',
+      customContentId: custom._id,
+      order: 1,
+      isRequired: true,
+      createdBy: masterAdminId,
     });
 
     const renderRes = await request(app)
@@ -158,16 +181,26 @@ describe('Content v1 API', () => {
       createdBy: new mongoose.Types.ObjectId('0000000000000000000000a1'),
     });
 
+    const program = await Program.findOne({ name: 'Program Alpha' }).lean();
+    if (!program) {
+      throw new Error('Program not found for course setup');
+    }
+
     const course = await Course.create({
       title: 'Course Beta',
+      description: 'Course description',
+      program: program._id,
       department: masterDepartmentId,
-      segments: [
-        {
-          segmentId: 'segment-1',
-          type: 'custom',
-          contentId: custom._id,
-        },
-      ],
+      createdBy: masterAdminId,
+    });
+
+    const courseContent = await CourseContent.create({
+      course: course._id,
+      contentType: 'custom',
+      customContentId: custom._id,
+      order: 1,
+      isRequired: true,
+      createdBy: masterAdminId,
     });
 
     const progressRes = await request(app)
@@ -175,7 +208,7 @@ describe('Content v1 API', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         courseId: course._id.toString(),
-        segmentId: 'segment-1',
+        courseContentId: courseContent._id.toString(),
         eventType: 'quiz_complete',
         payload: { score: 90, maxScore: 100, durationSec: 120 },
       });
@@ -196,19 +229,29 @@ describe('Content v1 API', () => {
       customType: 'practice',
       payload: { steps: 2 },
       department: masterDepartmentId,
-      createdBy: new mongoose.Types.ObjectId('0000000000000000000000a1'),
+      createdBy: masterAdminId,
     });
+
+    const program = await Program.findOne({ name: 'Program Alpha' }).lean();
+    if (!program) {
+      throw new Error('Program not found for course setup');
+    }
 
     const course = await Course.create({
       title: 'Course Gamma',
+      description: 'Course description',
+      program: program._id,
       department: masterDepartmentId,
-      segments: [
-        {
-          segmentId: 'segment-2',
-          type: 'custom',
-          contentId: custom._id,
-        },
-      ],
+      createdBy: masterAdminId,
+    });
+
+    const courseContent = await CourseContent.create({
+      course: course._id,
+      contentType: 'custom',
+      customContentId: custom._id,
+      order: 1,
+      isRequired: true,
+      createdBy: masterAdminId,
     });
 
     await request(app)
@@ -216,7 +259,7 @@ describe('Content v1 API', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         courseId: course._id.toString(),
-        segmentId: 'segment-2',
+        courseContentId: courseContent._id.toString(),
         eventType: 'section_complete',
         payload: { score: 100, maxScore: 100, durationSec: 60 },
       });

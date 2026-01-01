@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import CustomContent from '../../model/Content/CustomContent';
 import Course from '../../model/Content/Course';
+import CourseContent from '../../model/Academic/CourseContent';
 import RenderedCourse from '../../model/Content/RenderedCourse';
 import LearnerProgress from '../../model/Content/LearnerProgress';
 import ContentAttempt from '../../model/Content/ContentAttempt';
@@ -74,7 +75,7 @@ const resolveDepartmentScope = async (
 const renderCourseHtml = async (
   course: any,
   segments: Array<{
-    type: 'custom' | 'scorm';
+    contentType: 'custom' | 'scorm';
     segmentId: string;
     content: any;
   }>
@@ -83,7 +84,7 @@ const renderCourseHtml = async (
   const bodySegments: string[] = [];
 
   segments.forEach((segment) => {
-    if (segment.type === 'custom') {
+    if (segment.contentType === 'custom') {
       if (segment.content?.css) {
         styles.push(segment.content.css);
       }
@@ -302,14 +303,16 @@ export const getCourse = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateCourse = asyncHandler(async (req: Request, res: Response) => {
-  const { title, departmentId, segments } = req.body as {
+  const { title, departmentId, description, programLevel } = req.body as {
     title?: string;
+    description?: string;
     departmentId?: string | null;
-    segments?: Array<{ segmentId?: string; type: 'scorm' | 'custom'; contentId: string }>;
+    programLevel?: string | null;
   };
 
   const updates: any = {};
   if (title) updates.title = title;
+  if (description !== undefined) updates.description = description;
 
   if (departmentId !== undefined) {
     if (departmentId && !mongoose.isValidObjectId(departmentId)) {
@@ -318,18 +321,15 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
     updates.department = departmentId ? new mongoose.Types.ObjectId(departmentId) : undefined;
   }
 
-  if (segments) {
-    updates.segments = segments.map((segment) => ({
-      segmentId: segment.segmentId || new mongoose.Types.ObjectId().toString(),
-      type: segment.type,
-      contentId: new mongoose.Types.ObjectId(segment.contentId),
-    }));
+  if (programLevel !== undefined) {
+    if (programLevel && !mongoose.isValidObjectId(programLevel)) {
+      throw new ValidationError('Invalid programLevel id');
+    }
+    updates.programLevel = programLevel ? new mongoose.Types.ObjectId(programLevel) : undefined;
   }
 
   const course = await Course.findByIdAndUpdate(req.params.id, updates, {
     new: true,
-    upsert: true,
-    setDefaultsOnInsert: true,
   });
 
   res.status(200).json({
@@ -360,20 +360,32 @@ export const renderCourse = asyncHandler(async (req: Request, res: Response) => 
     return;
   }
 
+  const courseContents = await CourseContent.find({ course: course._id })
+    .sort({ order: 1 })
+    .lean();
+
   const segmentsWithContent = await Promise.all(
-    course.segments.map(async (segment: any) => {
-      if (segment.type === 'custom') {
-        const content = await CustomContent.findById(segment.contentId).lean();
+    courseContents.map(async (courseContent: any) => {
+      if (courseContent.contentType === 'custom') {
+        const content = await CustomContent.findById(courseContent.customContentId).lean();
         if (!content) {
           throw new NotFoundError('Custom content not found');
         }
-        return { ...segment, content };
+        return {
+          contentType: 'custom',
+          segmentId: courseContent._id.toString(),
+          content,
+        };
       }
-      const content = await ScormPackage.findById(segment.contentId).lean();
+      const content = await ScormPackage.findById(courseContent.scormPackageId).lean();
       if (!content) {
         throw new NotFoundError('SCORM package not found');
       }
-      return { ...segment, content };
+      return {
+        contentType: 'scorm',
+        segmentId: courseContent._id.toString(),
+        content,
+      };
     })
   );
 
@@ -402,20 +414,32 @@ export const forceRenderCourse = asyncHandler(async (req: Request, res: Response
     throw new NotFoundError('Course not found');
   }
 
+  const courseContents = await CourseContent.find({ course: course._id })
+    .sort({ order: 1 })
+    .lean();
+
   const segmentsWithContent = await Promise.all(
-    course.segments.map(async (segment: any) => {
-      if (segment.type === 'custom') {
-        const content = await CustomContent.findById(segment.contentId).lean();
+    courseContents.map(async (courseContent: any) => {
+      if (courseContent.contentType === 'custom') {
+        const content = await CustomContent.findById(courseContent.customContentId).lean();
         if (!content) {
           throw new NotFoundError('Custom content not found');
         }
-        return { ...segment, content };
+        return {
+          contentType: 'custom',
+          segmentId: courseContent._id.toString(),
+          content,
+        };
       }
-      const content = await ScormPackage.findById(segment.contentId).lean();
+      const content = await ScormPackage.findById(courseContent.scormPackageId).lean();
       if (!content) {
         throw new NotFoundError('SCORM package not found');
       }
-      return { ...segment, content };
+      return {
+        contentType: 'scorm',
+        segmentId: courseContent._id.toString(),
+        content,
+      };
     })
   );
 
@@ -445,9 +469,9 @@ export const recordCustomProgress = asyncHandler(async (req: Request, res: Respo
     throw new NotFoundError('Custom content not found');
   }
 
-  const { courseId, segmentId, eventType, payload } = req.body as {
+  const { courseId, courseContentId, eventType, payload } = req.body as {
     courseId: string;
-    segmentId: string;
+    courseContentId: string;
     eventType: 'answer' | 'quiz_complete' | 'section_complete';
     payload?: { score?: number; maxScore?: number; durationSec?: number };
   };
@@ -458,12 +482,25 @@ export const recordCustomProgress = asyncHandler(async (req: Request, res: Respo
   }
 
   const courseObjectId = new mongoose.Types.ObjectId(courseId);
+  const courseContent = await CourseContent.findById(courseContentId).lean();
+  if (!courseContent) {
+    throw new NotFoundError('Course content not found');
+  }
+  if (courseContent.contentType !== 'custom') {
+    throw new ValidationError('Course content is not custom');
+  }
+  if (courseContent.course?.toString() !== courseObjectId.toString()) {
+    throw new ValidationError('Course content does not belong to the course');
+  }
+  if (courseContent.customContentId?.toString() !== custom._id.toString()) {
+    throw new ValidationError('Course content does not match the content');
+  }
 
   const existing = await LearnerProgress.findOne({
     learnerId,
     courseId: courseObjectId,
     contentId: custom._id,
-    segmentId,
+    segmentId: courseContentId,
   });
 
   const status =
@@ -479,12 +516,12 @@ export const recordCustomProgress = asyncHandler(async (req: Request, res: Respo
   const attemptCount = (existing?.attemptCount || 0) + 1;
 
   await LearnerProgress.findOneAndUpdate(
-    { learnerId, courseId: courseObjectId, contentId: custom._id, segmentId },
+    { learnerId, courseId: courseObjectId, contentId: custom._id, segmentId: courseContentId },
     {
       learnerId,
       courseId: courseObjectId,
       contentId: custom._id,
-      segmentId,
+      segmentId: courseContentId,
       contentType: 'custom',
       customType: custom.customType,
       status,
@@ -504,7 +541,7 @@ export const recordCustomProgress = asyncHandler(async (req: Request, res: Respo
     learnerId,
     courseId: courseObjectId,
     contentId: custom._id,
-    segmentId,
+    segmentId: courseContentId,
     contentType: 'custom',
     customType: custom.customType,
     attemptNumber: attemptCount,
@@ -596,11 +633,16 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
       scormFilter.learner = new mongoose.Types.ObjectId(learnerId);
     }
     if (courseId) {
-      const course = await Course.findById(courseId).lean();
-      if (course) {
-        const scormIds = course.segments
-          .filter((segment: any) => segment.type === 'scorm')
-          .map((segment: any) => segment.contentId);
+      const courseContents = await CourseContent.find({
+        course: new mongoose.Types.ObjectId(courseId),
+        contentType: 'scorm',
+      })
+        .select('scormPackageId')
+        .lean();
+      const scormIds = courseContents
+        .map((item: any) => item.scormPackageId)
+        .filter(Boolean);
+      if (scormIds.length) {
         scormFilter.package = { $in: scormIds };
       }
     }

@@ -97,6 +97,83 @@ export const updateProgram = {
 };
 
 /**
+ * Program Level validation
+ */
+export const createProgramLevel = {
+  body: Joi.object({
+    program: objectId.required(),
+    name: Joi.string().min(2).max(100).trim().required(),
+    description: Joi.string().max(500).trim(),
+    order: Joi.number().integer().min(1).required(),
+    department: objectId,
+  }),
+};
+
+export const updateProgramLevel = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    name: Joi.string().min(2).max(100).trim(),
+    description: Joi.string().max(500).trim(),
+    order: Joi.number().integer().min(1),
+    department: objectId.allow(null),
+  }).min(1),
+};
+
+/**
+ * Course validation
+ */
+export const createCourse = {
+  body: Joi.object({
+    title: Joi.string().min(2).max(200).trim().required(),
+    description: Joi.string().max(1000).trim(),
+    program: objectId.required(),
+    programLevel: objectId,
+    department: objectId,
+  }),
+};
+
+export const updateCourse = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    title: Joi.string().min(2).max(200).trim(),
+    description: Joi.string().max(1000).trim(),
+    programLevel: objectId.allow(null),
+    department: objectId.allow(null),
+  }).min(1),
+};
+
+/**
+ * Course Content validation
+ */
+export const createCourseContent = {
+  body: Joi.object({
+    course: objectId.required(),
+    contentType: Joi.string().valid('scorm', 'custom').required(),
+    scormPackageId: objectId,
+    customContentId: objectId,
+    order: Joi.number().integer().min(1),
+    isRequired: Joi.boolean(),
+  }),
+};
+
+export const updateCourseContent = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    contentType: Joi.string().valid('scorm', 'custom'),
+    scormPackageId: objectId.allow(null),
+    customContentId: objectId.allow(null),
+    order: Joi.number().integer().min(1),
+    isRequired: Joi.boolean(),
+  }).min(1),
+};
+
+/**
  * Subject validation
  */
 export const createSubject = {

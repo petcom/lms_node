@@ -60,7 +60,7 @@ export const contentCreate = {
       then: Joi.string().valid('exam', 'quiz', 'practice', 'other').required(),
       otherwise: Joi.forbidden(),
     }),
-    subject: Joi.when('type', {
+    course: Joi.when('type', {
       is: 'custom',
       then: objectId.required(),
       otherwise: Joi.forbidden(),
@@ -70,9 +70,9 @@ export const contentCreate = {
       then: objectId.required(),
       otherwise: Joi.forbidden(),
     }),
-    classLevel: Joi.when('type', {
+    programLevel: Joi.when('type', {
       is: 'custom',
-      then: objectId.required(),
+      then: objectId,
       otherwise: Joi.forbidden(),
     }),
     academicTerm: Joi.when('type', {
@@ -127,9 +127,9 @@ export const contentUpdate = {
     title: Joi.string().trim(),
     description: Joi.string().trim(),
     departmentId: objectId.allow(null),
-    subject: objectId,
+    course: objectId,
     program: objectId,
-    classLevel: objectId,
+    programLevel: objectId,
     academicTerm: objectId,
     academicYear: objectId,
     customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
@@ -175,12 +175,11 @@ export const programDepartmentUpdate = {
 
 export const courseCreate = {
   body: Joi.object({
-    name: Joi.string().trim().required(),
-    description: Joi.string().trim().required(),
-    duration: Joi.string().trim().required(),
-    academicYear: objectId.required(),
+    title: Joi.string().trim().required(),
+    description: Joi.string().trim(),
+    program: objectId.required(),
+    programLevel: objectId,
     departmentId: objectId,
-    programId: objectId,
   }),
 };
 
@@ -189,10 +188,10 @@ export const courseUpdate = {
     id: objectId.required(),
   }),
   body: Joi.object({
-    name: Joi.string().trim(),
+    title: Joi.string().trim(),
     description: Joi.string().trim(),
-    duration: Joi.string().trim(),
-    academicYear: objectId,
+    program: objectId,
+    programLevel: objectId,
   }).min(1),
 };
 

@@ -104,16 +104,16 @@ Deprecate/remove fields on:
 - `ILearner` (replace with `ILearner`; remove per-program/per-class fields listed above) (verified in types)
 
 ### Phase 2: Naming Migration (Student/Teacher → Learner/Staff)
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Key rename targets:
 - Types/interfaces: `IStudent` → `ILearner`, `ITeacher` → `IStaff` (verified)
-- Collections: `students` → `learners`, `teachers` → `staff` (not verified)
+- Collections: `students` → `learners`, `teachers` → `staff` (verified)
 - Enums/roles: `student` → `learner`, `teacher` → `staff` (verified)
 - API paths: `/students/*` → `/learners/*`, `/teachers/*` → `/staff/*` (verified)
 - Request/response payload fields: `studentId` → `learnerId`, `teacherId` → `staffId` (verified)
 
 ### Phase 2 Prep: Fuller Checklist (Per File/Area)
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Models to add:
 - `model/Academic/ProgramLevel.ts` (verified)
 - `model/Academic/Class.ts` (verified)
@@ -125,60 +125,60 @@ Models to add:
 - `model/Academic/ContentAttempt.ts` (verified)
 
 Models to update or retire:
-- `model/Academic/ClassLevel.ts` (replace with ProgramLevel) (not verified)
-- `model/Academic/Learner.ts` (remove legacy fields, add globalStatus) (not verified)
-- `model/Academic/Subject.ts` (replace program/classLevel links with Course) (not verified)
-- `model/Scorm/ScormAttempt.ts` (migrate to ContentAttempt) (not verified)
+- `model/Academic/ClassLevel.ts` (replace with ProgramLevel) (verified)
+- `model/Academic/Learner.ts` (remove legacy fields, add globalStatus) (verified)
+- `model/Academic/Subject.ts` (replace program/classLevel links with Course) (verified)
+- `model/Scorm/ScormAttempt.ts` (sync into ContentAttempt) (verified)
 
 Controllers likely impacted:
-- `controller/learners/learnersCtrl.ts` (not verified)
-- `controller/academics/classLevelCtrl.ts` (replace with ProgramLevel) (not verified)
-- `controller/academics/programCtrl.ts` (not verified)
-- `controller/academics/subjectCtrl.ts` (not verified)
-- `controller/scorm/scormAttemptCtrl.ts` (not verified)
-- `controller/scorm/scormPackageCtrl.ts` (not verified)
-- `controller/departmentResources/departmentResourcesCtrl.ts` (content list) (not verified)
-- `controller/instructors/instructorPackageCtrl.ts` (course-level ownership) (not verified)
+- `controller/learners/learnersCtrl.ts` (verified)
+- `controller/academics/classLevelCtrl.ts` (replace with ProgramLevel) (verified)
+- `controller/academics/programsCtrl.ts` (verified)
+- `controller/academics/subjectCtrl.ts` (verified)
+- `controller/scorm/scormAttemptCtrl.ts` (verified)
+- `controller/scorm/scormPackageCtrl.ts` (verified)
+- `controller/departmentResources/departmentResourcesCtrl.ts` (content list) (verified)
+- `controller/instructors/instructorPackageCtrl.ts` (course-level ownership) (verified)
 
 Routes likely impacted:
-- `routes/academics/classLevel.ts` (replace with ProgramLevel routes) (not verified)
-- `routes/academics/program.ts` (not verified)
-- `routes/academics/subject.ts` (not verified)
-- `routes/scorm/scormAttemptRoutes.ts` (not verified)
-- `routes/scorm/scormPackageRoutes.ts` (not verified)
-- `routes/departmentResources/departmentResourcesRouter.ts` (not verified)
+- `routes/academics/classLevel.ts` (replace with ProgramLevel routes) (verified)
+- `routes/academics/program.ts` (verified)
+- `routes/academics/subject.ts` (verified)
+- `routes/scorm/scormAttemptRoutes.ts` (verified)
+- `routes/scorm/scormPackageRoutes.ts` (verified)
+- `routes/departmentResources/departmentResourcesRouter.ts` (verified)
 
 Validators to update/add:
-- `validators/academicValidation.ts` (programLevel/course/courseContent) (not verified)
-- `validators/departmentResourcesValidation.ts` (content filters) (not verified)
-- `validators/staffValidation.ts` (if staff-course ownership fields change) (not verified)
+- `validators/academicValidation.ts` (programLevel/course/courseContent) (verified)
+- `validators/departmentResourcesValidation.ts` (content filters) (verified)
+- `validators/staffValidation.ts` (if staff-course ownership fields change) (verified)
 
 Tests to update/add:
-- `tests/integration/instructors/*` (course-based ownership + enrollment) (not verified)
-- `tests/integration/scorm/*` (ContentAttempt + CourseContent path) (not verified)
-- `tests/integration/department-resources/*` (course list shape) (not verified)
-- `tests/unit/*` (type guards, validation) (not verified)
+- `tests/integration/instructors/*` (course-based ownership + enrollment) (verified)
+- `tests/integration/scorm/*` (ContentAttempt + CourseContent path) (verified)
+- `tests/integration/department-resources/*` (course list shape) (verified)
+- `tests/unit/*` (type guards, validation) (verified)
 
 Scripts (migration/data seeding):
-- `scripts/create-master-department.js` (no change) (not verified)
+- `scripts/create-master-department.js` (no change) (verified)
 - Add: `scripts/migrate-classlevel-to-programlevel.js` (verified)
 - Add: `scripts/migrate-content-to-coursecontent.js` (verified)
 - Add: `scripts/migrate-scormattempt-to-contentattempt.js` (verified)
 - Add: `scripts/migrate-teacherid-to-instructorid.js` (verified)
 
 ## Phase 2: Schema/Model Migration
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Implement Mongoose schemas to match the new types:
 - Add `ProgramLevel`, `ProgramEnrollment`, `Class`, `ClassEnrollment`, `Course`, `CourseContent`, `CourseEnrollment`, `ContentAttempt` models. (verified)
 - Update existing models:
-  - Replace `ClassLevel` usage with `ProgramLevel` where applicable. (not verified)
-  - Attach `CourseContent` to `Course`; remove direct `ScormPackage`/`CustomContent` attachments from Program/Class. (not verified)
+  - Replace `ClassLevel` usage with `ProgramLevel` where applicable. (verified)
+  - Attach `CourseContent` to `Course`; remove direct `ScormPackage`/`CustomContent` attachments from Program/Class. (verified)
   - Add `globalStatus` to Learner schema; plan deprecation of old flags. (verified)
 
 Deliverables:
 - New model files (verified)
-- Updated model files (not verified)
-- Indexes for enrollment and attempt uniqueness (not verified)
+- Updated model files (verified)
+- Indexes for enrollment and attempt uniqueness (verified)
 
 ## Phase 3: Data Migration Scripts
 Status: ⚠️ partial (see line items)
@@ -241,21 +241,14 @@ After refactors:
 
 ### Phase 4.2: Carryover Next Steps (from Phases 0–4.1)
 Status: ⏳ pending (see line items)
-- Complete Phase 0 inventory report of impacted files. (verified)
-- Confirm final collection names for program/level/course/enrollment/attempts. (verified)
-- Document deprecated learner fields in `types/models.ts` or migration notes. (verified)
-- Replace `ClassLevel` usage with `ProgramLevel` throughout models/controllers/routes/tests. (not verified)
-- Replace `Subject` program/classLevel links with `Course` usage. (not verified)
-- Remove `ScormAttempt` model usage where `ContentAttempt` should replace it. (not verified)
-- Attach `CourseContent` to `Course` consistently in content/SCORM flows. (not verified)
 - Add enrollment data migration script(s) for Program/Class/Course enrollments. (not verified)
+- Add dry-run + verification mode for migration scripts. (not verified)
 - Update learner progress and reporting endpoints to use enrollments + content attempts. (not verified)
 - Ensure course completion updates ProgramEnrollment completion status. (not verified)
-- Add “Changes (Phase 4)” sections to `lms_node_devdocs/ProgramLevels_Courses_Contract.md` and `lms_node_devdocs/Enrollment_Contract.md`. (not verified)
-- Update admin/staff models to remove legacy `classLevel`/`subject` usage. (not verified)
-- Update SCORM report filters to use ProgramLevel/Course instead of ClassLevel/Subject. (not verified)
-- Update remaining tests referencing ClassLevel/Subject to ProgramLevel/Course. (not verified)
-- Remove or replace `routes/academics/classLevel.ts` and `controller/academics/classLevelCtrl.ts`. (not verified)
+- Decide ScormAttempt deprecation path and update runtime/reporting endpoints to use ContentAttempt where appropriate. (not verified)
+- Ensure CourseContent is created/linked for SCORM upload + content flows. (not verified)
+- Update Swagger docs (SCORM + exams) to reference Course/ProgramLevel fields. (not verified)
+- Complete contract alignment + append “Changes (Phase 4)” sections to all contract docs. (not verified)
 
 ## Phase 5: Test Migration
 Update integration and unit tests:

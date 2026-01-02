@@ -7,10 +7,9 @@ import StaffRole from '../../model/Staff/StaffRole';
 import Department from '../../model/Academic/Department';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Exam from '../../model/Academic/Exam';
-import Subject from '../../model/Academic/Subject';
+import Course from '../../model/Content/Course';
 import Program from '../../model/Academic/Program';
-import ClassLevel from '../../model/Academic/ClassLevel';
-import AcademicYear from '../../model/Academic/AcademicYear';
+import ProgramLevel from '../../model/Academic/ProgramLevel';
 import { IDepartment } from '../../types/models';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
@@ -303,30 +302,30 @@ export const listDepartmentContent = AsyncHandler(
     const scormPromise =
       type && type !== 'scorm' ? Promise.resolve([]) : ScormPackage.find(scormFilter).lean();
 
-    const subjectFilter =
+    const courseFilter =
       departmentObjectIds === null ? {} : { department: { $in: departmentObjectIds } };
-    const subjectPromise = Subject.find(subjectFilter).select('_id department').lean();
+    const coursePromise = Course.find(courseFilter).select('_id department').lean();
 
-    const [scormPackages, subjects] = await Promise.all([scormPromise, subjectPromise]);
-    const subjectIds = subjects.map((subject) => subject._id);
-    const subjectDepartmentMap = new Map<string, DepartmentSummary | null>();
-    subjects.forEach((subject) => {
-      const deptId = subject.department ? subject.department.toString() : null;
-      subjectDepartmentMap.set(
-        subject._id.toString(),
+    const [scormPackages, courses] = await Promise.all([scormPromise, coursePromise]);
+    const courseIds = courses.map((course) => course._id);
+    const courseDepartmentMap = new Map<string, DepartmentSummary | null>();
+    courses.forEach((course) => {
+      const deptId = course.department ? course.department.toString() : null;
+      courseDepartmentMap.set(
+        course._id.toString(),
         deptId ? departmentMap.get(deptId) || null : null
       );
     });
 
     const examFilter: Record<string, any> = {};
-    if (subjectIds.length > 0) {
-      examFilter.subject = { $in: subjectIds };
+    if (courseIds.length > 0) {
+      examFilter.course = { $in: courseIds };
     }
 
     const exams =
       type && type === 'scorm'
         ? []
-        : await Exam.find(examFilter).select('name examType subject').lean();
+        : await Exam.find(examFilter).select('name examType course').lean();
 
     const items: ContentItem[] = [];
 
@@ -346,8 +345,8 @@ export const listDepartmentContent = AsyncHandler(
       if (customType && derivedCustomType !== customType) {
         return;
       }
-      const subjectId = exam.subject ? exam.subject.toString() : '';
-      const deptSummary = subjectDepartmentMap.get(subjectId) || null;
+      const courseId = exam.course ? exam.course.toString() : '';
+      const deptSummary = courseDepartmentMap.get(courseId) || null;
       items.push({
         id: exam._id.toString(),
         type: 'custom',
@@ -508,9 +507,9 @@ export const createDepartmentContent = AsyncHandler(
       title,
       description,
       customType,
-      subject,
+      course,
       program,
-      classLevel,
+      programLevel,
       academicTerm,
       academicYear,
       passMark,
@@ -522,12 +521,16 @@ export const createDepartmentContent = AsyncHandler(
     } = req.body as Record<string, any>;
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
-    ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
+    const courseDept = await resolveDepartmentId(Course, course, 'course');
+    ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
     const programDept = await resolveDepartmentId(Program, program, 'program');
     ensureDepartmentScope(scope, programDept, 'Access denied for this program');
-    const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
-    ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
+    const programLevelDept = programLevel
+      ? await resolveDepartmentId(ProgramLevel, programLevel, 'program level')
+      : null;
+    if (programLevelDept) {
+      ensureDepartmentScope(scope, programLevelDept, 'Access denied for this program level');
+    }
 
     if (!mongoose.isValidObjectId(academicTerm)) {
       throw new ValidationError('Invalid academic term id');
@@ -539,9 +542,9 @@ export const createDepartmentContent = AsyncHandler(
     const exam = await Exam.create({
       name: title,
       description,
-      subject: new mongoose.Types.ObjectId(subject),
+      course: new mongoose.Types.ObjectId(course),
       program: new mongoose.Types.ObjectId(program),
-      classLevel: new mongoose.Types.ObjectId(classLevel),
+      programLevel: programLevel ? new mongoose.Types.ObjectId(programLevel) : undefined,
       academicTerm: new mongoose.Types.ObjectId(academicTerm),
       academicYear: new mongoose.Types.ObjectId(academicYear),
       passMark,
@@ -554,7 +557,7 @@ export const createDepartmentContent = AsyncHandler(
       createdBy: req.userAuth?._id,
     });
 
-    const departmentRecord = subjectDept ? await Department.findById(subjectDept).lean() : null;
+    const departmentRecord = courseDept ? await Department.findById(courseDept).lean() : null;
     const deptSummary = departmentRecord ? toDepartmentSummary(departmentRecord) : null;
 
     res.status(201).json({
@@ -594,9 +597,9 @@ export const updateDepartmentContent = AsyncHandler(
         title,
         description,
         departmentId,
-        subject,
+        course,
         program,
-        classLevel,
+        programLevel,
         academicTerm,
       } = req.body as Record<string, any>;
 
@@ -615,10 +618,10 @@ export const updateDepartmentContent = AsyncHandler(
         }
       }
 
-      if (subject) {
-        const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
-        ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
-        pkg.subject = new mongoose.Types.ObjectId(subject);
+      if (course) {
+        const courseDept = await resolveDepartmentId(Course, course, 'course');
+        ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
+        pkg.course = new mongoose.Types.ObjectId(course);
       }
 
       if (program) {
@@ -627,10 +630,14 @@ export const updateDepartmentContent = AsyncHandler(
         pkg.program = new mongoose.Types.ObjectId(program);
       }
 
-      if (classLevel) {
-        const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
-        ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
-        pkg.classLevel = new mongoose.Types.ObjectId(classLevel);
+      if (programLevel) {
+        const programLevelDept = await resolveDepartmentId(
+          ProgramLevel,
+          programLevel,
+          'program level'
+        );
+        ensureDepartmentScope(scope, programLevelDept, 'Access denied for this program level');
+        pkg.programLevel = new mongoose.Types.ObjectId(programLevel);
       }
 
       if (academicTerm) {
@@ -667,20 +674,20 @@ export const updateDepartmentContent = AsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const currentSubjectDept = await resolveDepartmentId(
-      Subject,
-      exam.subject.toString(),
-      'subject'
+    const currentCourseDept = await resolveDepartmentId(
+      Course,
+      exam.course.toString(),
+      'course'
     );
-    ensureDepartmentScope(scope, currentSubjectDept, 'Access denied for this content');
+    ensureDepartmentScope(scope, currentCourseDept, 'Access denied for this content');
 
     const {
       title,
       description,
       customType,
-      subject,
+      course,
       program,
-      classLevel,
+      programLevel,
       academicTerm,
       academicYear,
       passMark,
@@ -691,10 +698,10 @@ export const updateDepartmentContent = AsyncHandler(
       examStatus,
     } = req.body as Record<string, any>;
 
-    if (subject) {
-      const subjectDept = await resolveDepartmentId(Subject, subject, 'subject');
-      ensureDepartmentScope(scope, subjectDept, 'Access denied for this subject');
-      exam.subject = new mongoose.Types.ObjectId(subject);
+    if (course) {
+      const courseDept = await resolveDepartmentId(Course, course, 'course');
+      ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
+      exam.course = new mongoose.Types.ObjectId(course);
     }
 
     if (program) {
@@ -703,10 +710,14 @@ export const updateDepartmentContent = AsyncHandler(
       exam.program = new mongoose.Types.ObjectId(program);
     }
 
-    if (classLevel) {
-      const classDept = await resolveDepartmentId(ClassLevel, classLevel, 'class level');
-      ensureDepartmentScope(scope, classDept, 'Access denied for this class level');
-      exam.classLevel = new mongoose.Types.ObjectId(classLevel);
+    if (programLevel) {
+      const programLevelDept = await resolveDepartmentId(
+        ProgramLevel,
+        programLevel,
+        'program level'
+      );
+      ensureDepartmentScope(scope, programLevelDept, 'Access denied for this program level');
+      exam.programLevel = new mongoose.Types.ObjectId(programLevel);
     }
 
     if (academicTerm) {
@@ -888,10 +899,10 @@ export const updateProgramDepartment = AsyncHandler(
 
 export const createDepartmentCourse = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { name, description, duration, academicYear, departmentId, programId } =
+    const { title, description, program, programLevel, departmentId } =
       req.body as Record<string, any>;
 
-    const existing = await Subject.findOne({ name }).lean();
+    const existing = await Course.findOne({ title, program }).lean();
     if (existing) {
       throw new ValidationError('Course already exists');
     }
@@ -909,31 +920,32 @@ export const createDepartmentCourse = AsyncHandler(
       ensureDepartmentScope(scope, resolvedDepartment, 'Access denied for this department');
     }
 
-    if (!mongoose.isValidObjectId(academicYear)) {
-      throw new ValidationError('Invalid academic year id');
+    if (!mongoose.isValidObjectId(program)) {
+      throw new ValidationError('Invalid program id');
     }
-    const yearExists = await AcademicYear.findById(academicYear).lean();
-    if (!yearExists) {
-      throw new NotFoundError('Academic year not found');
-    }
+    const programDept = await resolveDepartmentId(Program, program, 'program');
+    ensureDepartmentScope(scope, programDept, 'Access denied for this program');
 
-    let programObjectId: mongoose.Types.ObjectId | undefined;
-    if (programId) {
-      if (!mongoose.isValidObjectId(programId)) {
-        throw new ValidationError('Invalid program id');
+    let programLevelObjectId: mongoose.Types.ObjectId | undefined;
+    if (programLevel) {
+      if (!mongoose.isValidObjectId(programLevel)) {
+        throw new ValidationError('Invalid program level id');
       }
-      const programDept = await resolveDepartmentId(Program, programId, 'program');
-      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
-      programObjectId = new mongoose.Types.ObjectId(programId);
+      const programLevelDept = await resolveDepartmentId(
+        ProgramLevel,
+        programLevel,
+        'program level'
+      );
+      ensureDepartmentScope(scope, programLevelDept, 'Access denied for this program level');
+      programLevelObjectId = new mongoose.Types.ObjectId(programLevel);
     }
 
-    const course = await Subject.create({
-      name,
+    const course = await Course.create({
+      title,
       description,
-      duration,
-      academicYear: new mongoose.Types.ObjectId(academicYear),
       department: resolvedDepartment ? new mongoose.Types.ObjectId(resolvedDepartment) : undefined,
-      program: programObjectId,
+      program: new mongoose.Types.ObjectId(program),
+      programLevel: programLevelObjectId,
       createdBy: req.userAuth?._id,
     });
 
@@ -952,7 +964,7 @@ export const updateDepartmentCourse = AsyncHandler(
       throw new ValidationError('Invalid course id');
     }
 
-    const course = await Subject.findById(courseId);
+    const course = await Course.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -961,31 +973,44 @@ export const updateDepartmentCourse = AsyncHandler(
     const courseDept = course.department ? course.department.toString() : null;
     ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
 
-    const { name, description, duration, academicYear } = req.body as Record<string, any>;
+    const { title, description, program, programLevel } = req.body as Record<string, any>;
 
-    if (name && name !== course.name) {
-      const existing = await Subject.findOne({ name }).lean();
+    if (title && title !== course.title) {
+      const existing = await Course.findOne({ title, program: course.program }).lean();
       if (existing) {
         throw new ValidationError('Course already exists');
       }
-      course.name = name;
+      course.title = title;
     }
 
     if (description !== undefined) {
       course.description = description;
     }
-    if (duration !== undefined) {
-      course.duration = duration;
+
+    if (program !== undefined) {
+      if (!mongoose.isValidObjectId(program)) {
+        throw new ValidationError('Invalid program id');
+      }
+      const programDept = await resolveDepartmentId(Program, program, 'program');
+      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+      course.program = new mongoose.Types.ObjectId(program);
     }
-    if (academicYear !== undefined) {
-      if (!mongoose.isValidObjectId(academicYear)) {
-        throw new ValidationError('Invalid academic year id');
+
+    if (programLevel !== undefined) {
+      if (programLevel === null) {
+        course.programLevel = undefined;
+      } else {
+        if (!mongoose.isValidObjectId(programLevel)) {
+          throw new ValidationError('Invalid program level id');
+        }
+        const programLevelDept = await resolveDepartmentId(
+          ProgramLevel,
+          programLevel,
+          'program level'
+        );
+        ensureDepartmentScope(scope, programLevelDept, 'Access denied for this program level');
+        course.programLevel = new mongoose.Types.ObjectId(programLevel);
       }
-      const yearExists = await AcademicYear.findById(academicYear).lean();
-      if (!yearExists) {
-        throw new NotFoundError('Academic year not found');
-      }
-      course.academicYear = new mongoose.Types.ObjectId(academicYear);
     }
 
     await course.save();
@@ -1007,7 +1032,7 @@ export const updateCourseDepartment = AsyncHandler(
       throw new ValidationError('Invalid course id');
     }
 
-    const course = await Subject.findById(courseId);
+    const course = await Course.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -1048,7 +1073,7 @@ export const updateCourseProgram = AsyncHandler(
       throw new ValidationError('Invalid course id');
     }
 
-    const course = await Subject.findById(courseId);
+    const course = await Course.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }

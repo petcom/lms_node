@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import ScormPackage from '../../model/Scorm/ScormPackage';
-import ScormAttempt from '../../model/Scorm/ScormAttempt';
-import ClassLevel from '../../model/Academic/ClassLevel';
+import ContentAttempt from '../../model/Academic/ContentAttempt';
+import CourseContent from '../../model/Academic/CourseContent';
+import ClassModel from '../../model/Academic/Class';
+import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import Learner from '../../model/Academic/Learner';
 
@@ -99,40 +101,46 @@ export const listInstructorClasses = asyncHandler(async (req: Request, res: Resp
 
   const skip = (page - 1) * limit;
   const [classes, total] = await Promise.all([
-    ClassLevel.find(classFilter).skip(skip).limit(limit),
-    ClassLevel.countDocuments(classFilter),
+    ClassModel.find(classFilter).skip(skip).limit(limit),
+    ClassModel.countDocuments(classFilter),
   ]);
 
   const classIds = classes.map((c) => c._id.toString());
-  const learners = await Learner.find({ classLevels: { $in: classIds } }).select(
-    'name classLevels'
+  const enrollments = await ClassEnrollment.find({ class: { $in: classIds } }).select(
+    'class learner'
   );
   const learnersByClass: Record<string, mongoose.Types.ObjectId[]> = {};
-  learners.forEach((s) => {
-    (s.classLevels || []).forEach((cl: any) => {
-      if (classIds.includes(cl)) {
-        if (!learnersByClass[cl]) learnersByClass[cl] = [];
-        learnersByClass[cl].push(s._id as any);
-      }
-    });
+  const learnerIdsSet = new Set<string>();
+
+  enrollments.forEach((enrollment) => {
+    const classId = enrollment.class.toString();
+    const learnerId = enrollment.learner.toString();
+    learnerIdsSet.add(learnerId);
+    if (!learnersByClass[classId]) {
+      learnersByClass[classId] = [];
+    }
+    learnersByClass[classId].push(enrollment.learner as any);
   });
 
-  const learnerIds = learners.map((s) => s._id);
-  const attemptAgg = await ScormAttempt.aggregate([
-    { $match: { learner: { $in: learnerIds } } },
-    {
-      $group: {
-        _id: '$learner',
-        completed: {
-          $sum: { $cond: [{ $in: ['$status', ['completed', 'passed']] }, 1, 0] },
-        },
-        passed: {
-          $sum: { $cond: [{ $eq: ['$status', 'passed'] }, 1, 0] },
-        },
-        total: { $sum: 1 },
-      },
-    },
-  ]);
+  const learnerIds = Array.from(learnerIdsSet).map((id) => new mongoose.Types.ObjectId(id));
+  const attemptAgg =
+    learnerIds.length === 0
+      ? []
+      : await ContentAttempt.aggregate([
+          { $match: { learner: { $in: learnerIds }, contentType: 'scorm' } },
+          {
+            $group: {
+              _id: '$learner',
+              completed: {
+                $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+              },
+              passed: {
+                $sum: { $cond: [{ $eq: ['$passed', true] }, 1, 0] },
+              },
+              total: { $sum: 1 },
+            },
+          },
+        ]);
   const attemptMap = attemptAgg.reduce<
     Record<string, { completed: number; passed: number; total: number }>
   >((acc, cur) => {
@@ -191,21 +199,20 @@ export const instructorDashboard = asyncHandler(async (req: Request, res: Respon
     classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
-  const classes = await ClassLevel.find(classFilter).select('_id');
+  const classes = await ClassModel.find(classFilter).select('_id');
   const classIds = classes.map((c) => c._id.toString());
 
-  const learners = await Learner.find({ classLevels: { $in: classIds } }).select('_id');
-  const learnerIds = learners.map((s) => s._id);
+  const enrollments = await ClassEnrollment.find({ class: { $in: classIds } }).select('learner');
+  const learnerIds = enrollments.map((enrollment) => enrollment.learner);
 
-  const attempts = await ScormAttempt.find({ learner: { $in: learnerIds } }).select(
-    'status package'
-  );
+  const attempts = await ContentAttempt.find({
+    learner: { $in: learnerIds },
+    contentType: 'scorm',
+  }).select('status passed');
 
   const totalAttempts = attempts.length;
-  const completedAttempts = attempts.filter((a) =>
-    ['completed', 'passed'].includes(a.status)
-  ).length;
-  const passedAttempts = attempts.filter((a) => a.status === 'passed').length;
+  const completedAttempts = attempts.filter((a) => a.status === 'completed').length;
+  const passedAttempts = attempts.filter((a) => a.passed).length;
 
   const avgCompletion =
     totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
@@ -238,7 +245,7 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
     classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
-  const classes = await ClassLevel.find(classFilter).select('_id');
+  const classes = await ClassModel.find(classFilter).select('_id');
   const allowedClassIds = classes.map((c) => c._id.toString());
 
   const filterClassId = req.query.classId as string | undefined;
@@ -248,14 +255,21 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
 
   const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
 
-  const learners = await Learner.find({ classLevels: { $in: classIdsToUse } }).select(
-    'name classLevels'
+  const enrollments = await ClassEnrollment.find({ class: { $in: classIdsToUse } }).select(
+    'learner'
   );
-  const learnerIds = learners.map((s) => s._id);
+  const learnerIds = Array.from(
+    new Set(enrollments.map((enrollment) => enrollment.learner.toString()))
+  ).map((id) => new mongoose.Types.ObjectId(id));
+  const learners = await Learner.find({ _id: { $in: learnerIds } }).select('name');
   const learnerNameMap = learners.reduce<Record<string, string>>((acc, s) => {
     acc[s._id.toString()] = s.name;
     return acc;
   }, {});
+
+  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
+  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const skip = (page - 1) * limit;
 
   const packageIdParam = req.query.packageId as string | undefined;
   let packageFilter: any = {};
@@ -264,22 +278,50 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
     if (!pkg) {
       throw new NotFoundError('SCORM package not found');
     }
-    packageFilter = { package: pkg._id };
+    const courseContents = await CourseContent.find({ scormPackageId: pkg._id }).select('_id');
+    const courseContentIds = courseContents.map((content) => content._id);
+    if (courseContentIds.length === 0) {
+      res.status(200).json({
+        success: true,
+        data: {
+          items: [],
+          total: 0,
+          page,
+          pageSize: limit,
+        },
+      });
+      return;
+    }
+    packageFilter = { courseContent: { $in: courseContentIds } };
   }
 
-  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
-  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
-  const skip = (page - 1) * limit;
-
   const [items, total] = await Promise.all([
-    ScormAttempt.find({ learner: { $in: learnerIds }, ...packageFilter })
+    ContentAttempt.find({
+      learner: { $in: learnerIds },
+      contentType: 'scorm',
+      ...packageFilter,
+    })
       .sort({ startedAt: -1 })
       .skip(skip)
       .limit(limit),
-    ScormAttempt.countDocuments({ learner: { $in: learnerIds }, ...packageFilter }),
+    ContentAttempt.countDocuments({
+      learner: { $in: learnerIds },
+      contentType: 'scorm',
+      ...packageFilter,
+    }),
   ]);
 
-  const packageIds = items.map((a) => a.package);
+  const courseContentIds = items.map((a) => a.courseContent);
+  const courseContents = await CourseContent.find({ _id: { $in: courseContentIds } }).select(
+    'scormPackageId'
+  );
+  const courseContentToPackage = courseContents.reduce<Record<string, string>>((acc, content) => {
+    if (content.scormPackageId) {
+      acc[content._id.toString()] = content.scormPackageId.toString();
+    }
+    return acc;
+  }, {});
+  const packageIds = Object.values(courseContentToPackage);
   const packages = await ScormPackage.find({ _id: { $in: packageIds } }).select('title');
   const packageMap = packages.reduce<Record<string, string>>((acc, p) => {
     acc[p._id.toString()] = p.title;
@@ -289,9 +331,9 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
   const mapped = items.map((a) => ({
     id: a._id.toString(),
     learnerName: learnerNameMap[a.learner.toString()] || 'Unknown',
-    packageTitle: packageMap[a.package.toString()] || 'Unknown',
+    packageTitle: packageMap[courseContentToPackage[a.courseContent.toString()]] || 'Unknown',
     status: a.status,
-    score: (a as any).scorePercentage || undefined,
+    score: a.score ?? undefined,
     startedAt: a.startedAt,
     completedAt: a.completedAt,
   }));
@@ -316,7 +358,7 @@ export const listInstructorAssignments = asyncHandler(async (req: Request, res: 
     classFilter.instructors = new mongoose.Types.ObjectId(instructorId);
   }
 
-  const classes = await ClassLevel.find(classFilter).select('name');
+  const classes = await ClassModel.find(classFilter).select('name');
   const allowedClassIds = classes.map((c) => c._id.toString());
   const classNameMap = classes.reduce<Record<string, string>>((acc, c) => {
     acc[c._id.toString()] = c.name;
@@ -330,7 +372,7 @@ export const listInstructorAssignments = asyncHandler(async (req: Request, res: 
 
   const classIdsToUse = filterClassId ? [filterClassId] : allowedClassIds;
 
-  const pkgFilter: any = { 'assignedTo.classLevels': { $in: classIdsToUse } };
+  const pkgFilter: any = { 'assignedTo.classes': { $in: classIdsToUse } };
   if (role === 'staff') {
     pkgFilter.uploadedBy = new mongoose.Types.ObjectId(instructorId);
   }
@@ -345,7 +387,7 @@ export const listInstructorAssignments = asyncHandler(async (req: Request, res: 
   ]);
 
   const items = packages.map((pkg) => {
-    const clsIds = (pkg.assignedTo?.classLevels || [])
+    const clsIds = (pkg.assignedTo?.classes || [])
       .map(String)
       .filter((id) => classIdsToUse.includes(id));
     return {
@@ -401,24 +443,44 @@ export const listInstructorPackages = asyncHandler(async (req: Request, res: Res
   ]);
 
   const packageIds = items.map((p) => p._id);
-  const attemptStats = await ScormAttempt.aggregate([
-    { $match: { package: { $in: packageIds } } },
-    {
-      $group: {
-        _id: '$package',
-        total: { $sum: 1 },
-        completed: {
-          $sum: {
-            $cond: [{ $in: ['$status', ['completed', 'passed']] }, 1, 0],
+  const courseContents = await CourseContent.find({
+    scormPackageId: { $in: packageIds },
+  }).select('_id scormPackageId');
+  const contentIds = courseContents.map((content) => content._id);
+  const contentToPackage = courseContents.reduce<Record<string, string>>((acc, content) => {
+    if (content.scormPackageId) {
+      acc[content._id.toString()] = content.scormPackageId.toString();
+    }
+    return acc;
+  }, {});
+
+  const attemptStats =
+    contentIds.length === 0
+      ? []
+      : await ContentAttempt.aggregate([
+          { $match: { courseContent: { $in: contentIds }, contentType: 'scorm' } },
+          {
+            $group: {
+              _id: '$courseContent',
+              total: { $sum: 1 },
+              completed: {
+                $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+              },
+            },
           },
-        },
-      },
-    },
-  ]);
+        ]);
 
   const statsMap = attemptStats.reduce<Record<string, { total: number; completed: number }>>(
     (acc, cur) => {
-      acc[cur._id.toString()] = { total: cur.total, completed: cur.completed };
+      const packageId = contentToPackage[cur._id.toString()];
+      if (!packageId) {
+        return acc;
+      }
+      const existing = acc[packageId] || { total: 0, completed: 0 };
+      acc[packageId] = {
+        total: existing.total + cur.total,
+        completed: existing.completed + cur.completed,
+      };
       return acc;
     },
     {}
@@ -475,7 +537,7 @@ export const assignInstructorPackage = asyncHandler(async (req: Request, res: Re
   ensureOwnership(pkg, req);
 
   const instructorId = req.userAuth!._id.toString();
-  const classes = await ClassLevel.find({ _id: { $in: classIds } });
+  const classes = await ClassModel.find({ _id: { $in: classIds } });
 
   const ownedClasses = classes.filter((c) =>
     (c.instructors || []).some((t) => t.toString() === instructorId)
@@ -485,11 +547,11 @@ export const assignInstructorPackage = asyncHandler(async (req: Request, res: Re
     throw new NotFoundError('One or more classes not found for this staff member');
   }
 
-  const assigned = pkg.assignedTo || { learners: [], classLevels: [], programs: [] };
+  const assigned = pkg.assignedTo || { learners: [], classes: [], programs: [] };
   const uniqueClassIds = Array.from(
-    new Set([...(assigned.classLevels || []).map(String), ...classIds.map(String)])
+    new Set([...(assigned.classes || []).map(String), ...classIds.map(String)])
   );
-  assigned.classLevels = uniqueClassIds as any;
+  assigned.classes = uniqueClassIds as any;
   pkg.assignedTo = assigned;
 
   if (dueDate) {

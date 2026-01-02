@@ -60,11 +60,11 @@ const programSchema = new Schema<IProgram>(
         default: [],
       },
     ],
-    // Subjects that are in the program
-    subjects: [
+    // Courses that are in the program
+    courses: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Subject',
+        ref: 'Course',
         default: [],
       },
     ],

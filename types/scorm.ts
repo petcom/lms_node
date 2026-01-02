@@ -146,9 +146,9 @@ export interface IScormPackage {
   entryPoint: string;
 
   // Academic Integration
-  subject?: Types.ObjectId;
+  course?: Types.ObjectId;
   program?: Types.ObjectId;
-  classLevel?: Types.ObjectId;
+  programLevel?: Types.ObjectId;
   academicTerm?: Types.ObjectId;
   department?: Types.ObjectId;
 
@@ -165,7 +165,7 @@ export interface IScormPackage {
   uploadedByModel?: 'Admin' | 'Instructor' | 'Learner';
   assignedTo: {
     learners?: Types.ObjectId[];
-    classLevels?: Types.ObjectId[];
+    classes?: Types.ObjectId[];
     programs?: Types.ObjectId[];
   };
 
@@ -415,9 +415,9 @@ export interface IStorageProvider {
 export interface IUploadScormPackageRequest {
   title: string;
   description?: string;
-  subject?: string;
+  course?: string;
   program?: string;
-  classLevel?: string;
+  programLevel?: string;
   academicTerm?: string;
   isGraded: boolean;
   passingScore?: number;
@@ -426,7 +426,7 @@ export interface IUploadScormPackageRequest {
   dueDate?: Date;
   assignedTo?: {
     learners?: string[];
-    classLevels?: string[];
+    classes?: string[];
     programs?: string[];
   };
   trackingOptions?: {
@@ -447,7 +447,7 @@ export interface IUpdateScormPackageRequest {
   isActive?: boolean;
   assignedTo?: {
     learners?: string[];
-    classLevels?: string[];
+    classes?: string[];
     programs?: string[];
   };
   trackingOptions?: {

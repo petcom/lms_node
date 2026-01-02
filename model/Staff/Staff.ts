@@ -58,8 +58,9 @@ const staffSchema = new Schema<IStaff>(
       type: [String],
       default: [],
     },
-    subject: {
-      type: String,
+    course: {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
     },
     // When you are registered, staff goes through approval stage
     applicationStatus: {
@@ -68,18 +69,21 @@ const staffSchema = new Schema<IStaff>(
       default: 'pending',
     },
     program: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'Program',
     },
-    // A instructor can teach in more than one class level
-    classLevel: {
-      type: String,
+    // An instructor can teach in more than one program level
+    programLevel: {
+      type: Schema.Types.ObjectId,
+      ref: 'ProgramLevel',
     },
     department: {
       type: Schema.Types.ObjectId,
       ref: 'Department',
     },
     academicYear: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'AcademicYear',
     },
     examsCreated: [
       {
@@ -98,14 +102,14 @@ const staffSchema = new Schema<IStaff>(
 // Indexes for query performance
 staffSchema.index({ email: 1 }, { unique: true });
 staffSchema.index({ instructorId: 1 }, { unique: true });
-staffSchema.index({ subject: 1 });
-staffSchema.index({ classLevel: 1 });
+staffSchema.index({ course: 1 });
+staffSchema.index({ programLevel: 1 });
 staffSchema.index({ applicationStatus: 1 });
 staffSchema.index({ isSuspended: 1 });
 staffSchema.index({ isWithdrawn: 1 });
 staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
-staffSchema.index({ subject: 1, classLevel: 1 });
+staffSchema.index({ course: 1, programLevel: 1 });
 staffSchema.index({ applicationStatus: 1, createdAt: -1 });
 
 // Model

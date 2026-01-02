@@ -26,12 +26,8 @@ interface UpdateProfileBody {
 }
 
 interface AdminUpdateLearnerBody {
-  classLevels?: string;
-  academicYear?: string;
-  program?: string;
   name?: string;
   email?: string;
-  prefectName?: string;
   isSuspended?: boolean;
   isWithdrawn?: boolean;
 }
@@ -138,13 +134,9 @@ export const getLearnerProfile = AsyncHandler(
     const learnerProfile = {
       name: learner?.name,
       email: learner?.email,
-      currentClassLevel: learner?.currentClassLevel,
-      program: learner?.program,
-      dateAdmitted: learner?.dateAdmitted,
       isSuspended: learner?.isSuspended,
       isWithdrawn: learner?.isWithdrawn,
       learnerId: learner?.learnerId,
-      prefectName: learner?.prefectName,
     };
     // get learner exam results
     const learnerExamResults = learner?.examResults;
@@ -281,16 +273,7 @@ export const adminUpdateLearner = AsyncHandler(
     req: Request<{ learnerID: string }, {}, AdminUpdateLearnerBody>,
     res: Response
   ): Promise<void> => {
-    const {
-      classLevels,
-      academicYear,
-      program,
-      name,
-      email,
-      prefectName,
-      isSuspended,
-      isWithdrawn,
-    } = req.body;
+    const { name, email, isSuspended, isWithdrawn } = req.body;
 
     // find the learner by id
     const learnerFound = await Learner.findById(req.params.learnerID);
@@ -304,14 +287,8 @@ export const adminUpdateLearner = AsyncHandler(
         $set: {
           name,
           email,
-          academicYear,
-          program,
-          prefectName,
           isSuspended,
           isWithdrawn,
-        },
-        $addToSet: {
-          classLevels,
         },
       },
       {
@@ -429,7 +406,7 @@ export const writeExam = AsyncHandler(
       score,
       status,
       remarks,
-      classLevel: examFound?.classLevel,
+      programLevel: examFound?.programLevel,
       academicTerm: examFound?.academicTerm,
       academicYear: examFound?.academicYear,
       answeredQuestions: answeredQuestionsArray,
@@ -438,64 +415,6 @@ export const writeExam = AsyncHandler(
     learnerFound.examResults?.push(examResults?._id);
     // save
     await learnerFound.save();
-
-    /**
-     * Promote Learner to next Class Level or Term/Year if necessary
-     */
-    // Promote to level 200
-    if (
-      examFound.academicTerm.name === '3rd term' &&
-      status === 'passed' &&
-      learnerFound?.currentClassLevel === 'Level 100'
-    ) {
-      learnerFound.classLevels.push('Level 200');
-      learnerFound.currentClassLevel = 'Level 200';
-      await learnerFound.save();
-    }
-
-    // Promote to level 300
-    if (
-      examFound.academicTerm.name === '3rd term' &&
-      status === 'passed' &&
-      learnerFound?.currentClassLevel === 'Level 200'
-    ) {
-      learnerFound.classLevels.push('Level 300');
-      learnerFound.currentClassLevel = 'Level 300';
-      await learnerFound.save();
-    }
-
-    // Promote to level 400
-    if (
-      examFound.academicTerm.name === '3rd term' &&
-      status === 'passed' &&
-      learnerFound?.currentClassLevel === 'Level 300'
-    ) {
-      learnerFound.classLevels.push('Level 400');
-      learnerFound.currentClassLevel = 'Level 400';
-      await learnerFound.save();
-    }
-
-    // Promote to level 500
-    if (
-      examFound.academicTerm.name === '3rd term' &&
-      status === 'passed' &&
-      learnerFound?.currentClassLevel === 'Level 400'
-    ) {
-      learnerFound.classLevels.push('Level 500');
-      learnerFound.currentClassLevel = 'Level 500';
-      await learnerFound.save();
-    }
-
-    // Promote to Graduate
-    if (
-      examFound.academicTerm.name === '3rd term' &&
-      status === 'passed' &&
-      learnerFound?.currentClassLevel === 'Level 500'
-    ) {
-      learnerFound.isGraduated = true;
-      learnerFound.yearGraduated = new Date();
-      await learnerFound.save();
-    }
 
     // submit request
     res.status(200).json({

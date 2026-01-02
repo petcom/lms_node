@@ -49,9 +49,9 @@ const examResultSchema = new Schema<IExamResult>(
       enum: ['Excellent!', 'Very Good', 'Good', 'Fair', 'Needs Improvement'],
       default: 'Fair',
     },
-    classLevel: {
+    programLevel: {
       type: Schema.Types.ObjectId,
-      ref: 'ClassLevel',
+      ref: 'ProgramLevel',
     },
     academicTerm: {
       type: Schema.Types.ObjectId,
@@ -78,7 +78,7 @@ examResultSchema.index({ learner: 1 });
 examResultSchema.index({ exam: 1 });
 examResultSchema.index({ academicYear: 1 });
 examResultSchema.index({ academicTerm: 1 });
-examResultSchema.index({ classLevel: 1 });
+examResultSchema.index({ programLevel: 1 });
 examResultSchema.index({ status: 1 });
 examResultSchema.index({ isPublished: 1 });
 examResultSchema.index({ createdAt: -1 });
@@ -86,7 +86,7 @@ examResultSchema.index({ createdAt: -1 });
 examResultSchema.index({ learner: 1, academicYear: 1 });
 examResultSchema.index({ learner: 1, exam: 1 }, { unique: true });
 examResultSchema.index({ exam: 1, status: 1 });
-examResultSchema.index({ academicYear: 1, academicTerm: 1, classLevel: 1 });
+examResultSchema.index({ academicYear: 1, academicTerm: 1, programLevel: 1 });
 examResultSchema.index({ isPublished: 1, createdAt: -1 });
 
 const ExamResult = mongoose.model<IExamResult>('ExamResult', examResultSchema);

@@ -1,8 +1,9 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import Subject from '../../../model/Academic/Subject';
+import Course from '../../../model/Content/Course';
 import Department from '../../../model/Academic/Department';
+import Program from '../../../model/Academic/Program';
 
 const masterToken = 'test-global-admin-token';
 const topAdminToken = 'test-top-global-admin-token';
@@ -12,18 +13,27 @@ const masterDepartmentId = new mongoose.Types.ObjectId(
 );
 const topDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d1');
 const otherTopDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d3');
-const academicYearId = new mongoose.Types.ObjectId('0000000000000000000000f1');
-
-const baseSubject = (name: string, department: mongoose.Types.ObjectId) => ({
-  name,
-  description: `${name} desc`,
-  academicTerm: new mongoose.Types.ObjectId(),
-  academicYear: academicYearId,
+const baseProgram = (department: mongoose.Types.ObjectId) => ({
+  name: `Program-${department.toString().slice(-3)}`,
+  description: 'Program',
+  duration: '4 months',
   createdBy: masterAdminId,
   department,
 });
 
-describe('Subjects listing department filtering', () => {
+const baseCourse = (
+  title: string,
+  department: mongoose.Types.ObjectId,
+  program: mongoose.Types.ObjectId
+) => ({
+  title,
+  description: `${title} desc`,
+  program,
+  department,
+  createdBy: masterAdminId,
+});
+
+describe('Courses listing department filtering', () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState !== 1) {
       const uri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/lms-test';
@@ -36,7 +46,8 @@ describe('Subjects listing department filtering', () => {
   });
 
   beforeEach(async () => {
-    await Subject.deleteMany({});
+    await Course.deleteMany({});
+    await Program.deleteMany({});
     await Department.deleteMany({});
 
     await Department.create({
@@ -58,28 +69,30 @@ describe('Subjects listing department filtering', () => {
       code: 'BETA',
     });
 
-    await Subject.create(baseSubject('Subject Alpha', topDepartmentId));
-    await Subject.create(baseSubject('Subject Beta', otherTopDepartmentId));
+    const programAlpha = await Program.create(baseProgram(topDepartmentId));
+    const programBeta = await Program.create(baseProgram(otherTopDepartmentId));
+    await Course.create(baseCourse('Course Alpha', topDepartmentId, programAlpha._id));
+    await Course.create(baseCourse('Course Beta', otherTopDepartmentId, programBeta._id));
   });
 
   it('allows master admin to filter by department query', async () => {
     const res = await request(app)
-      .get(`/api/v1/subjects?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/courses?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${masterToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(1);
-    expect(res.body.data[0].name).toBe('Subject Beta');
+    expect(res.body.data[0].title).toBe('Course Beta');
   });
 
   it('ignores out-of-scope department filters for non-master admins', async () => {
     const res = await request(app)
-      .get(`/api/v1/subjects?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/courses?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${topAdminToken}`);
 
     expect(res.status).toBe(200);
-    const names = res.body.data.map((s: any) => s.name);
-    expect(names).toContain('Subject Alpha');
-    expect(names).not.toContain('Subject Beta');
+    const titles = res.body.data.map((s: any) => s.title);
+    expect(titles).toContain('Course Alpha');
+    expect(titles).not.toContain('Course Beta');
   });
 });

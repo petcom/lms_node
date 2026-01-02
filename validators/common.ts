@@ -114,28 +114,6 @@ export const academicYear = Joi.string()
   });
 
 /**
- * Grade/Class level validation
- */
-export const classLevel = Joi.string()
-  .valid(
-    'Grade 1',
-    'Grade 2',
-    'Grade 3',
-    'Grade 4',
-    'Grade 5',
-    'Grade 6',
-    'Grade 7',
-    'Grade 8',
-    'Grade 9',
-    'Grade 10',
-    'Grade 11',
-    'Grade 12'
-  )
-  .messages({
-    'any.only': 'Invalid class level',
-  });
-
-/**
  * Academic term validation
  */
 export const academicTerm = Joi.string().valid('1st Term', '2nd Term', '3rd Term').messages({

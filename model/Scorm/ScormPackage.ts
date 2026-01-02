@@ -86,17 +86,17 @@ const scormPackageSchema = new Schema<IScormPackage>(
     },
 
     // Academic Integration
-    subject: {
+    course: {
       type: Schema.Types.ObjectId,
-      ref: 'Subject',
+      ref: 'Course',
     },
     program: {
       type: Schema.Types.ObjectId,
       ref: 'Program',
     },
-    classLevel: {
+    programLevel: {
       type: Schema.Types.ObjectId,
-      ref: 'ClassLevel',
+      ref: 'ProgramLevel',
     },
     department: {
       type: Schema.Types.ObjectId,
@@ -156,10 +156,10 @@ const scormPackageSchema = new Schema<IScormPackage>(
           ref: 'Learner',
         },
       ],
-      classLevels: [
+      classes: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'ClassLevel',
+          ref: 'Class',
         },
       ],
       programs: [
@@ -282,9 +282,9 @@ const scormPackageSchema = new Schema<IScormPackage>(
 
 // Indexes for performance
 scormPackageSchema.index({ 'assignedTo.learners': 1 });
-scormPackageSchema.index({ 'assignedTo.classLevels': 1 });
+scormPackageSchema.index({ 'assignedTo.classes': 1 });
 scormPackageSchema.index({ 'assignedTo.programs': 1 });
-scormPackageSchema.index({ subject: 1, program: 1 });
+scormPackageSchema.index({ course: 1, program: 1 });
 scormPackageSchema.index({ status: 1, isActive: 1 });
 scormPackageSchema.index({ isPublished: 1, status: 1 });
 
@@ -300,20 +300,23 @@ scormPackageSchema.virtual('completionRate').get(function (this: IScormPackage) 
 scormPackageSchema.statics.findAssignedToLearner = async function (
   learnerId: mongoose.Types.ObjectId
 ) {
-  const learner = await mongoose.model('Learner').findById(learnerId).lean();
-
   const orConditions: any[] = [{ 'assignedTo.learners': learnerId }];
 
-  if (learner?.program) {
-    orConditions.push({ 'assignedTo.programs': learner.program });
+  const ProgramEnrollment = mongoose.model('ProgramEnrollment');
+  const ClassEnrollment = mongoose.model('ClassEnrollment');
+
+  const programEnrollments = await ProgramEnrollment.find({ learner: learnerId }).select(
+    'program'
+  );
+  const programIds = programEnrollments.map((enrollment: any) => enrollment.program);
+  if (programIds.length > 0) {
+    orConditions.push({ 'assignedTo.programs': { $in: programIds } });
   }
 
-  const validClassLevels = Array.isArray(learner?.classLevels)
-    ? (learner!.classLevels as any[]).filter((lvl) => mongoose.Types.ObjectId.isValid(lvl))
-    : [];
-
-  if (validClassLevels.length > 0) {
-    orConditions.push({ 'assignedTo.classLevels': { $in: validClassLevels } });
+  const classEnrollments = await ClassEnrollment.find({ learner: learnerId }).select('class');
+  const classIds = classEnrollments.map((enrollment: any) => enrollment.class).filter(Boolean);
+  if (classIds.length > 0) {
+    orConditions.push({ 'assignedTo.classes': { $in: classIds } });
   }
 
   return this.find({

@@ -1,8 +1,9 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import ClassLevel from '../../../model/Academic/ClassLevel';
+import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Department from '../../../model/Academic/Department';
+import Program from '../../../model/Academic/Program';
 
 const masterToken = 'test-global-admin-token';
 const topAdminToken = 'test-top-global-admin-token';
@@ -13,14 +14,28 @@ const masterDepartmentId = new mongoose.Types.ObjectId(
 const topDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d1');
 const otherTopDepartmentId = new mongoose.Types.ObjectId('0000000000000000000000d3');
 
-const baseClass = (name: string, department: mongoose.Types.ObjectId) => ({
-  name,
-  description: `${name} desc`,
+const baseProgram = (department: mongoose.Types.ObjectId) => ({
+  name: `Program-${department.toString().slice(-3)}`,
+  description: 'Program',
+  duration: '4 months',
   createdBy: masterAdminId,
   department,
 });
 
-describe('Class levels listing department filtering', () => {
+const baseProgramLevel = (
+  name: string,
+  department: mongoose.Types.ObjectId,
+  program: mongoose.Types.ObjectId
+) => ({
+  name,
+  description: `${name} desc`,
+  createdBy: masterAdminId,
+  department,
+  program,
+  order: 1,
+});
+
+describe('Program levels listing department filtering', () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState !== 1) {
       const uri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/lms-test';
@@ -33,7 +48,8 @@ describe('Class levels listing department filtering', () => {
   });
 
   beforeEach(async () => {
-    await ClassLevel.deleteMany({});
+    await ProgramLevel.deleteMany({});
+    await Program.deleteMany({});
     await Department.deleteMany({});
 
     await Department.create({
@@ -55,13 +71,15 @@ describe('Class levels listing department filtering', () => {
       code: 'BETA',
     });
 
-    await ClassLevel.create(baseClass('Level Alpha', topDepartmentId));
-    await ClassLevel.create(baseClass('Level Beta', otherTopDepartmentId));
+    const programAlpha = await Program.create(baseProgram(topDepartmentId));
+    const programBeta = await Program.create(baseProgram(otherTopDepartmentId));
+    await ProgramLevel.create(baseProgramLevel('Level Alpha', topDepartmentId, programAlpha._id));
+    await ProgramLevel.create(baseProgramLevel('Level Beta', otherTopDepartmentId, programBeta._id));
   });
 
   it('allows master admin to filter by department query', async () => {
     const res = await request(app)
-      .get(`/api/v1/class-levels?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/program-levels?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${masterToken}`);
 
     expect(res.status).toBe(200);
@@ -71,7 +89,7 @@ describe('Class levels listing department filtering', () => {
 
   it('ignores out-of-scope department filters for non-master admins', async () => {
     const res = await request(app)
-      .get(`/api/v1/class-levels?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/program-levels?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${topAdminToken}`);
 
     expect(res.status).toBe(200);

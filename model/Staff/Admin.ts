@@ -51,10 +51,16 @@ const adminSchema = new Schema<IAdmin>(
         ref: 'AcademicYear',
       },
     ],
-    classLevels: [
+    programLevels: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'ClassLevel',
+        ref: 'ProgramLevel',
+      },
+    ],
+    courses: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
       },
     ],
     instructors: [

@@ -27,7 +27,7 @@ export const updateStaffProfile = {
     email,
     phone,
     employeeId: Joi.string().trim(),
-    subject: objectId,
+    course: objectId,
     program: objectId,
     department: objectId,
   }).min(1),
@@ -62,7 +62,7 @@ export const promoteLearner = {
     learnerId: objectId.required(),
   }),
   body: Joi.object({
-    classLevel: objectId.required(),
+    programLevel: objectId.required(),
     academicYear: objectId.required(),
   }),
 };
@@ -75,8 +75,8 @@ export const assignStaff = {
     staffId: objectId.required(),
   }),
   body: Joi.object({
-    subject: objectId.required(),
+    course: objectId.required(),
     program: objectId,
-    classLevel: objectId,
+    programLevel: objectId,
   }),
 };

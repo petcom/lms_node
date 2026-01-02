@@ -15,9 +15,9 @@ const examSchema = new Schema<IExam>(
       type: String,
       required: true,
     },
-    subject: {
+    course: {
       type: Schema.Types.ObjectId,
-      ref: 'Subject',
+      ref: 'Course',
       required: true,
     },
     program: {
@@ -71,10 +71,9 @@ const examSchema = new Schema<IExam>(
         ref: 'Question',
       },
     ],
-    classLevel: {
+    programLevel: {
       type: Schema.Types.ObjectId,
-      ref: 'ClassLevel',
-      required: true,
+      ref: 'ProgramLevel',
     },
     createdBy: {
       type: Schema.Types.ObjectId,
@@ -91,16 +90,16 @@ const examSchema = new Schema<IExam>(
 );
 
 // Indexes for query performance
-examSchema.index({ subject: 1 });
+examSchema.index({ course: 1 });
 examSchema.index({ program: 1 });
-examSchema.index({ classLevel: 1 });
+examSchema.index({ programLevel: 1 });
 examSchema.index({ academicTerm: 1 });
 examSchema.index({ academicYear: 1 });
 examSchema.index({ examStatus: 1 });
 examSchema.index({ examDate: -1 });
 examSchema.index({ createdBy: 1 });
 // Compound indexes for common queries
-examSchema.index({ subject: 1, classLevel: 1, academicTerm: 1 });
+examSchema.index({ course: 1, programLevel: 1, academicTerm: 1 });
 examSchema.index({ examStatus: 1, examDate: -1 });
 examSchema.index({ program: 1, academicYear: 1 });
 

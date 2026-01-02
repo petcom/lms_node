@@ -30,7 +30,7 @@ export const registerInstructor = {
     passwordConfirmation,
     employeeId: Joi.string().trim(),
     dateEmployed: Joi.date().iso(),
-    subject: Joi.string().trim(),
+    course: Joi.string().trim(),
     program: Joi.string().trim(),
   }),
 };
@@ -45,7 +45,7 @@ export const registerLearner = {
     password,
     passwordConfirmation,
     academicYear: objectId,
-    classLevel: objectId,
+    programLevel: objectId,
     program: objectId,
     dateAdmitted: Joi.date().iso(),
     learnerId: Joi.string().trim(),

@@ -2,14 +2,21 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
-import ScormAttempt from '../../../model/Scorm/ScormAttempt';
+import ContentAttempt from '../../../model/Academic/ContentAttempt';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
-import ClassLevel from '../../../model/Academic/ClassLevel';
+import ClassModel from '../../../model/Academic/Class';
+import Program from '../../../model/Academic/Program';
+import ProgramLevel from '../../../model/Academic/ProgramLevel';
+import Course from '../../../model/Content/Course';
+import CourseContent from '../../../model/Academic/CourseContent';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
 const instructorToken = 'test-instructor-token';
+const masterDepartmentId = new mongoose.Types.ObjectId(
+  process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
+);
 
 const makePackage = (overrides: Partial<any> = {}) => {
   const uploader = overrides.uploadedBy || new mongoose.Types.ObjectId(instructorId);
@@ -66,8 +73,12 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
 
   afterAll(async () => {
     await ScormPackage.deleteMany({});
-    await ScormAttempt.deleteMany({});
-    await ClassLevel.deleteMany({});
+    await ContentAttempt.deleteMany({});
+    await CourseContent.deleteMany({});
+    await Course.deleteMany({});
+    await ProgramLevel.deleteMany({});
+    await Program.deleteMany({});
+    await ClassModel.deleteMany({});
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
     await mongoose.connection.close();
@@ -75,8 +86,12 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
 
   beforeEach(async () => {
     await ScormPackage.deleteMany({});
-    await ScormAttempt.deleteMany({});
-    await ClassLevel.deleteMany({});
+    await ContentAttempt.deleteMany({});
+    await CourseContent.deleteMany({});
+    await Course.deleteMany({});
+    await ProgramLevel.deleteMany({});
+    await Program.deleteMany({});
+    await ClassModel.deleteMany({});
   });
 
   it('lists only instructor-owned packages with attempt stats and supports status filtering', async () => {
@@ -93,20 +108,49 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
       })
     );
 
-    await ScormAttempt.create([
+    const program = await Program.create({
+      name: 'Program Alpha',
+      description: 'Program Alpha',
+      duration: '4 months',
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const programLevel = await ProgramLevel.create({
+      program: program._id,
+      name: 'Level 1',
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const course = await Course.create({
+      title: 'Course Alpha',
+      description: 'Course Alpha',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+    });
+    const courseContent = await CourseContent.create({
+      course: course._id,
+      contentType: 'scorm',
+      scormPackageId: pkgPublished._id,
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+    });
+
+    await ContentAttempt.create([
       {
-        attemptId: 'att-1',
         learner: new mongoose.Types.ObjectId(),
-        package: pkgPublished._id,
-        attemptNumber: 1,
+        courseContent: courseContent._id,
+        contentType: 'scorm',
         status: 'completed',
       },
       {
-        attemptId: 'att-2',
         learner: new mongoose.Types.ObjectId(),
-        package: pkgPublished._id,
-        attemptNumber: 1,
-        status: 'passed',
+        courseContent: courseContent._id,
+        contentType: 'scorm',
+        status: 'completed',
+        passed: true,
       },
     ] as any);
 
@@ -132,9 +176,25 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
   });
 
   it('creates assignments for instructor-owned classes and packages', async () => {
-    const klass = await ClassLevel.create({
+    const program = await Program.create({
+      name: 'Program Alpha',
+      description: 'Program Alpha',
+      duration: '4 months',
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const programLevel = await ProgramLevel.create({
+      program: program._id,
+      name: 'Level 1',
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const klass = await ClassModel.create({
       name: 'Class 1',
-      description: 'Test class',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
       createdBy: new mongoose.Types.ObjectId(adminId),
       instructors: [new mongoose.Types.ObjectId(instructorId)],
     });
@@ -152,14 +212,30 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
     expect(res.body.assignmentId).toBe(pkg._id.toString());
 
     const updated = await ScormPackage.findById(pkg._id);
-    expect(updated?.assignedTo?.classLevels?.map(String)).toContain(klass._id.toString());
+    expect(updated?.assignedTo?.classes?.map(String)).toContain(klass._id.toString());
     expect(updated?.dueDate).toBeDefined();
   });
 
   it('validates assignment input and ownership', async () => {
-    const klass = await ClassLevel.create({
+    const program = await Program.create({
+      name: 'Program Alpha',
+      description: 'Program Alpha',
+      duration: '4 months',
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const programLevel = await ProgramLevel.create({
+      program: program._id,
+      name: 'Level 1',
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const klass = await ClassModel.create({
       name: 'Other class',
-      description: 'Test class',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
       createdBy: new mongoose.Types.ObjectId(adminId),
       instructors: [new mongoose.Types.ObjectId(adminId)],
     });
@@ -183,9 +259,11 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
       .send({ packageId: pkg._id.toString(), classIds: [klass._id.toString()] });
     expect(unauthorizedClass.status).toBe(404);
 
-    const ownedClass = await ClassLevel.create({
+    const ownedClass = await ClassModel.create({
       name: 'Owned class',
-      description: 'Owned',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
       createdBy: new mongoose.Types.ObjectId(adminId),
       instructors: [new mongoose.Types.ObjectId(instructorId)],
     });

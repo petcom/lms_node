@@ -18,9 +18,8 @@ export interface IAdmin extends Document {
   yearGroups?: Types.ObjectId[];
   instructors?: Types.ObjectId[];
   learners?: Types.ObjectId[];
-  classLevels?: Types.ObjectId[]; // Deprecated: replaced by programLevels
   programLevels?: Types.ObjectId[];
-  subjects?: Types.ObjectId[];
+  courses?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,10 +36,10 @@ export interface IStaff extends Document {
   isSuspended: boolean;
   role: 'staff';
   roles?: string[];
-  subject?: Types.ObjectId;
+  course?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
   program?: Types.ObjectId;
-  classLevel?: Types.ObjectId;
+  programLevel?: Types.ObjectId;
   academicYear?: Types.ObjectId;
   examsCreated?: Types.ObjectId[];
   department?: Types.ObjectId;
@@ -150,22 +149,6 @@ export interface IAcademicTerm extends Document {
   updatedAt: Date;
 }
 
-// Class Level Interface (Deprecated: replaced by ProgramLevel)
-export interface IClassLevel extends Document {
-  _id: Types.ObjectId;
-  name: string;
-  description?: string;
-  createdBy: Types.ObjectId;
-  department?: Types.ObjectId;
-  learners?: Types.ObjectId[];
-  subjects?: Types.ObjectId[];
-  instructors?: Types.ObjectId[];
-  archived: boolean;
-  archivedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Program Interface
 export interface IProgram extends Document {
   _id: Types.ObjectId;
@@ -177,7 +160,7 @@ export interface IProgram extends Document {
   department: Types.ObjectId;
   instructors?: Types.ObjectId[];
   learners?: Types.ObjectId[];
-  subjects?: Types.ObjectId[];
+  courses?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
   createdAt: Date;
@@ -306,23 +289,6 @@ export interface IContentAttempt extends Document {
   createdAt: Date;
 }
 
-// Subject Interface (Deprecated: replaced by Course)
-export interface ISubject extends Document {
-  _id: Types.ObjectId;
-  name: string;
-  description?: string;
-  academicYear: Types.ObjectId;
-  createdBy: Types.ObjectId;
-  duration: string;
-  program?: Types.ObjectId;
-  instructors?: Types.ObjectId[];
-  department?: Types.ObjectId;
-  archived: boolean;
-  archivedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Department Interface
 export interface IDepartment extends Document {
   _id: Types.ObjectId;
@@ -366,8 +332,9 @@ export interface IExam extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  subject: Types.ObjectId;
+  course: Types.ObjectId;
   program: Types.ObjectId;
+  programLevel?: Types.ObjectId;
   passMark: number;
   totalMark: number;
   academicTerm: Types.ObjectId;
@@ -378,7 +345,6 @@ export interface IExam extends Document {
   examStatus: 'pending' | 'live' | 'completed';
   createdBy: Types.ObjectId;
   academicYear: Types.ObjectId;
-  classLevel: Types.ObjectId;
   questions?: Types.ObjectId[];
   isPublished: boolean;
   createdAt: Date;
@@ -402,7 +368,7 @@ export interface IExamResult extends Document {
   isPublished: boolean;
   academicTerm: Types.ObjectId;
   academicYear: Types.ObjectId;
-  classLevel: Types.ObjectId;
+  programLevel?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

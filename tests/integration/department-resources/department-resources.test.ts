@@ -9,8 +9,8 @@ import ScormPackage from '../../../model/Scorm/ScormPackage';
 import AcademicYear from '../../../model/Academic/AcademicYear';
 import AcademicTerm from '../../../model/Academic/AcademicTerm';
 import Program from '../../../model/Academic/Program';
-import Subject from '../../../model/Academic/Subject';
-import ClassLevel from '../../../model/Academic/ClassLevel';
+import ProgramLevel from '../../../model/Academic/ProgramLevel';
+import Course from '../../../model/Content/Course';
 import Exam from '../../../model/Academic/Exam';
 
 const masterToken = 'test-global-admin-token';
@@ -48,8 +48,8 @@ describe('Department Resources API', () => {
       AcademicYear.deleteMany({}),
       AcademicTerm.deleteMany({}),
       Program.deleteMany({}),
-      Subject.deleteMany({}),
-      ClassLevel.deleteMany({}),
+      ProgramLevel.deleteMany({}),
+      Course.deleteMany({}),
       Exam.deleteMany({}),
     ]);
 
@@ -196,21 +196,22 @@ describe('Department Resources API', () => {
       department: topDepartmentId,
     });
 
-    const classLevel = await ClassLevel.create({
-      name: 'Grade 1',
-      description: 'Grade 1',
+    const programLevel = await ProgramLevel.create({
+      program: program._id,
+      name: 'Level 1',
+      description: 'Level 1',
+      order: 1,
       createdBy: masterAdminId,
       department: topDepartmentId,
     });
 
-    const subject = await Subject.create({
-      name: 'Alpha Subject',
-      description: 'Alpha subject',
-      academicYear: academicYear._id,
-      createdBy: masterAdminId,
-      duration: '3 months',
-      department: topDepartmentId,
+    const course = await Course.create({
+      title: 'Alpha Course',
+      description: 'Alpha course',
       program: program._id,
+      programLevel: programLevel._id,
+      department: topDepartmentId,
+      createdBy: masterAdminId,
     });
 
     const instructor = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
@@ -221,7 +222,7 @@ describe('Department Resources API', () => {
     await Exam.create({
       name: 'Alpha Quiz',
       description: 'Quiz for Alpha',
-      subject: subject._id,
+      course: course._id,
       program: program._id,
       passMark: 30,
       totalMark: 100,
@@ -231,7 +232,7 @@ describe('Department Resources API', () => {
       examTime: '10:00',
       examType: 'quiz',
       examStatus: 'pending',
-      classLevel: classLevel._id,
+      programLevel: programLevel._id,
       createdBy: instructor._id,
       academicYear: academicYear._id,
     });
@@ -342,13 +343,13 @@ describe('Department Resources API', () => {
   });
 
   it('creates and updates custom content', async () => {
-    const subject = await Subject.findOne({ name: 'Alpha Subject' }).lean();
+    const course = await Course.findOne({ title: 'Alpha Course' }).lean();
     const program = await Program.findOne({ name: 'Alpha Program' }).lean();
-    const classLevel = await ClassLevel.findOne({ name: 'Grade 1' }).lean();
+    const programLevel = await ProgramLevel.findOne({ name: 'Level 1' }).lean();
     const academicTerm = await AcademicTerm.findOne({ name: '1st Term' }).lean();
     const academicYear = await AcademicYear.findOne({ name: '2024-2025' }).lean();
 
-    if (!subject || !program || !classLevel || !academicTerm || !academicYear) {
+    if (!course || !program || !programLevel || !academicTerm || !academicYear) {
       throw new Error('Missing academic data for content setup');
     }
 
@@ -360,9 +361,9 @@ describe('Department Resources API', () => {
         title: 'Alpha Practice',
         description: 'Practice exam',
         customType: 'practice',
-        subject: subject._id.toString(),
+        course: course._id.toString(),
         program: program._id.toString(),
-        classLevel: classLevel._id.toString(),
+        programLevel: programLevel._id.toString(),
         academicTerm: academicTerm._id.toString(),
         academicYear: academicYear._id.toString(),
         passMark: 30,
@@ -426,27 +427,25 @@ describe('Department Resources API', () => {
     const academicYear = await AcademicYear.findOne({ name: '2024-2025' }).lean();
     const program = await Program.findOne({ name: 'Alpha Program' }).lean();
 
-    if (!academicYear || !program) {
-      throw new Error('Missing academic data for course setup');
+    if (!program) {
+      throw new Error('Missing program data for course setup');
     }
 
     const createRes = await request(app)
       .post('/api/v1/department-resources/courses')
       .set('Authorization', `Bearer ${topAdminToken}`)
       .send({
-        name: 'Alpha Course',
+        title: 'Alpha Course',
         description: 'Course for Alpha',
-        duration: '3 months',
-        academicYear: academicYear._id.toString(),
+        program: program._id.toString(),
         departmentId: topDepartmentId.toString(),
-        programId: program._id.toString(),
       });
 
     expect(createRes.status).toBe(201);
 
-    const course = await Subject.findOne({ name: 'Alpha Subject' }).lean();
+    const course = await Course.findOne({ title: 'Alpha Course' }).lean();
     if (!course) {
-      throw new Error('Alpha Subject not found for update');
+      throw new Error('Alpha Course not found for update');
     }
 
     const updateRes = await request(app)

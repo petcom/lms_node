@@ -3,8 +3,8 @@ import Department from '../model/Academic/Department';
 import Admin from '../model/Staff/Admin';
 import Staff from '../model/Staff/Staff';
 import Program from '../model/Academic/Program';
-import Subject from '../model/Academic/Subject';
-import ClassLevel from '../model/Academic/ClassLevel';
+import Course from '../model/Content/Course';
+import ProgramLevel from '../model/Academic/ProgramLevel';
 import ScormPackage from '../model/Scorm/ScormPackage';
 import logger from '../utils/logger';
 
@@ -32,8 +32,11 @@ export const ensureMasterDepartment = async (): Promise<void> => {
       Admin.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       Staff.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
       Program.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
-      Subject.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
-      ClassLevel.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
+      Course.updateMany({ department: { $exists: false } }, { $set: { department: masterId } }),
+      ProgramLevel.updateMany(
+        { department: { $exists: false } },
+        { $set: { department: masterId } }
+      ),
       ScormPackage.updateMany(
         { department: { $exists: false } },
         { $set: { department: masterId } }

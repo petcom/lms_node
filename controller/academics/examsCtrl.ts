@@ -6,13 +6,13 @@ import Staff from '../../model/Staff/Staff';
 interface CreateExamBody {
   name: string;
   description: string;
-  subject: string;
+  course: string;
   program: string;
   academicTerm: string;
   duration: string;
   examDate: Date;
   examTime: string;
-  classLevel: string;
+  programLevel?: string;
   examType: string;
   academicYear: string;
 }
@@ -20,13 +20,13 @@ interface CreateExamBody {
 interface UpdateExamBody {
   name?: string;
   description?: string;
-  subject?: string;
+  course?: string;
   program?: string;
   academicTerm?: string;
   duration?: string;
   examDate?: Date;
   examTime?: string;
-  classLevel?: string;
+  programLevel?: string;
   examType?: string;
   academicYear?: string;
 }
@@ -44,13 +44,13 @@ export const createExam = AsyncHandler(
     const {
       name,
       description,
-      subject,
+      course,
       program,
       academicTerm,
       duration,
       examDate,
       examTime,
-      classLevel,
+      programLevel,
       examType,
       academicYear,
     } = req.body;
@@ -81,9 +81,9 @@ export const createExam = AsyncHandler(
       examDate,
       examTime,
       examType,
-      classLevel,
+      programLevel,
       createdBy: req.userAuth?._id,
-      subject,
+      course,
       program,
     });
 
@@ -142,13 +142,13 @@ export const updateExam = AsyncHandler(
     const {
       name,
       description,
-      subject,
+      course,
       program,
       academicTerm,
       duration,
       examDate,
       examTime,
-      classLevel,
+      programLevel,
       examType,
       academicYear,
     } = req.body;
@@ -162,13 +162,13 @@ export const updateExam = AsyncHandler(
       {
         name,
         description,
-        subject,
+        course,
         program,
         academicTerm,
         duration,
         examDate,
         examTime,
-        classLevel,
+        programLevel,
         examType,
         academicYear,
         createdBy: req.userAuth?._id,

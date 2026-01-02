@@ -5,8 +5,8 @@ import Department from '../../model/Academic/Department';
 import Admin from '../../model/Staff/Admin';
 import Staff from '../../model/Staff/Staff';
 import Program from '../../model/Academic/Program';
-import Subject from '../../model/Academic/Subject';
-import ClassLevel from '../../model/Academic/ClassLevel';
+import ProgramLevel from '../../model/Academic/ProgramLevel';
+import Course from '../../model/Content/Course';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import { IDepartment } from '../../types/models';
 import {
@@ -35,8 +35,8 @@ type DepartmentWithCounts = IDepartment & {
   counts: {
     staffCount: number;
     programCount: number;
-    subjectCount: number;
-    classLevelCount: number;
+    courseCount: number;
+    programLevelCount: number;
     packageCount: number;
     globalPackageCount: number;
   };
@@ -60,16 +60,16 @@ const buildCounts = async (
     adminCount,
     instructorCount,
     programCount,
-    subjectCount,
-    classLevelCount,
+    courseCount,
+    programLevelCount,
     packageCount,
     globalPackageCount,
   ] = await Promise.all([
     Admin.countDocuments({ department: departmentId }),
     Staff.countDocuments({ department: departmentId }),
     Program.countDocuments({ department: departmentId }),
-    Subject.countDocuments({ department: departmentId }),
-    ClassLevel.countDocuments({ department: departmentId }),
+    Course.countDocuments({ department: departmentId }),
+    ProgramLevel.countDocuments({ department: departmentId }),
     ScormPackage.countDocuments({ department: departmentId, isGlobal: { $ne: true } }),
     ScormPackage.countDocuments({ isGlobal: true }),
   ]);
@@ -77,8 +77,8 @@ const buildCounts = async (
   return {
     staffCount: adminCount + instructorCount,
     programCount,
-    subjectCount,
-    classLevelCount,
+    courseCount,
+    programLevelCount,
     packageCount,
     globalPackageCount,
   };
@@ -438,7 +438,7 @@ export const deleteDepartment = AsyncHandler(
 
     ensureScope(req, department._id.toString());
 
-    const [childCount, staffCounts, programCount, subjectCount, classLevelCount, packageCount] =
+    const [childCount, staffCounts, programCount, courseCount, programLevelCount, packageCount] =
       await Promise.all([
         Department.countDocuments({ parent: department._id }),
         Promise.all([
@@ -446,8 +446,8 @@ export const deleteDepartment = AsyncHandler(
           Staff.countDocuments({ department: department._id }),
         ]),
         Program.countDocuments({ department: department._id }),
-        Subject.countDocuments({ department: department._id }),
-        ClassLevel.countDocuments({ department: department._id }),
+        Course.countDocuments({ department: department._id }),
+        ProgramLevel.countDocuments({ department: department._id }),
         ScormPackage.countDocuments({ department: department._id }),
       ]);
 
@@ -459,8 +459,8 @@ export const deleteDepartment = AsyncHandler(
     if (
       staffCount > 0 ||
       programCount > 0 ||
-      subjectCount > 0 ||
-      classLevelCount > 0 ||
+      courseCount > 0 ||
+      programLevelCount > 0 ||
       packageCount > 0
     ) {
       throw new ValidationError('Department has associated staff or content and cannot be deleted');

@@ -1,16 +1,24 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app/app';
-import ClassLevel from '../../../model/Academic/ClassLevel';
+import ClassModel from '../../../model/Academic/Class';
+import ClassEnrollment from '../../../model/Academic/ClassEnrollment';
 import Learner from '../../../model/Academic/Learner';
-import ScormAttempt from '../../../model/Scorm/ScormAttempt';
+import ContentAttempt from '../../../model/Academic/ContentAttempt';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
+import Program from '../../../model/Academic/Program';
+import ProgramLevel from '../../../model/Academic/ProgramLevel';
+import Course from '../../../model/Content/Course';
+import CourseContent from '../../../model/Academic/CourseContent';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
 const instructorToken = 'test-instructor-token';
+const masterDepartmentId = new mongoose.Types.ObjectId(
+  process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00'
+);
 
 const makePackage = (title: string) => ({
   packageId: new mongoose.Types.ObjectId().toString(),
@@ -63,9 +71,14 @@ describe('Instructor Phase 4: Attempts Listing', () => {
   });
 
   afterAll(async () => {
-    await ClassLevel.deleteMany({});
+    await ClassModel.deleteMany({});
+    await ClassEnrollment.deleteMany({});
     await Learner.deleteMany({});
-    await ScormAttempt.deleteMany({});
+    await ContentAttempt.deleteMany({});
+    await CourseContent.deleteMany({});
+    await Course.deleteMany({});
+    await ProgramLevel.deleteMany({});
+    await Program.deleteMany({});
     await ScormPackage.deleteMany({});
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
@@ -73,35 +86,76 @@ describe('Instructor Phase 4: Attempts Listing', () => {
   });
 
   beforeEach(async () => {
-    await ClassLevel.deleteMany({});
+    await ClassModel.deleteMany({});
+    await ClassEnrollment.deleteMany({});
     await Learner.deleteMany({});
-    await ScormAttempt.deleteMany({});
+    await ContentAttempt.deleteMany({});
+    await CourseContent.deleteMany({});
+    await Course.deleteMany({});
+    await ProgramLevel.deleteMany({});
+    await Program.deleteMany({});
     await ScormPackage.deleteMany({});
   });
 
   it('lists attempts filtered by classId and packageId, scoped to instructor classes', async () => {
-    const klass = await ClassLevel.create({
+    const program = await Program.create({
+      name: 'Program Alpha',
+      description: 'Program Alpha',
+      duration: '4 months',
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const programLevel = await ProgramLevel.create({
+      program: program._id,
+      name: 'Level 1',
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+      department: masterDepartmentId,
+    });
+    const klass = await ClassModel.create({
       name: 'Class 1',
-      description: 'Test class',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
       createdBy: new mongoose.Types.ObjectId(adminId),
       instructors: [new mongoose.Types.ObjectId(instructorId)],
     });
 
     const pkg = await ScormPackage.create(makePackage('Pkg1'));
+    const course = await Course.create({
+      title: 'Course 1',
+      description: 'Course 1',
+      program: program._id,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+    });
+    const courseContent = await CourseContent.create({
+      course: course._id,
+      contentType: 'scorm',
+      scormPackageId: pkg._id,
+      order: 1,
+      createdBy: new mongoose.Types.ObjectId(adminId),
+    });
 
     const learner = await Learner.create({
       name: 'Learner One',
       email: 's1@example.com',
       password: 'pw',
-      classLevels: [klass._id.toString()],
       role: 'learner',
     });
 
-    await ScormAttempt.create({
-      attemptId: 'att-1',
+    await ClassEnrollment.create({
       learner: learner._id,
-      package: pkg._id,
-      attemptNumber: 1,
+      class: klass._id,
+      program: program._id,
+      programLevel: programLevel._id,
+    });
+
+    await ContentAttempt.create({
+      learner: learner._id,
+      courseContent: courseContent._id,
+      contentType: 'scorm',
       status: 'completed',
       startedAt: new Date('2024-01-01T00:00:00Z'),
       completedAt: new Date('2024-01-01T01:00:00Z'),

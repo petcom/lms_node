@@ -5,8 +5,8 @@ import Department from '../../../model/Academic/Department';
 import Program from '../../../model/Academic/Program';
 import AcademicYear from '../../../model/Academic/AcademicYear';
 import AcademicTerm from '../../../model/Academic/AcademicTerm';
-import ClassLevel from '../../../model/Academic/ClassLevel';
-import Subject from '../../../model/Academic/Subject';
+import ProgramLevel from '../../../model/Academic/ProgramLevel';
+import Course from '../../../model/Content/Course';
 import Staff from '../../../model/Staff/Staff';
 import Exam from '../../../model/Academic/Exam';
 
@@ -39,8 +39,8 @@ describe('Program levels, courses, and course content', () => {
       Program.deleteMany({}),
       AcademicYear.deleteMany({}),
       AcademicTerm.deleteMany({}),
-      ClassLevel.deleteMany({}),
-      Subject.deleteMany({}),
+      ProgramLevel.deleteMany({}),
+      Course.deleteMany({}),
       Staff.deleteMany({}),
       Exam.deleteMany({}),
     ]);
@@ -91,21 +91,22 @@ describe('Program levels, courses, and course content', () => {
       createdBy: masterAdminId,
     });
 
-    const classLevel = await ClassLevel.create({
-      name: 'Grade 1',
-      description: 'Grade 1',
+    const programLevel = await ProgramLevel.create({
+      program: programId,
+      name: 'Level 1',
+      description: 'Level 1',
+      order: 1,
       createdBy: masterAdminId,
       department: masterDepartmentId,
     });
 
-    const subject = await Subject.create({
-      name: 'Alpha Subject',
-      description: 'Alpha subject',
-      academicYear: academicYear._id,
-      createdBy: masterAdminId,
-      duration: '3 months',
-      department: masterDepartmentId,
+    const course = await Course.create({
+      title: 'Alpha Course',
+      description: 'Alpha course',
       program: programId,
+      programLevel: programLevel._id,
+      department: masterDepartmentId,
+      createdBy: masterAdminId,
     });
 
     const instructor = await Staff.create({
@@ -120,7 +121,7 @@ describe('Program levels, courses, and course content', () => {
     const exam = await Exam.create({
       name: 'Alpha Quiz',
       description: 'Quiz for Alpha',
-      subject: subject._id,
+      course: course._id,
       program: programId,
       passMark: 30,
       totalMark: 100,
@@ -130,7 +131,7 @@ describe('Program levels, courses, and course content', () => {
       examTime: '10:00',
       examType: 'quiz',
       examStatus: 'pending',
-      classLevel: classLevel._id,
+      programLevel: programLevel._id,
       createdBy: instructor._id,
       academicYear: academicYear._id,
     });

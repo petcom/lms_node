@@ -25,7 +25,7 @@ export const checkExamResults = AsyncHandler(
       _id: req.params.id,
     })
       .populate('exam')
-      .populate('classLevel')
+      .populate('programLevel')
       .populate('academicTerm')
       .populate('academicYear');
     if (!examResult) {

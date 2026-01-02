@@ -1,5 +1,6 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import { IScormAttempt } from '../../types/scorm';
+import { syncContentAttemptFromScorm } from '../../utils/scorm/contentAttemptSync';
 
 /**
  * SCORM Attempt Schema
@@ -397,6 +398,16 @@ scormAttemptSchema.index({ package: 1, status: 1 }); // Find all attempts by sta
 scormAttemptSchema.index({ learner: 1, startedAt: -1 }); // Learner's recent attempts
 scormAttemptSchema.index({ 'cmi.completion_status': 1, package: 1 }); // Completion tracking
 scormAttemptSchema.index({ learner: 1, package: 1, attemptNumber: 1 }, { unique: true }); // Prevent duplicate attempts
+
+scormAttemptSchema.post('save', function (doc, next) {
+  syncContentAttemptFromScorm(doc)
+    .then(() => next())
+    .catch((error) => {
+      // Avoid blocking SCORM runtime flows on ContentAttempt sync
+      console.warn('ContentAttempt sync failed for ScormAttempt', error);
+      next();
+    });
+});
 
 const ScormAttempt = mongoose.model<IScormAttempt, IScormAttemptModel>(
   'ScormAttempt',

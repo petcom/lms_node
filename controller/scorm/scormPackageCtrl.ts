@@ -31,12 +31,12 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
   const {
     title,
     description,
-    subject,
-    subjectId,
+    course,
+    courseId,
     program,
     programId,
-    classLevel,
-    classLevelId,
+    programLevel,
+    programLevelId,
     isGraded,
     maxScore,
     dueDate,
@@ -164,9 +164,9 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       packageSize: validationResult.packageSize,
       uploadedBy: req.userAuth!._id,
       uploadedByModel,
-      subject: subject || subjectId || null,
+      course: course || courseId || null,
       program: program || programId || null,
-      classLevel: classLevel || classLevelId || null,
+      programLevel: programLevel || programLevelId || null,
       department: chosenDepartment ? new mongoose.Types.ObjectId(chosenDepartment) : undefined,
       isGraded: parsedIsGraded,
       maxScore: parsedMaxScore !== undefined ? parsedMaxScore : 100,
@@ -227,9 +227,9 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   const {
     page = 1,
     limit = 10,
-    subject,
+    course,
     program,
-    classLevel,
+    programLevel,
     isPublished,
     status,
     search,
@@ -245,9 +245,9 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
   // Department scoping
   const scope = req.departmentScope?.accessibleDepartmentIds;
 
-  // Filter by subject
-  if (subject) {
-    query.subject = subject;
+  // Filter by course
+  if (course) {
+    query.course = course;
   }
 
   // Filter by program
@@ -255,9 +255,9 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     query.program = program;
   }
 
-  // Filter by class level
-  if (classLevel) {
-    query.classLevel = classLevel;
+  // Filter by program level
+  if (programLevel) {
+    query.programLevel = programLevel;
   }
 
   // Filter by published status
@@ -316,11 +316,11 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
 
   const packages = await ScormPackage.find(query)
     .populate({ path: 'uploadedBy', select: 'name email role' })
-    .populate('subject', 'name')
+    .populate('course', 'title')
     .populate('program', 'name')
-    .populate('classLevel', 'name')
+    .populate('programLevel', 'name')
     .populate('assignedTo.learners', 'name email')
-    .populate('assignedTo.classLevels', 'name')
+    .populate('assignedTo.classes', 'name')
     .populate('assignedTo.programs', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -348,11 +348,11 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
 export const getPackage = asyncHandler(async (req: Request, res: Response) => {
   const scormPackage = await ScormPackage.findById(req.params.id)
     .populate({ path: 'uploadedBy', select: 'name email role' })
-    .populate('subject', 'name')
+    .populate('course', 'title')
     .populate('program', 'name')
-    .populate('classLevel', 'name')
+    .populate('programLevel', 'name')
     .populate('assignedTo.learners', 'name email')
-    .populate('assignedTo.classLevels', 'name')
+    .populate('assignedTo.classes', 'name')
     .populate('assignedTo.programs', 'name');
 
   if (!scormPackage) {
@@ -383,9 +383,9 @@ export const updatePackage = asyncHandler(async (req: Request, res: Response) =>
     title,
     description,
     isPublished,
-    subject,
+    course,
     program,
-    classLevel,
+    programLevel,
     requiredScore,
     passingScore,
     maxAttempts,
@@ -407,9 +407,9 @@ export const updatePackage = asyncHandler(async (req: Request, res: Response) =>
   if (title) scormPackage.title = title;
   if (description !== undefined) (scormPackage as any).description = description;
   if (isPublished !== undefined) (scormPackage as any).isPublished = isPublished;
-  if (subject !== undefined) (scormPackage as any).subject = subject;
+  if (course !== undefined) (scormPackage as any).course = course;
   if (program !== undefined) (scormPackage as any).program = program;
-  if (classLevel !== undefined) (scormPackage as any).classLevel = classLevel;
+  if (programLevel !== undefined) (scormPackage as any).programLevel = programLevel;
   if (requiredScore !== undefined) (scormPackage as any).requiredScore = requiredScore;
   if (passingScore !== undefined) (scormPackage as any).passingScore = passingScore;
   if (maxAttempts !== undefined) (scormPackage as any).maxAttempts = maxAttempts;
@@ -505,9 +505,9 @@ export const clonePackage = asyncHandler(
       filePath: source.filePath,
       storagePath: sourceAny.storagePath,
       storageProvider: sourceAny.storageProvider,
-      subject: source.subject,
+      course: source.course,
       program: source.program,
-      classLevel: source.classLevel,
+      programLevel: source.programLevel,
       department: new mongoose.Types.ObjectId(targetDept),
       createdBy: req.userAuth!._id,
       uploadedBy: req.userAuth!._id,
@@ -522,7 +522,7 @@ export const clonePackage = asyncHandler(
       maxAttempts: (source as any).maxAttempts,
       assignedTo: {
         learners: [],
-        classLevels: [],
+        classes: [],
         programs: [],
       },
     });
@@ -556,7 +556,11 @@ export const assignPackage = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('SCORM package not found');
   }
 
-  const assignedTo = scormPackage.assignedTo || { learners: [], classLevels: [], programs: [] };
+  const assignedTo = scormPackage.assignedTo || {
+    learners: [],
+    classes: [],
+    programs: [],
+  };
 
   // Add learners
   if (learnerIds && Array.isArray(learnerIds)) {
@@ -565,11 +569,11 @@ export const assignPackage = asyncHandler(async (req: Request, res: Response) =>
     assignedTo.learners = merged as any;
   }
 
-  // Add class levels
+  // Add classes
   if (classIds && Array.isArray(classIds)) {
-    const current = assignedTo.classLevels?.map(String) || [];
+    const current = assignedTo.classes?.map(String) || [];
     const merged = Array.from(new Set([...current, ...classIds.map(String)]));
-    assignedTo.classLevels = merged as any;
+    assignedTo.classes = merged as any;
   }
 
   // Add programs
@@ -605,7 +609,11 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
     throw new Error('SCORM package not found');
   }
 
-  const assignedTo = scormPackage.assignedTo || { learners: [], classLevels: [], programs: [] };
+  const assignedTo = scormPackage.assignedTo || {
+    learners: [],
+    classes: [],
+    programs: [],
+  };
 
   // Remove learners
   if (learnerIds && Array.isArray(learnerIds)) {
@@ -614,9 +622,9 @@ export const unassignPackage = asyncHandler(async (req: Request, res: Response) 
     );
   }
 
-  // Remove class levels
+  // Remove classes
   if (classIds && Array.isArray(classIds)) {
-    assignedTo.classLevels = (assignedTo.classLevels || []).filter(
+    assignedTo.classes = (assignedTo.classes || []).filter(
       (id: any) => !classIds.map(String).includes(id.toString())
     );
   }

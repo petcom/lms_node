@@ -30,9 +30,9 @@ interface UpdateStaffProfileBody {
 
 interface AdminUpdateStaffBody {
   program?: Types.ObjectId;
-  classLevel?: Types.ObjectId;
+  programLevel?: Types.ObjectId;
   academicYear?: Types.ObjectId;
-  subject?: Types.ObjectId;
+  course?: Types.ObjectId;
   department?: string;
 }
 
@@ -282,7 +282,7 @@ export const adminUpdateStaff = expressAsyncHandler(
     req: Request<{ staffID: string }, {}, AdminUpdateStaffBody>,
     res: Response
   ): Promise<void> => {
-    const { program, classLevel, academicYear, subject, department } = req.body;
+    const { program, programLevel, academicYear, course, department } = req.body;
 
     // find staff
     const staffFound = await Staff.findById(req.params.staffID);
@@ -321,15 +321,15 @@ export const adminUpdateStaff = expressAsyncHandler(
       return;
     }
 
-    // assign class level
-    if (classLevel) {
-      staffFound.classLevel = classLevel;
+    // assign program level
+    if (programLevel) {
+      staffFound.programLevel = programLevel;
       await staffFound.save();
 
       res.status(200).json({
         success: 'success',
         data: staffFound,
-        message: 'Staff profile updated successfully',
+        message: 'Staff program level updated successfully',
       });
       return;
     }
@@ -347,15 +347,15 @@ export const adminUpdateStaff = expressAsyncHandler(
       return;
     }
 
-    // assign subject
-    if (subject) {
-      staffFound.subject = subject;
+    // assign course
+    if (course) {
+      staffFound.course = course;
       await staffFound.save();
 
       res.status(200).json({
         success: 'success',
         data: staffFound,
-        message: 'Staff subject updated successfully',
+        message: 'Staff course updated successfully',
       });
       return;
     }

@@ -9,6 +9,8 @@ import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Learner from '../../model/Academic/Learner';
+import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
+import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
 import {
   calculateBestScore,
@@ -100,7 +102,7 @@ const mapErrorToStatus = (error: any): number => {
 export const getLearnerProgress = async (req: Request, res: Response) => {
   try {
     const { learnerId } = req.params;
-    const { startDate, endDate, packageId, program, classLevel } = req.query;
+    const { startDate, endDate, packageId, program, programLevel } = req.query;
 
     const role = req.userAuth?.role;
     const userId = req.userAuth?._id?.toString();
@@ -132,7 +134,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
       .sort({ startedAt: -1 });
 
     // Get learner info
-    const learner = await Learner.findById(learnerId).select('firstName lastName email');
+    const learner = await Learner.findById(learnerId).select('name email');
 
     if (!learner) {
       return res.status(404).json({
@@ -152,7 +154,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
       }
 
       if (program && pkg.program?.toString() !== String(program)) return;
-      if (classLevel && pkg.classLevel?.toString() !== String(classLevel)) return;
+      if (programLevel && pkg.programLevel?.toString() !== String(programLevel)) return;
 
       const packageId = pkg._id.toString();
 
@@ -214,7 +216,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
       success: true,
       data: {
         learnerId: learner._id,
-        learnerName: `${(learner as any).firstName} ${(learner as any).lastName}`,
+        learnerName: (learner as any).name,
         learnerEmail: (learner as any).email,
         packages: paged.data,
         pagination: paged.pagination,
@@ -244,7 +246,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
 export const getPackageAnalytics = async (req: Request, res: Response) => {
   try {
     const { packageId } = req.params;
-    const { startDate, endDate, learnerId, program, classLevel } = req.query;
+    const { startDate, endDate, learnerId, program, programLevel } = req.query;
 
     const role = req.userAuth?.role;
     const userId = req.userAuth?._id?.toString();
@@ -281,15 +283,46 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
       query.learner = learnerId;
     }
 
+    if (program && !mongoose.isValidObjectId(program as any)) {
+      throw new ValidationError('Invalid program');
+    }
+
+    if (programLevel && !mongoose.isValidObjectId(programLevel as any)) {
+      throw new ValidationError('Invalid programLevel');
+    }
+
     // Get all attempts for this package
     const attempts = await ScormAttempt.find(query)
-      .populate('learner', 'firstName lastName email program classLevels')
+      .populate('learner', 'name email')
       .sort({ startedAt: -1 });
+
+    const programLearners =
+      program && mongoose.isValidObjectId(program as any)
+        ? new Set(
+            (
+              await ProgramEnrollment.find({ program }).select('learner').lean()
+            ).map((enrollment) => enrollment.learner.toString())
+          )
+        : null;
+
+    const programLevelLearners =
+      programLevel && mongoose.isValidObjectId(programLevel as any)
+        ? new Set(
+            (
+              await ClassEnrollment.find({ programLevel }).select('learner').lean()
+            ).map((enrollment) => enrollment.learner.toString())
+          )
+        : null;
 
     const filteredAttempts = attempts.filter((a) => {
       const learner = a.learner as any;
-      if (program && learner?.program?.toString() !== String(program)) return false;
-      if (classLevel && !learner?.classLevels?.includes(String(classLevel))) return false;
+      if (programLearners && !programLearners.has(learner?._id?.toString?.() || '')) return false;
+      if (
+        programLevelLearners &&
+        !programLevelLearners.has(learner?._id?.toString?.() || '')
+      ) {
+        return false;
+      }
       return true;
     });
 
@@ -332,7 +365,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
       if (!learnerMap.has(learnerId)) {
         learnerMap.set(learnerId, {
           learnerId: learner._id,
-          learnerName: `${learner.firstName} ${learner.lastName}`,
+          learnerName: learner.name,
           learnerEmail: learner.email,
           attempts: [],
         });
@@ -420,7 +453,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
     const scope = req.departmentScope?.accessibleDepartmentIds as DepartmentScope;
 
     const attempt = await ScormAttempt.findOne({ attemptId })
-      .populate('learner', 'firstName lastName email')
+      .populate('learner', 'name email')
       .populate('package', 'title version manifest');
 
     if (!attempt) {
@@ -447,7 +480,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
         attemptId: attempt.attemptId,
         learner: {
           id: learner._id,
-          name: `${learner.firstName} ${learner.lastName}`,
+          name: learner.name,
           email: learner.email,
         },
         package: {
@@ -481,7 +514,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
  */
 export const exportTrackingData = async (req: Request, res: Response) => {
   try {
-    const { packageId, learnerId, startDate, endDate, format = 'json', program, classLevel } =
+    const { packageId, learnerId, startDate, endDate, format = 'json', program, programLevel } =
       req.query;
 
     const role = req.userAuth?.role;
@@ -514,18 +547,51 @@ export const exportTrackingData = async (req: Request, res: Response) => {
       if (end) query.startedAt.$lte = end;
     }
 
+    if (program && !mongoose.isValidObjectId(program as any)) {
+      throw new ValidationError('Invalid program');
+    }
+
+    if (programLevel && !mongoose.isValidObjectId(programLevel as any)) {
+      throw new ValidationError('Invalid programLevel');
+    }
+
     // Get attempts
     const attempts = await ScormAttempt.find(query)
-      .populate('learner', 'firstName lastName email program classLevels')
-      .populate('package', 'title version department uploadedBy isGlobal program classLevel')
+      .populate('learner', 'name email')
+      .populate('package', 'title version department uploadedBy isGlobal program programLevel')
       .sort({ startedAt: -1 });
+
+    const programLearners =
+      program && mongoose.isValidObjectId(program as any)
+        ? new Set(
+            (
+              await ProgramEnrollment.find({ program }).select('learner').lean()
+            ).map((enrollment) => enrollment.learner.toString())
+          )
+        : null;
+
+    const programLevelLearners =
+      programLevel && mongoose.isValidObjectId(programLevel as any)
+        ? new Set(
+            (
+              await ClassEnrollment.find({ programLevel }).select('learner').lean()
+            ).map((enrollment) => enrollment.learner.toString())
+          )
+        : null;
 
     const filteredAttempts = attempts.filter((attempt) => {
       const pkg = attempt.package as any;
       if (!isPackageAccessible(pkg, role, userId, scope)) return false;
       const learner = attempt.learner as any;
-      if (program && learner?.program?.toString() !== String(program)) return false;
-      if (classLevel && !learner?.classLevels?.includes(String(classLevel))) return false;
+      if (programLearners && !programLearners.has(learner?._id?.toString?.() || '')) {
+        return false;
+      }
+      if (
+        programLevelLearners &&
+        !programLevelLearners.has(learner?._id?.toString?.() || '')
+      ) {
+        return false;
+      }
       return true;
     });
 
@@ -539,7 +605,7 @@ export const exportTrackingData = async (req: Request, res: Response) => {
 
       return {
         learnerId: learner._id,
-        learnerName: `${learner.firstName} ${learner.lastName}`,
+        learnerName: learner.name,
         learnerEmail: learner.email,
         packageId: pkg._id,
         packageTitle: pkg.title,
@@ -582,7 +648,7 @@ export const exportTrackingData = async (req: Request, res: Response) => {
     } else {
       const jsonExport = {
         exportDate: new Date().toISOString(),
-        filters: { packageId, learnerId, startDate, endDate, program, classLevel },
+        filters: { packageId, learnerId, startDate, endDate, program, programLevel },
         totalRecords: exportData.length,
         page: paged.pagination.page,
         pages: paged.pagination.pages,

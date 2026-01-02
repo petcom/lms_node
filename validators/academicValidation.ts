@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { objectId, pagination, academicYear, classLevel, academicTerm, date } from './common';
+import { objectId, pagination, academicYear, academicTerm, date } from './common';
 
 /**
  * Academic Year validation
@@ -52,26 +52,6 @@ export const updateAcademicTerm = {
 };
 
 /**
- * Class Level validation
- */
-export const createClassLevel = {
-  body: Joi.object({
-    name: classLevel.required(),
-    description: Joi.string().max(500).trim(),
-  }),
-};
-
-export const updateClassLevel = {
-  params: Joi.object({
-    id: objectId.required(),
-  }),
-  body: Joi.object({
-    name: classLevel,
-    description: Joi.string().max(500).trim(),
-  }).min(1),
-};
-
-/**
  * Program validation
  */
 export const createProgram = {
@@ -92,7 +72,7 @@ export const updateProgram = {
     description: Joi.string().max(1000).trim(),
     duration: Joi.string().trim(),
     code: Joi.string().trim().uppercase(),
-    subjects: Joi.array().items(objectId),
+    courses: Joi.array().items(objectId),
   }).min(1),
 };
 
@@ -237,33 +217,6 @@ export const updateCourseEnrollment = {
 };
 
 /**
- * Subject validation
- */
-export const createSubject = {
-  body: Joi.object({
-    name: Joi.string().min(2).max(100).trim().required(),
-    description: Joi.string().max(1000).trim(),
-    academicTerm: objectId.required(),
-    code: Joi.string().trim().uppercase(),
-    duration: Joi.string().trim(),
-  }),
-};
-
-export const updateSubject = {
-  params: Joi.object({
-    id: objectId.required(),
-  }),
-  body: Joi.object({
-    name: Joi.string().min(2).max(100).trim(),
-    description: Joi.string().max(1000).trim(),
-    academicTerm: objectId,
-    code: Joi.string().trim().uppercase(),
-    duration: Joi.string().trim(),
-    instructor: objectId,
-  }).min(1),
-};
-
-/**
  * Year Group validation
  */
 export const createYearGroup = {
@@ -290,7 +243,7 @@ export const createExam = {
   body: Joi.object({
     name: Joi.string().min(2).max(200).trim().required(),
     description: Joi.string().max(1000).trim(),
-    subject: objectId.required(),
+    course: objectId.required(),
     program: objectId.required(),
     academicTerm: objectId.required(),
     duration: Joi.number().integer().min(1).max(480).required(), // in minutes, max 8 hours
@@ -301,7 +254,7 @@ export const createExam = {
     examType: Joi.string().valid('quiz', 'mid-term', 'final', 'assignment').required(),
     passMark: Joi.number().min(0).max(100).required(),
     totalMark: Joi.number().min(1).max(1000).required(),
-    classLevel: objectId.required(),
+    programLevel: objectId,
     academicYear: objectId.required(),
   }),
 };
@@ -313,7 +266,7 @@ export const updateExam = {
   body: Joi.object({
     name: Joi.string().min(2).max(200).trim(),
     description: Joi.string().max(1000).trim(),
-    subject: objectId,
+    course: objectId,
     program: objectId,
     academicTerm: objectId,
     duration: Joi.number().integer().min(1).max(480),
@@ -323,7 +276,7 @@ export const updateExam = {
     passMark: Joi.number().min(0).max(100),
     totalMark: Joi.number().min(1).max(1000),
     isPublished: Joi.boolean(),
-    classLevel: objectId,
+    programLevel: objectId,
     academicYear: objectId,
   }).min(1),
 };

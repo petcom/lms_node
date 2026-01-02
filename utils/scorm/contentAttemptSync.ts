@@ -1,55 +1,87 @@
-import mongoose from 'mongoose';
-import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import CourseContent from '../../model/Academic/CourseContent';
 import ContentAttempt from '../../model/Academic/ContentAttempt';
+import ScormPackage from '../../model/Scorm/ScormPackage';
+import { scormTimeToSeconds } from './cmiDataMapper';
 
-type SyncOptions = {
-  attempt: typeof ScormAttempt.prototype;
-};
-
-const mapStatus = (status?: string): 'in_progress' | 'completed' | 'abandoned' => {
+const mapStatus = (status?: string) => {
   if (!status) return 'in_progress';
   if (['completed', 'passed', 'failed'].includes(status)) return 'completed';
-  if (status === 'suspended') return 'abandoned';
   return 'in_progress';
 };
 
-export const syncContentAttemptFromScorm = async ({ attempt }: SyncOptions): Promise<void> => {
-  if (!attempt?.package || !attempt?.learner) {
-    return;
+const derivePassed = (status?: string, cmi?: any) => {
+  if (status === 'passed') return true;
+  if (status === 'failed') return false;
+  const lessonStatus = cmi?.lesson_status || cmi?.core?.lesson_status;
+  const successStatus = cmi?.success_status;
+  if (lessonStatus === 'passed' || successStatus === 'passed') return true;
+  if (lessonStatus === 'failed' || successStatus === 'failed') return false;
+  return undefined;
+};
+
+const deriveScore = (cmi?: any) => {
+  const scaled = cmi?.score?.scaled;
+  if (scaled !== undefined && scaled !== null) {
+    return Math.round((scaled + 1) * 50);
   }
+  const raw = cmi?.score?.raw ?? cmi?.core?.score?.raw;
+  return raw !== undefined && raw !== null ? raw : undefined;
+};
+
+const deriveMaxScore = (cmi?: any) => {
+  const max = cmi?.score?.max ?? cmi?.core?.score?.max;
+  return max !== undefined && max !== null ? max : undefined;
+};
+
+const deriveTimeSpent = (cmi?: any, version?: string) => {
+  const timeString = cmi?.total_time || cmi?.core?.total_time || '0';
+  try {
+    return scormTimeToSeconds(timeString, version || 'scorm_1.2');
+  } catch (error) {
+    return 0;
+  }
+};
+
+export const syncContentAttemptFromScorm = async (attempt: any) => {
+  const scormPackage = await ScormPackage.findById(attempt.package).lean();
+  if (!scormPackage) return null;
 
   const courseContent = await CourseContent.findOne({
-    contentType: 'scorm',
-    scormPackageId: attempt.package,
-  })
-    .select('_id')
-    .lean();
+    scormPackageId: scormPackage._id,
+    ...(scormPackage.course ? { course: scormPackage.course } : {}),
+  }).lean();
 
-  if (!courseContent) {
-    return;
-  }
+  if (!courseContent) return null;
 
-  const score =
-    typeof (attempt as any).scorePercentage === 'number'
-      ? (attempt as any).scorePercentage
-      : (attempt as any).cmi?.score?.raw;
-  const maxScore = (attempt as any).cmi?.score?.max;
+  const cmi = attempt.cmi || {};
+  const score = deriveScore(cmi);
+  const maxScore = deriveMaxScore(cmi);
+  const passed = derivePassed(attempt.status, cmi);
+  const timeSpentSec = deriveTimeSpent(cmi, scormPackage.version);
 
-  await ContentAttempt.findOneAndUpdate(
-    { scormAttemptId: (attempt as any)._id },
+  const update = {
+    learner: attempt.learner,
+    courseContent: courseContent._id,
+    contentType: 'scorm' as const,
+    status: mapStatus(attempt.status),
+    score,
+    maxScore,
+    passed,
+    timeSpentSec,
+    payload: {
+      cmi,
+    },
+    startedAt: attempt.startedAt || new Date(),
+    completedAt: attempt.completedAt || undefined,
+  };
+
+  return await ContentAttempt.findOneAndUpdate(
+    { scormAttemptId: attempt._id },
     {
-      learner: (attempt as any).learner,
-      courseContent: new mongoose.Types.ObjectId(courseContent._id.toString()),
-      contentType: 'scorm',
-      scormAttemptId: (attempt as any)._id,
-      status: mapStatus((attempt as any).status),
-      score: typeof score === 'number' ? score : undefined,
-      maxScore: typeof maxScore === 'number' ? maxScore : undefined,
-      passed: (attempt as any).status === 'passed',
-      startedAt: (attempt as any).startedAt || new Date(),
-      completedAt: (attempt as any).completedAt,
-      payload: (attempt as any).cmi || {},
+      $set: update,
+      $setOnInsert: {
+        scormAttemptId: attempt._id,
+      },
     },
     { upsert: true, new: true }
   );

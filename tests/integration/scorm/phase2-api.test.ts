@@ -103,7 +103,7 @@ describe('SCORM Phase 2: Package Management API', () => {
   describe('1. Package Upload', () => {
     it('should reject non-authenticated upload', async () => {
       const res = await request(app)
-        .post('/api/v1/scorm/packages')
+        .post('/api/v1/content/scorm/packages')
         .attach('package', Buffer.from('fake-zip'), 'test.zip');
 
       expect(res.status).toBe(401);
@@ -111,7 +111,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should reject non-ZIP files', async () => {
       const res = await request(app)
-        .post('/api/v1/scorm/packages')
+        .post('/api/v1/content/scorm/packages')
         .set('Authorization', `Bearer ${instructorToken}`)
         .attach('package', Buffer.from('not-a-zip'), 'test.txt');
 
@@ -122,7 +122,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       // Skip actual upload for now - would need real SCORM package
       // This test verifies the endpoint exists and requires auth
       const res = await request(app)
-        .post('/api/v1/scorm/packages')
+        .post('/api/v1/content/scorm/packages')
         .set('Authorization', `Bearer ${instructorToken}`);
 
       // Without file, should get 400 or similar
@@ -141,7 +141,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get all packages (instructor/admin)', async () => {
       const res = await request(app)
-        .get('/api/v1/scorm/packages')
+        .get('/api/v1/content/scorm/packages')
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -154,7 +154,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get single package by ID', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/packages/${packageId}`)
+        .get(`/api/v1/content/scorm/packages/${packageId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
@@ -166,7 +166,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should update package (instructor/admin)', async () => {
       const res = await request(app)
-        .put(`/api/v1/scorm/packages/${packageId}`)
+        .put(`/api/v1/content/scorm/packages/${packageId}`)
         .set('Authorization', `Bearer ${instructorToken}`)
         .send({
           title: 'Updated Test Package',
@@ -180,7 +180,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should delete package (instructor/admin)', async () => {
       const res = await request(app)
-        .delete(`/api/v1/scorm/packages/${packageId}`)
+        .delete(`/api/v1/content/scorm/packages/${packageId}`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -202,7 +202,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should assign package to learners', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${packageId}/assign`)
+        .post(`/api/v1/content/scorm/packages/${packageId}/assign`)
         .set('Authorization', `Bearer ${instructorToken}`)
         .send({
           learnerIds: [learnerId],
@@ -215,13 +215,13 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should unassign package from learners', async () => {
       // First assign
       await request(app)
-        .post(`/api/v1/scorm/packages/${packageId}/assign`)
+        .post(`/api/v1/content/scorm/packages/${packageId}/assign`)
         .set('Authorization', `Bearer ${instructorToken}`)
         .send({ learnerIds: [learnerId] });
 
       // Then unassign
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${packageId}/unassign`)
+        .post(`/api/v1/content/scorm/packages/${packageId}/unassign`)
         .set('Authorization', `Bearer ${instructorToken}`)
         .send({ learnerIds: [learnerId] });
 
@@ -232,13 +232,13 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should get learner assignments', async () => {
       // Assign package
       await request(app)
-        .post(`/api/v1/scorm/packages/${packageId}/assign`)
+        .post(`/api/v1/content/scorm/packages/${packageId}/assign`)
         .set('Authorization', `Bearer ${instructorToken}`)
         .send({ learnerIds: [learnerId] });
 
       // Get assignments
       const res = await request(app)
-        .get('/api/v1/scorm/packages/my-assignments')
+        .get('/api/v1/content/scorm/packages/my-assignments')
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
@@ -268,7 +268,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should publish a draft package (instructor/admin)', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .post(`/api/v1/content/scorm/packages/${publishPackageId}/publish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -279,7 +279,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should be idempotent when publishing an already published package', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .post(`/api/v1/content/scorm/packages/${publishPackageId}/publish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       // publish once
@@ -287,7 +287,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
       // publish again
       const second = await request(app)
-        .post(`/api/v1/scorm/packages/${publishPackageId}/publish`)
+        .post(`/api/v1/content/scorm/packages/${publishPackageId}/publish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(second.status).toBe(200);
@@ -297,7 +297,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should unpublish a published package (instructor/admin)', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .post(`/api/v1/content/scorm/packages/${unpublishPackageId}/unpublish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -308,7 +308,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should be idempotent when unpublishing an already draft package', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .post(`/api/v1/content/scorm/packages/${unpublishPackageId}/unpublish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       // unpublish once
@@ -316,7 +316,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
       // unpublish again
       const second = await request(app)
-        .post(`/api/v1/scorm/packages/${unpublishPackageId}/unpublish`)
+        .post(`/api/v1/content/scorm/packages/${unpublishPackageId}/unpublish`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(second.status).toBe(200);
@@ -335,7 +335,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should launch package for learner', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/content/${packageId}/launch`)
+        .get(`/api/v1/content/scorm/content/${packageId}/launch`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       // May fail without actual content files, but endpoint should exist
@@ -344,7 +344,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get manifest (admin/instructor)', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/content/${packageId}/manifest`)
+        .get(`/api/v1/content/scorm/content/${packageId}/manifest`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       // May fail without actual manifest, but endpoint should exist
@@ -377,7 +377,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get attempts by package', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/package/${packageId}`)
+        .get(`/api/v1/content/scorm/attempts/package/${packageId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
@@ -387,7 +387,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get single attempt', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/${attemptId}`)
+        .get(`/api/v1/content/scorm/attempts/${attemptId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
@@ -397,7 +397,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get all attempts (admin/instructor)', async () => {
       const res = await request(app)
-        .get('/api/v1/scorm/attempts')
+        .get('/api/v1/content/scorm/attempts')
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -430,7 +430,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should update CMI data', async () => {
       const res = await request(app)
-        .put(`/api/v1/scorm/attempts/${attemptId}/cmi`)
+        .put(`/api/v1/content/scorm/attempts/${attemptId}/cmi`)
         .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           element: 'cmi.core.score.raw',
@@ -443,7 +443,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get CMI element value', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/${attemptId}/cmi/cmi.core.lesson_status`)
+        .get(`/api/v1/content/scorm/attempts/${attemptId}/cmi/cmi.core.lesson_status`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(200);
@@ -452,7 +452,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should complete attempt', async () => {
       const res = await request(app)
-        .post(`/api/v1/scorm/attempts/${attemptId}/complete`)
+        .post(`/api/v1/content/scorm/attempts/${attemptId}/complete`)
         .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           score: { raw: 95, min: 0, max: 100 },
@@ -465,7 +465,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should get learner progress summary', async () => {
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/learner/${learnerId}/summary`)
+        .get(`/api/v1/content/scorm/attempts/learner/${learnerId}/summary`)
         .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(res.status).toBe(200);
@@ -483,14 +483,14 @@ describe('SCORM Phase 2: Package Management API', () => {
     });
 
     it('should reject unauthenticated requests', async () => {
-      const res = await request(app).get('/api/v1/scorm/packages');
+      const res = await request(app).get('/api/v1/content/scorm/packages');
 
       expect(res.status).toBe(401);
     });
 
     it('should reject learner upload', async () => {
       const res = await request(app)
-        .post('/api/v1/scorm/packages')
+        .post('/api/v1/content/scorm/packages')
         .set('Authorization', `Bearer ${learnerToken}`)
         .attach('package', Buffer.from('fake'), 'test.zip');
 
@@ -499,7 +499,7 @@ describe('SCORM Phase 2: Package Management API', () => {
 
     it('should reject learner delete', async () => {
       const res = await request(app)
-        .delete(`/api/v1/scorm/packages/${packageId}`)
+        .delete(`/api/v1/content/scorm/packages/${packageId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(403);
@@ -510,7 +510,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should return 404 for non-existent package', async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
-        .get(`/api/v1/scorm/packages/${fakeId}`)
+        .get(`/api/v1/content/scorm/packages/${fakeId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(404);
@@ -519,7 +519,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     it('should return 404 for non-existent attempt', async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
-        .get(`/api/v1/scorm/attempts/${fakeId}`)
+        .get(`/api/v1/content/scorm/attempts/${fakeId}`)
         .set('Authorization', `Bearer ${learnerToken}`);
 
       expect(res.status).toBe(404);
@@ -540,7 +540,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       });
 
       const res = await request(app)
-        .put(`/api/v1/scorm/attempts/${attempt._id}/cmi`)
+        .put(`/api/v1/content/scorm/attempts/${attempt._id}/cmi`)
         .set('Authorization', `Bearer ${learnerToken}`)
         .send({
           element: 'invalid.cmi.path',

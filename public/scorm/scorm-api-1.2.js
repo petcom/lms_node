@@ -14,7 +14,7 @@
   'use strict';
 
   // Configuration
-  const API_BASE_URL = '/api/v1/scorm/runtime';
+  const API_BASE_URL = '/api/v1/content/scorm/runtime';
   const COMMIT_DEBOUNCE_MS = 2000; // Auto-commit after 2 seconds of inactivity
 
   // Error codes per SCORM 1.2 spec

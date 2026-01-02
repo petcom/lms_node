@@ -26,7 +26,7 @@ const router = express.Router();
 
 /**
  * Learner Progress
- * GET /api/v1/scorm/reports/learner/:learnerId
+ * GET /api/v1/content/scorm/reports/learner/:learnerId
  *
  * Get progress across all SCORM packages for a learner
  * Learners can view their own, Staff/Admins can view any
@@ -42,7 +42,7 @@ router.get(
 
 /**
  * Package Analytics
- * GET /api/v1/scorm/reports/package/:packageId/analytics
+ * GET /api/v1/content/scorm/reports/package/:packageId/analytics
  *
  * Get analytics for a specific package (staff/admin only)
  * Includes completion rates, score distribution, time analysis
@@ -59,7 +59,7 @@ router.get(
 
 /**
  * Attempt Details
- * GET /api/v1/scorm/reports/attempts/:attemptId
+ * GET /api/v1/content/scorm/reports/attempts/:attemptId
  *
  * Get detailed information about a specific attempt
  * Includes full CMI data and session log
@@ -75,7 +75,7 @@ router.get(
 
 /**
  * Export Tracking Data
- * GET /api/v1/scorm/reports/export
+ * GET /api/v1/content/scorm/reports/export
  *
  * Export tracking data in various formats (JSON, CSV, XLSX)
  * Staff/Admin only
@@ -85,7 +85,7 @@ router.get('/export', isAuthenticated, departmentScope(), isInstructorOrAdmin, e
 
 /**
  * Completion Rates
- * GET /api/v1/scorm/reports/completion/:packageId
+ * GET /api/v1/content/scorm/reports/completion/:packageId
  *
  * Get completion rates over time for a package
  * Staff/Admin only
@@ -102,7 +102,7 @@ router.get(
 
 /**
  * Score Distribution
- * GET /api/v1/scorm/reports/scores/:packageId
+ * GET /api/v1/content/scorm/reports/scores/:packageId
  *
  * Get score distribution and statistics for a package
  * Staff/Admin only
@@ -119,7 +119,7 @@ router.get(
 
 /**
  * Time Analytics
- * GET /api/v1/scorm/reports/time/:packageId
+ * GET /api/v1/content/scorm/reports/time/:packageId
  *
  * Get time spent analytics for a package
  * Instructor/Admin only
@@ -136,7 +136,7 @@ router.get(
 
 /**
  * Interaction Data
- * GET /api/v1/scorm/reports/interactions/:attemptId
+ * GET /api/v1/content/scorm/reports/interactions/:attemptId
  *
  * Get interaction tracking data for an attempt
  * Includes question responses, correct/incorrect answers

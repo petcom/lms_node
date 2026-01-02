@@ -49,7 +49,7 @@ export const launchPackage = asyncHandler(async (req: Request, res: Response) =>
   const storageProvider = StorageFactory.getProvider();
   const contentUrl = storageProvider.getFileUrl(`${packageId}/${(scormPackage as any).launchUrl}`);
 
-  const runtimeBase = `/api/v1/scorm/runtime/${attempt._id}`;
+  const runtimeBase = `/api/v1/content/scorm/runtime/${attempt._id}`;
 
   // Update statistics
   await ScormPackage.updateStats(scormPackage.packageId, scormPackage._id as any);

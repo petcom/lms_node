@@ -32,7 +32,7 @@ const attachTokenFromQuery = (req: Request, res: Response, next: NextFunction) =
 
 /**
  * Launch SCORM player
- * GET /api/v1/scorm/player/:packageId/launch
+ * GET /api/v1/content/scorm/player/:packageId/launch
  *
  * Returns HTML player interface with embedded content
  * Requires authentication (learners must be assigned)
@@ -41,7 +41,7 @@ router.get('/:packageId/launch', attachTokenFromQuery, isAuthenticated(), launch
 
 /**
  * Serve SCORM content files
- * GET /api/v1/scorm/player/:packageId/content/*
+ * GET /api/v1/content/scorm/player/:packageId/content/*
  *
  * Serves static files from extracted SCORM package
  * Handles all content types (HTML, CSS, JS, images, videos, etc.)
@@ -51,7 +51,7 @@ router.get('/:packageId/content/*', attachTokenFromQuery, isAuthenticated(), ser
 
 /**
  * Exit player
- * POST /api/v1/scorm/player/:attemptId/exit
+ * POST /api/v1/content/scorm/player/:attemptId/exit
  *
  * Returns final attempt statistics
  * Requires learner authentication

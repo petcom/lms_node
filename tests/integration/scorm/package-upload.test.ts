@@ -87,7 +87,7 @@ describe('SCORM Package Upload API', () => {
     const zipBuffer = buildZip();
 
     const res = await request(app)
-      .post('/api/v1/scorm/packages')
+      .post('/api/v1/content/scorm/packages')
       .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Upload Test')
       .field('isGraded', 'true')
@@ -107,7 +107,7 @@ describe('SCORM Package Upload API', () => {
     const zipBuffer = buildZip(false);
 
     const res = await request(app)
-      .post('/api/v1/scorm/packages')
+      .post('/api/v1/content/scorm/packages')
       .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Bad Package')
       .attach('file', zipBuffer, 'bad.zip');
@@ -122,7 +122,7 @@ describe('SCORM Package Upload API', () => {
     const bigBuffer = zip.toBuffer();
 
     const res = await request(app)
-      .post('/api/v1/scorm/packages')
+      .post('/api/v1/content/scorm/packages')
       .set('Authorization', `Bearer ${instructorToken}`)
       .field('title', 'Too Big')
       .attach('file', bigBuffer, 'big.zip');
@@ -134,7 +134,7 @@ describe('SCORM Package Upload API', () => {
     const zipBuffer = buildZip();
 
     const res = await request(app)
-      .post('/api/v1/scorm/packages')
+      .post('/api/v1/content/scorm/packages')
       .attach('file', zipBuffer, 'noauth.zip')
       .field('title', 'No Auth');
 

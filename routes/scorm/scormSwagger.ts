@@ -5,7 +5,7 @@
 
 /**
  * @swagger
- * /api/v1/scorm/packages:
+ * /api/v1/content/scorm/packages:
  *   post:
  *     summary: Upload a new SCORM package
  *     tags: [SCORM - Packages]
@@ -105,7 +105,7 @@
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *
- * /api/v1/scorm/packages/{id}:
+ * /api/v1/content/scorm/packages/{id}:
  *   get:
  *     summary: Get SCORM package by ID
  *     tags: [SCORM - Packages]
@@ -179,7 +179,7 @@
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  *
- * /api/v1/scorm/packages/{id}/publish:
+ * /api/v1/content/scorm/packages/{id}/publish:
  *   post:
  *     summary: Publish SCORM package
  *     tags: [SCORM - Packages]
@@ -195,7 +195,7 @@
  *       200:
  *         description: Package published successfully
  *
- * /api/v1/scorm/packages/{id}/learners:
+ * /api/v1/content/scorm/packages/{id}/learners:
  *   post:
  *     summary: Assign learners to SCORM package
  *     tags: [SCORM - Packages]
@@ -222,7 +222,7 @@
  *       200:
  *         description: Learners assigned successfully
  *
- * /api/v1/scorm/runtime/{attemptId}/initialize:
+ * /api/v1/content/scorm/runtime/{attemptId}/initialize:
  *   post:
  *     summary: Initialize SCORM runtime session
  *     tags: [SCORM - Runtime]
@@ -256,7 +256,7 @@
  *                       type: string
  *                       example: '0'
  *
- * /api/v1/scorm/runtime/{attemptId}/get/{element}:
+ * /api/v1/content/scorm/runtime/{attemptId}/get/{element}:
  *   get:
  *     summary: Get CMI data element value
  *     tags: [SCORM - Runtime]
@@ -295,7 +295,7 @@
  *                       type: string
  *                       example: '85'
  *
- * /api/v1/scorm/runtime/{attemptId}/set:
+ * /api/v1/content/scorm/runtime/{attemptId}/set:
  *   post:
  *     summary: Set CMI data element value
  *     tags: [SCORM - Runtime]
@@ -324,7 +324,7 @@
  *       200:
  *         description: Value set successfully
  *
- * /api/v1/scorm/runtime/{attemptId}/commit:
+ * /api/v1/content/scorm/runtime/{attemptId}/commit:
  *   post:
  *     summary: Commit (save) CMI data to database
  *     tags: [SCORM - Runtime]
@@ -340,7 +340,7 @@
  *       200:
  *         description: Data committed successfully
  *
- * /api/v1/scorm/runtime/{attemptId}/terminate:
+ * /api/v1/content/scorm/runtime/{attemptId}/terminate:
  *   post:
  *     summary: Terminate SCORM session
  *     tags: [SCORM - Runtime]
@@ -356,7 +356,7 @@
  *       200:
  *         description: Session terminated successfully
  *
- * /api/v1/scorm/player/{packageId}/launch:
+ * /api/v1/content/scorm/player/{packageId}/launch:
  *   get:
  *     summary: Launch SCORM content player
  *     tags: [SCORM - Player]
@@ -376,7 +376,7 @@
  *             schema:
  *               type: string
  *
- * /api/v1/scorm/reports/learner/{learnerId}:
+ * /api/v1/content/scorm/reports/learner/{learnerId}:
  *   get:
  *     summary: Get learner progress across all SCORM packages
  *     tags: [SCORM - Reports]
@@ -418,7 +418,7 @@
  *                         averageScore:
  *                           type: number
  *
- * /api/v1/scorm/reports/package/{packageId}/analytics:
+ * /api/v1/content/scorm/reports/package/{packageId}/analytics:
  *   get:
  *     summary: Get package analytics (staff/admin)
  *     tags: [SCORM - Reports]
@@ -448,7 +448,7 @@
  *             schema:
  *               $ref: '#/components/schemas/ScormReportAnalytics'
  *
- * /api/v1/scorm/reports/export:
+ * /api/v1/content/scorm/reports/export:
  *   get:
  *     summary: Export SCORM tracking data
  *     tags: [SCORM - Reports]
@@ -480,7 +480,7 @@
  *             schema:
  *               type: string
  *
- * /api/v1/scorm/attempts:
+ * /api/v1/content/scorm/attempts:
  *   post:
  *     summary: Create a new SCORM attempt
  *     tags: [SCORM - Attempts]

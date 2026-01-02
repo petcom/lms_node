@@ -269,8 +269,8 @@ Deliverables:
 Status: ⚠️ partial
 - Remove legacy fields from Learner model and related code paths. (verified)
 - Standardize person name normalization + display handling in controllers/reports. (verified)
-- Remove unused models/endpoints. (not verified)
-- Update docs and contracts. (not verified)
+- Remove unused models/endpoints (legacy `/api/v1/scorm/*` mounts). (verified)
+ - Update docs and contracts. (verified)
 
 Deliverables:
 - Clean compile/test (targeted suites verified; full suite not run)

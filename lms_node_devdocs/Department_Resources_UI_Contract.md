@@ -129,7 +129,7 @@ Response:
 ```
 
 Notes:
-- `type=scorm` is rejected (use `/api/v1/scorm/packages`).
+- `type=scorm` is rejected (use `/api/v1/content/scorm/packages`).
 
 ## Content (Update)
 PATCH `/content/:id`

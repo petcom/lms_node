@@ -507,7 +507,7 @@ export const createDepartmentContent = AsyncHandler(
     const { type } = req.body as { type: 'scorm' | 'custom' };
 
     if (type === 'scorm') {
-      throw new ValidationError('Use /api/v1/scorm/packages for SCORM uploads');
+      throw new ValidationError('Use /api/v1/content/scorm/packages for SCORM uploads');
     }
 
     if (type !== 'custom') {

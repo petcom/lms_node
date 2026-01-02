@@ -168,13 +168,6 @@ app.use('/api/v1/exams', examRouter); // Exams routes
 app.use('/api/v1/learners', learnerRouter); // Learner routes
 app.use('/api/v1/questions', questionsRouter); // Question routes
 app.use('/api/v1/exam-results', examResultRouter); // Exam results routes
-app.use('/api/v1/scorm/packages', scormPackageRouter); // SCORM package management
-app.use('/api/v1/scorm/content', scormContentRouter); // SCORM content delivery
-app.use('/api/v1/scorm/attempts', scormAttemptRouter); // SCORM attempt tracking
-app.use('/api/v1/scorm/runtime', scormRuntimeRouter); // SCORM runtime API
-app.use('/api/v1/scorm/player', scormPlayerRouter); // SCORM player interface
-app.use('/api/v1/scorm/reports', scormReportRouter); // SCORM tracking and reporting
-app.use('/api/v1/scorm', scormHealthRouter); // SCORM health and monitoring
 app.use('/api/v1/content/scorm/packages', scormPackageRouter); // Content SCORM package management
 app.use('/api/v1/content/scorm/content', scormContentRouter); // Content SCORM content delivery
 app.use('/api/v1/content/scorm/attempts', scormAttemptRouter); // Content SCORM attempt tracking

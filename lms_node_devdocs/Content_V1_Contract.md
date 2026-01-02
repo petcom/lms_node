@@ -83,29 +83,24 @@ Body:
 ```
 
 ## SCORM (Type-Specific Pipeline)
-These endpoints retain the existing SCORM pipeline but live under `/content/scorm/*`.
+These endpoints retain the SCORM pipeline and live under `/content/scorm/*`.
 
 ### Upload / Register
 POST `/scorm/packages`
-- Same payload/behavior as existing `/api/v1/scorm/packages`
 
 ### Content Delivery
 GET `/scorm/content/*`
-- Same behavior as existing `/api/v1/scorm/content`
 
 ### Runtime API
 POST `/scorm/runtime/*`
-- Same behavior as existing `/api/v1/scorm/runtime`
 
 ### Player
 GET `/scorm/player/*`
-- Same behavior as existing `/api/v1/scorm/player`
 
 ### Attempts, Reports, Health
 GET/POST `/scorm/attempts/*`
 GET `/scorm/reports/*`
 GET `/scorm/health/*`
-- Same behavior as existing `/api/v1/scorm/*` routes
 
 ## Course Composition
 GET `/courses/:id`
@@ -390,4 +385,4 @@ ReportingSummary
 ```
 
 ## Legacy Compatibility
-If desired, keep `/api/v1/scorm/*` as aliases to `/api/v1/content/scorm/*` during migration.
+Note: `/api/v1/scorm/*` legacy aliases have been removed; use `/api/v1/content/scorm/*`.

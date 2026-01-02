@@ -11,7 +11,7 @@ import path from 'path';
 
 /**
  * Launch SCORM player with content
- * GET /api/v1/scorm/player/:packageId/launch
+ * GET /api/v1/content/scorm/player/:packageId/launch
  */
 export const launchPlayer = async (req: Request, res: Response) => {
   try {
@@ -157,7 +157,7 @@ export const launchPlayer = async (req: Request, res: Response) => {
 
 /**
  * Serve SCORM content files
- * GET /api/v1/scorm/player/:packageId/content/*
+ * GET /api/v1/content/scorm/player/:packageId/content/*
  */
 export const serveContent = async (req: Request, res: Response) => {
   try {
@@ -236,7 +236,7 @@ export const serveContent = async (req: Request, res: Response) => {
 
 /**
  * Close/Exit player
- * POST /api/v1/scorm/player/:attemptId/exit
+ * POST /api/v1/content/scorm/player/:attemptId/exit
  */
 export const exitPlayer = async (req: Request, res: Response) => {
   try {
@@ -622,7 +622,7 @@ function generatePlayerHTML(options: {
     function loadContent() {
       const iframe = document.getElementById('scorm-frame');
       const tokenQuery = CONFIG.authToken ? \`?token=\${encodeURIComponent(CONFIG.authToken)}\` : '';
-      const contentUrl = \`/api/v1/scorm/player/\${CONFIG.packageId}/content/\${CONFIG.launchUrl}\${tokenQuery}\`;
+      const contentUrl = \`/api/v1/content/scorm/player/\${CONFIG.packageId}/content/\${CONFIG.launchUrl}\${tokenQuery}\`;
       
       console.log('[Player] Loading content:', contentUrl);
       iframe.src = contentUrl;
@@ -750,7 +750,7 @@ function generatePlayerHTML(options: {
       }
 
       // Notify backend of exit for final stats (best-effort)
-      fetch(\`/api/v1/scorm/player/\${CONFIG.attemptId}/exit\`, {
+      fetch(\`/api/v1/content/scorm/player/\${CONFIG.attemptId}/exit\`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

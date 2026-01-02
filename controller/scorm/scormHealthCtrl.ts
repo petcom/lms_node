@@ -9,7 +9,7 @@ import logger from '../../utils/logger';
 
 /**
  * @swagger
- * /api/v1/scorm/health:
+ * /api/v1/content/scorm/health:
  *   get:
  *     summary: Get SCORM system health status
  *     description: Returns health status and metrics for SCORM system monitoring
@@ -141,7 +141,7 @@ export const getHealthStatus = async (req: Request, res: Response): Promise<void
 
 /**
  * @swagger
- * /api/v1/scorm/metrics:
+ * /api/v1/content/scorm/metrics:
  *   get:
  *     summary: Get detailed SCORM metrics
  *     description: Returns detailed metrics for SCORM system monitoring and analytics
@@ -197,7 +197,7 @@ export const getMetrics = async (req: Request, res: Response): Promise<void> => 
 
 /**
  * @swagger
- * /api/v1/scorm/metrics/reset:
+ * /api/v1/content/scorm/metrics/reset:
  *   post:
  *     summary: Reset SCORM metrics (admin only)
  *     description: Resets all in-memory SCORM metrics. For development and testing purposes.

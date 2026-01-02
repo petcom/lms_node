@@ -195,7 +195,7 @@ describe('SCORM Phase 3: Runtime API', () => {
     const { attemptId, courseContentId } = await seedAttempt();
 
     const initRes = await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/initialize`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
@@ -204,18 +204,18 @@ describe('SCORM Phase 3: Runtime API', () => {
 
     await request(app)
       .put(
-        `/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.lesson_status')}`
+        `/api/v1/content/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.lesson_status')}`
       )
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: 'completed' });
 
     await request(app)
-      .put(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
+      .put(`/api/v1/content/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: '92' });
 
     const commitRes = await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/commit`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/commit`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
@@ -227,14 +227,14 @@ describe('SCORM Phase 3: Runtime API', () => {
     expect((attemptAfterCommit as any)?.cmi?.lesson_status).toBe('completed');
 
     const getRes = await request(app)
-      .get(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
+      .get(`/api/v1/content/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.core.score.raw')}`)
       .set('Authorization', `Bearer ${learnerToken}`);
 
     expect(getRes.status).toBe(200);
     expect(getRes.body.data.value).toBe('92');
 
     const terminateRes = await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/terminate`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/terminate`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
@@ -255,12 +255,12 @@ describe('SCORM Phase 3: Runtime API', () => {
   it('updates heartbeat for an active session', async () => {
     const { attemptId } = await seedAttempt();
     await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/initialize`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     const heartbeatRes = await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/heartbeat`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/heartbeat`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
@@ -271,12 +271,12 @@ describe('SCORM Phase 3: Runtime API', () => {
   it('returns SCORM error code for invalid elements', async () => {
     const { attemptId } = await seedAttempt();
     await request(app)
-      .post(`/api/v1/scorm/runtime/${attemptId}/initialize`)
+      .post(`/api/v1/content/scorm/runtime/${attemptId}/initialize`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({});
 
     const res = await request(app)
-      .put(`/api/v1/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.invalid.element')}`)
+      .put(`/api/v1/content/scorm/runtime/${attemptId}/value/${encodeURIComponent('cmi.invalid.element')}`)
       .set('Authorization', `Bearer ${learnerToken}`)
       .send({ value: 'nope' });
 

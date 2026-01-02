@@ -67,7 +67,7 @@ describe('SCORM packages listing filters', () => {
     ]);
 
     const resDraft = await request(app)
-      .get('/api/v1/scorm/packages?status=draft&page=1&limit=10')
+      .get('/api/v1/content/scorm/packages?status=draft&page=1&limit=10')
       .set('Authorization', `Bearer ${instructorToken}`);
 
     expect(resDraft.status).toBe(200);
@@ -78,7 +78,7 @@ describe('SCORM packages listing filters', () => {
     expect(resDraft.body.pagination.limit).toBe(10);
 
     const resPublished = await request(app)
-      .get('/api/v1/scorm/packages?status=published&page=1&limit=10')
+      .get('/api/v1/content/scorm/packages?status=published&page=1&limit=10')
       .set('Authorization', `Bearer ${instructorToken}`);
 
     expect(resPublished.status).toBe(200);
@@ -93,7 +93,7 @@ describe('SCORM packages listing filters', () => {
     ]);
 
     const res = await request(app)
-      .get('/api/v1/scorm/packages?search=Alpha')
+      .get('/api/v1/content/scorm/packages?search=Alpha')
       .set('Authorization', `Bearer ${instructorToken}`);
 
     expect(res.status).toBe(200);
@@ -119,7 +119,7 @@ describe('SCORM packages listing filters', () => {
     ]);
 
     const res = await request(app)
-      .get('/api/v1/scorm/packages')
+      .get('/api/v1/content/scorm/packages')
       .set('Authorization', `Bearer ${instructorToken}`);
 
     expect(res.status).toBe(200);
@@ -127,7 +127,7 @@ describe('SCORM packages listing filters', () => {
     expect(titles).toEqual(['Global Package', 'My Package']);
 
     const ownerRes = await request(app)
-      .get('/api/v1/scorm/packages?owner=me')
+      .get('/api/v1/content/scorm/packages?owner=me')
       .set('Authorization', `Bearer ${instructorToken}`);
 
     expect(ownerRes.status).toBe(200);

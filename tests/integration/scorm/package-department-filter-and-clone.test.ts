@@ -82,7 +82,7 @@ describe('SCORM packages department filter and cloning', () => {
 
   it('allows master admin to filter packages by department', async () => {
     const res = await request(app)
-      .get(`/api/v1/scorm/packages?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/content/scorm/packages?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${masterToken}`);
 
     expect(res.status).toBe(200);
@@ -93,7 +93,7 @@ describe('SCORM packages department filter and cloning', () => {
 
   it('ignores out-of-scope department filters for non-master admins but still shows scope + globals', async () => {
     const res = await request(app)
-      .get(`/api/v1/scorm/packages?department=${otherTopDepartmentId.toString()}`)
+      .get(`/api/v1/content/scorm/packages?department=${otherTopDepartmentId.toString()}`)
       .set('Authorization', `Bearer ${topAdminToken}`);
 
     expect(res.status).toBe(200);
@@ -106,7 +106,7 @@ describe('SCORM packages department filter and cloning', () => {
   it('clones a global package into a target department', async () => {
     const globalPkg = await ScormPackage.findOne({ title: 'Global Pkg' });
     const res = await request(app)
-      .post(`/api/v1/scorm/packages/${globalPkg!._id.toString()}/clone`)
+      .post(`/api/v1/content/scorm/packages/${globalPkg!._id.toString()}/clone`)
       .set('Authorization', `Bearer ${masterToken}`)
       .send({ department: topDepartmentId.toString() });
 

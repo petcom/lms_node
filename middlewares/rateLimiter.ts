@@ -19,9 +19,9 @@ const passthrough: RequestHandler = (_req, _res, next) => next();
  * Applies to all API requests
  */
 const SCORM_RATE_LIMIT_EXEMPT_PREFIXES = [
-  '/api/v1/scorm/runtime',
-  '/api/v1/scorm/player',
-  '/api/v1/scorm/content',
+  '/api/v1/content/scorm/runtime',
+  '/api/v1/content/scorm/player',
+  '/api/v1/content/scorm/content',
 ];
 
 const apiLimiter = isRateLimitDisabled

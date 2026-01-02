@@ -98,7 +98,7 @@ const mapErrorToStatus = (error: any): number => {
 
 /**
  * Get learner progress across all SCORM packages
- * GET /api/v1/scorm/reports/learner/:learnerId
+ * GET /api/v1/content/scorm/reports/learner/:learnerId
  */
 export const getLearnerProgress = async (req: Request, res: Response) => {
   try {
@@ -242,7 +242,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
 
 /**
  * Get package analytics for staff
- * GET /api/v1/scorm/reports/package/:packageId/analytics
+ * GET /api/v1/content/scorm/reports/package/:packageId/analytics
  */
 export const getPackageAnalytics = async (req: Request, res: Response) => {
   try {
@@ -443,7 +443,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
 
 /**
  * Get detailed attempt information
- * GET /api/v1/scorm/reports/attempts/:attemptId
+ * GET /api/v1/content/scorm/reports/attempts/:attemptId
  */
 export const getAttemptDetails = async (req: Request, res: Response) => {
   try {
@@ -511,7 +511,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
 
 /**
  * Export tracking data
- * GET /api/v1/scorm/reports/export
+ * GET /api/v1/content/scorm/reports/export
  */
 export const exportTrackingData = async (req: Request, res: Response) => {
   try {
@@ -674,7 +674,7 @@ export const exportTrackingData = async (req: Request, res: Response) => {
 
 /**
  * Get completion rates over time
- * GET /api/v1/scorm/reports/completion/:packageId
+ * GET /api/v1/content/scorm/reports/completion/:packageId
  */
 export const getCompletionRates = async (req: Request, res: Response) => {
   try {
@@ -753,7 +753,7 @@ export const getCompletionRates = async (req: Request, res: Response) => {
 
 /**
  * Get score distribution for a package
- * GET /api/v1/scorm/reports/scores/:packageId
+ * GET /api/v1/content/scorm/reports/scores/:packageId
  */
 export const getScoreDistribution = async (req: Request, res: Response) => {
   try {
@@ -836,7 +836,7 @@ export const getScoreDistribution = async (req: Request, res: Response) => {
 
 /**
  * Get time analytics for a package
- * GET /api/v1/scorm/reports/time/:packageId
+ * GET /api/v1/content/scorm/reports/time/:packageId
  */
 export const getTimeAnalytics = async (req: Request, res: Response) => {
   try {
@@ -933,7 +933,7 @@ export const getTimeAnalytics = async (req: Request, res: Response) => {
 
 /**
  * Get interaction data for an attempt
- * GET /api/v1/scorm/reports/interactions/:attemptId
+ * GET /api/v1/content/scorm/reports/interactions/:attemptId
  */
 export const getInteractionData = async (req: Request, res: Response) => {
   try {

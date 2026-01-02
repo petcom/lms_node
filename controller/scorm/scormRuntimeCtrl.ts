@@ -100,7 +100,7 @@ const persistScormProgress = async (attempt: any): Promise<void> => {
 
 /**
  * @desc    Initialize SCORM session
- * @route   POST /api/v1/scorm/runtime/:attemptId/initialize
+ * @route   POST /api/v1/content/scorm/runtime/:attemptId/initialize
  * @access  Private (Learner)
  */
 export const initializeSession = asyncHandler(async (req: Request, res: Response) => {
@@ -178,7 +178,7 @@ export const initializeSession = asyncHandler(async (req: Request, res: Response
 
 /**
  * @desc    Terminate SCORM session
- * @route   POST /api/v1/scorm/runtime/:attemptId/terminate
+ * @route   POST /api/v1/content/scorm/runtime/:attemptId/terminate
  * @access  Private (Learner)
  */
 export const terminateSessionAPI = asyncHandler(async (req: Request, res: Response) => {
@@ -285,7 +285,7 @@ export const terminateSessionAPI = asyncHandler(async (req: Request, res: Respon
 
 /**
  * @desc    Get CMI value
- * @route   GET /api/v1/scorm/runtime/:attemptId/value/:element
+ * @route   GET /api/v1/content/scorm/runtime/:attemptId/value/:element
  * @access  Private (Learner)
  */
 export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) => {
@@ -390,7 +390,7 @@ export const getCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
 /**
  * @desc    Set CMI value
- * @route   PUT /api/v1/scorm/runtime/:attemptId/value/:element
+ * @route   PUT /api/v1/content/scorm/runtime/:attemptId/value/:element
  * @access  Private (Learner)
  */
 export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) => {
@@ -517,7 +517,7 @@ export const setCMIValueAPI = asyncHandler(async (req: Request, res: Response) =
 
 /**
  * @desc    Commit CMI data
- * @route   POST /api/v1/scorm/runtime/:attemptId/commit
+ * @route   POST /api/v1/content/scorm/runtime/:attemptId/commit
  * @access  Private (Learner)
  */
 export const commitData = asyncHandler(async (req: Request, res: Response) => {
@@ -623,7 +623,7 @@ export const commitData = asyncHandler(async (req: Request, res: Response) => {
 
 /**
  * @desc    Get last error
- * @route   GET /api/v1/scorm/runtime/:attemptId/error
+ * @route   GET /api/v1/content/scorm/runtime/:attemptId/error
  * @access  Private (Learner)
  */
 export const getLastError = asyncHandler(async (req: Request, res: Response) => {
@@ -663,7 +663,7 @@ export const getLastError = asyncHandler(async (req: Request, res: Response) => 
 
 /**
  * @desc    Session heartbeat
- * @route   POST /api/v1/scorm/runtime/:attemptId/heartbeat
+ * @route   POST /api/v1/content/scorm/runtime/:attemptId/heartbeat
  * @access  Private (Learner)
  */
 export const heartbeat = asyncHandler(async (req: Request, res: Response) => {

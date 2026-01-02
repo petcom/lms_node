@@ -32,6 +32,16 @@ const addressSchema = new Schema(
   { _id: false }
 );
 
+const honorSchema = new Schema(
+  {
+    sex: { type: String },
+    gender: { type: String },
+    pronouns: { type: String },
+    honorific: { type: String },
+  },
+  { _id: false }
+);
+
 /**
  * Admin Schema
  * Represents system administrators who manage the LMS
@@ -57,6 +67,10 @@ const adminSchema = new Schema<IAdmin>(
     },
     addresses: {
       type: [addressSchema],
+      default: undefined,
+    },
+    honor: {
+      type: honorSchema,
       default: undefined,
     },
     academicTerms: [

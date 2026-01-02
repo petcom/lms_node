@@ -32,6 +32,16 @@ const addressSchema = new Schema(
   { _id: false }
 );
 
+const honorSchema = new Schema(
+  {
+    sex: { type: String },
+    gender: { type: String },
+    pronouns: { type: String },
+    honorific: { type: String },
+  },
+  { _id: false }
+);
+
 const getNameInitials = (name: any) => {
   if (!name) return '';
   if (typeof name === 'string') {
@@ -85,6 +95,10 @@ const learnerSchema = new Schema<ILearner>(
     },
     addresses: {
       type: [addressSchema],
+      default: undefined,
+    },
+    honor: {
+      type: honorSchema,
       default: undefined,
     },
     globalStatus: {

@@ -11,6 +11,13 @@ export interface IPersonName {
   display?: string;
 }
 
+export interface IPersonHonor {
+  sex?: string;
+  gender?: string;
+  pronouns?: string;
+  honorific?: string;
+}
+
 export interface IPersonAddress {
   line1: string;
   line2?: string;
@@ -27,6 +34,7 @@ export interface IPerson extends Document {
   name: IPersonName;
   email: string;
   addresses?: IPersonAddress[];
+  honor?: IPersonHonor;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +78,14 @@ export interface IStaffRole extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILookup extends Document {
+  _id: Types.ObjectId;
+  type: string;
+  value: string;
   createdAt: Date;
   updatedAt: Date;
 }

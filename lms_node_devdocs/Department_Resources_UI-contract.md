@@ -41,6 +41,7 @@ Response:
 
 Notes:
 - `name` is a display string derived from the structured `name` fields stored on the user (`first`, `middle`, `last`).
+- `role` reflects the canonical `User.role`; `roles` reflects `User.subroles` for staff subtypes.
 
 ## Content
 GET `/content`

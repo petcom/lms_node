@@ -3,7 +3,7 @@
 Base URL: `/api/v1/settings`
 
 ## Purpose
-Provide global, admin-only configuration for platform defaults (starting with pagination),
+Provide global, global-admin-only configuration for platform defaults (starting with pagination),
 with optional per-resource overrides. This doc is a proposal and should be reviewed
 before implementation.
 
@@ -30,7 +30,7 @@ Document shape:
       "staffDashboard": { "limit": 10, "maxLimit": 50 }
     }
   },
-  "updatedBy": "admin-id",
+  "updatedBy": "global-admin-id",
   "updatedAt": "ISO-8601",
   "createdAt": "ISO-8601"
 }

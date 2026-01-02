@@ -20,7 +20,7 @@ describe('Admin instructor status actions', () => {
 
     await Admin.create({
       _id: adminId,
-      name: 'Admin User',
+      name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
       password: await hashPassword('Password123!'),
       role: 'global-admin',
@@ -28,7 +28,7 @@ describe('Admin instructor status actions', () => {
 
     await Staff.create({
       _id: instructorId,
-      name: 'Staff User',
+      name: { first: 'Staff', last: 'User' },
       email: 'instructor@example.com',
       password: await hashPassword('Password123!'),
       role: 'staff',

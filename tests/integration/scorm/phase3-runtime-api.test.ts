@@ -78,7 +78,7 @@ const seedAcademicContext = async () => {
 
   await Admin.create({
     _id: adminId,
-    name: 'Runtime Admin',
+    name: { first: 'Runtime', last: 'Admin' },
     email: 'runtime.admin@example.com',
     password: 'password123',
     role: 'global-admin',
@@ -132,7 +132,7 @@ const seedAttempt = async () => {
   await Learner.deleteMany({ _id: learnerId });
   await Learner.create({
     _id: learnerId,
-    name: 'Runtime Learner',
+    name: { first: 'Runtime', last: 'Learner' },
     email: 'runtime.learner@example.com',
     password: 'password123',
     role: 'learner',

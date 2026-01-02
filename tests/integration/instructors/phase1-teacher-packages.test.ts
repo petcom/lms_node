@@ -47,7 +47,7 @@ describe('Instructor Phase 1: Publish/Unpublish', () => {
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
-      name: 'Staff One',
+      name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
       password: 'password',
       role: 'staff',
@@ -55,7 +55,7 @@ describe('Instructor Phase 1: Publish/Unpublish', () => {
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
-      name: 'Admin User',
+      name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
       password: 'password',
       role: 'global-admin',

@@ -74,6 +74,17 @@ const parsePagination = (req: Request): { skip: number; limit: number } | null =
   return { skip: (safePage - 1) * safeLimit, limit: safeLimit };
 };
 
+const getDisplayName = (name: any): string => {
+  if (!name) return '';
+  if (typeof name === 'string') return name;
+  if (name.display) return name.display;
+  const first = name.first ? String(name.first).trim() : '';
+  const last = name.last ? String(name.last).trim() : '';
+  const middleInitial = name.middle ? ` ${String(name.middle).trim()[0]?.toUpperCase()}.` : '';
+  if (!first && !last) return '';
+  return `${last}, ${first}${middleInitial}`.trim();
+};
+
 const resolveDepartmentScope = async (
   req: Request,
   departmentId?: string
@@ -224,7 +235,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
     return {
       id: admin._id.toString(),
-      name: admin.name,
+      name: getDisplayName(admin.name),
       email: admin.email,
       role: 'global-admin',
       department: deptSummary,
@@ -236,7 +247,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
     return {
       id: staff._id.toString(),
-      name: staff.name,
+      name: getDisplayName(staff.name),
       email: staff.email,
       role: 'staff',
       roles: Array.isArray(staff.roles) ? staff.roles : [],

@@ -20,7 +20,7 @@ describe('Admin learner status actions', () => {
 
     await Admin.create({
       _id: adminId,
-      name: 'Admin User',
+      name: { first: 'Admin', last: 'User' },
       email: 'admin-learner@example.com',
       password: await hashPassword('Password123!'),
       role: 'global-admin',
@@ -28,7 +28,7 @@ describe('Admin learner status actions', () => {
 
     await Learner.create({
       _id: learnerId,
-      name: 'Learner User',
+      name: { first: 'Learner', last: 'User' },
       email: 'learner@example.com',
       password: await hashPassword('Password123!'),
       role: 'learner',

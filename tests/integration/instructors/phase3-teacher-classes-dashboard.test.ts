@@ -55,7 +55,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
-      name: 'Staff One',
+      name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
       password: 'password',
       role: 'staff',
@@ -63,7 +63,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
-      name: 'Admin User',
+      name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
       password: 'password',
       role: 'global-admin',
@@ -139,13 +139,13 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
     });
 
     const learner1 = await Learner.create({
-      name: 'Learner One',
+      name: { first: 'Learner', last: 'One' },
       email: 's1@example.com',
       password: 'pw',
       role: 'learner',
     });
     const learner2 = await Learner.create({
-      name: 'Learner Two',
+      name: { first: 'Learner', last: 'Two' },
       email: 's2@example.com',
       password: 'pw',
       role: 'learner',

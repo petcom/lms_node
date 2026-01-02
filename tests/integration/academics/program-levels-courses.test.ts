@@ -110,7 +110,7 @@ describe('Program levels, courses, and course content', () => {
     });
 
     const instructor = await Staff.create({
-      name: 'Staff User',
+      name: { first: 'Staff', last: 'User' },
       email: 'staff@example.com',
       password: 'password123',
       role: 'staff',

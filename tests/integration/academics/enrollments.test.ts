@@ -94,7 +94,7 @@ describe('Enrollment APIs', () => {
     courseId = course._id;
 
     const learner = await Learner.create({
-      name: 'Learner One',
+      name: { first: 'Learner', last: 'One' },
       email: 'learner1@example.com',
       password: 'password123',
       role: 'learner',

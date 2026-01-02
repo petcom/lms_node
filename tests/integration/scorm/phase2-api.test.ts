@@ -60,7 +60,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     await Staff.deleteMany({ email: 'instructor@example.com' });
     const instructor = await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
-      name: 'Test Staff',
+      name: { first: 'Test', last: 'Staff' },
       email: 'instructor@example.com',
       password: 'password123',
       role: 'staff',

@@ -58,7 +58,7 @@ describe('SCORM Package Upload API', () => {
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
-      name: 'Staff Upload',
+      name: { first: 'Staff', last: 'Upload' },
       email: 'instructor-upload@example.com',
       password: 'password',
       role: 'staff',
@@ -66,7 +66,7 @@ describe('SCORM Package Upload API', () => {
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
-      name: 'Admin Upload',
+      name: { first: 'Admin', last: 'Upload' },
       email: 'admin-upload@example.com',
       password: 'password',
       role: 'global-admin',

@@ -1,16 +1,44 @@
 import mongoose, { Schema } from 'mongoose';
 import { IAdmin } from '../../types/models';
 
+const nameSchema = new Schema(
+  {
+    first: { type: String, required: true },
+    middle: { type: String },
+    last: { type: String, required: true },
+    display: {
+      type: String,
+      default: function (this: { first?: string; middle?: string; last?: string }) {
+        if (!this?.first || !this?.last) return '';
+        const middleInitial = this.middle ? ` ${this.middle.trim()[0]?.toUpperCase()}.` : '';
+        return `${this.last.trim()}, ${this.first.trim()}${middleInitial}`;
+      },
+    },
+  },
+  { _id: false }
+);
+
+const addressSchema = new Schema(
+  {
+    line1: { type: String, required: true },
+    line2: { type: String },
+    city: { type: String, required: true },
+    region: { type: String },
+    postalCode: { type: String, required: true },
+    country: { type: String, required: true },
+    isPrimaryCorrespondence: { type: Boolean, default: false },
+    isPrimaryBilling: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 /**
  * Admin Schema
  * Represents system administrators who manage the LMS
  */
 const adminSchema = new Schema<IAdmin>(
   {
-    name: {
-      type: String,
-      required: true,
-    },
+    name: nameSchema,
     email: {
       type: String,
       required: true,
@@ -26,6 +54,10 @@ const adminSchema = new Schema<IAdmin>(
     role: {
       type: String,
       default: 'global-admin',
+    },
+    addresses: {
+      type: [addressSchema],
+      default: undefined,
     },
     academicTerms: [
       {

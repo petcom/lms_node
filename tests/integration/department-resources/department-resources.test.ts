@@ -89,21 +89,21 @@ describe('Department Resources API', () => {
     await Admin.create([
       {
         _id: masterAdminId,
-        name: 'Master Admin',
+        name: { first: 'Master', last: 'Admin' },
         email: 'master@example.com',
         password: 'Password@123',
         department: masterDepartmentId,
       },
       {
         _id: topAdminId,
-        name: 'Top Admin',
+        name: { first: 'Top', last: 'Admin' },
         email: 'top@example.com',
         password: 'Password@123',
         department: topDepartmentId,
       },
       {
         _id: subAdminId,
-        name: 'Sub Admin',
+        name: { first: 'Sub', last: 'Admin' },
         email: 'sub@example.com',
         password: 'Password@123',
         department: subDepartmentId,
@@ -112,19 +112,19 @@ describe('Department Resources API', () => {
 
     await Staff.create([
       {
-        name: 'Alpha Instructor',
+        name: { first: 'Alpha', last: 'Instructor' },
         email: 'alpha.instructor@example.com',
         password: 'Password@123',
         department: topDepartmentId,
       },
       {
-        name: 'Sub Instructor',
+        name: { first: 'Sub', last: 'Instructor' },
         email: 'sub.instructor@example.com',
         password: 'Password@123',
         department: subDepartmentId,
       },
       {
-        name: 'Beta Instructor',
+        name: { first: 'Beta', last: 'Instructor' },
         email: 'beta.instructor@example.com',
         password: 'Password@123',
         department: otherDepartmentId,
@@ -245,11 +245,11 @@ describe('Department Resources API', () => {
 
     expect(res.status).toBe(200);
     const names = res.body.items.map((item: any) => item.name);
-    expect(names).toContain('Top Admin');
-    expect(names).toContain('Sub Admin');
-    expect(names).toContain('Alpha Instructor');
-    expect(names).toContain('Sub Instructor');
-    expect(names).not.toContain('Beta Instructor');
+    expect(names).toContain('Admin, Top');
+    expect(names).toContain('Admin, Sub');
+    expect(names).toContain('Instructor, Alpha');
+    expect(names).toContain('Instructor, Sub');
+    expect(names).not.toContain('Instructor, Beta');
   });
 
   it('filters staff users by role type', async () => {
@@ -301,8 +301,8 @@ describe('Department Resources API', () => {
 
     expect(res.status).toBe(200);
     const names = res.body.items.map((item: any) => item.name);
-    expect(names).toContain('Beta Instructor');
-    expect(names).not.toContain('Alpha Instructor');
+    expect(names).toContain('Instructor, Beta');
+    expect(names).not.toContain('Instructor, Alpha');
   });
 
   it('updates staff roles within scope', async () => {

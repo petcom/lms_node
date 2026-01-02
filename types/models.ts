@@ -4,11 +4,35 @@ import { Document, Types, Model } from 'mongoose';
 // User role types
 export type UserRole = 'global-admin' | 'staff' | 'learner';
 
-// Admin Interface
-export interface IAdmin extends Document {
+export interface IPersonName {
+  first: string;
+  middle?: string;
+  last: string;
+  display?: string;
+}
+
+export interface IPersonAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  region?: string;
+  postalCode: string;
+  country: string;
+  isPrimaryCorrespondence?: boolean;
+  isPrimaryBilling?: boolean;
+}
+
+export interface IPerson extends Document {
   _id: Types.ObjectId;
-  name: string;
+  name: IPersonName;
   email: string;
+  addresses?: IPersonAddress[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Admin Interface
+export interface IAdmin extends IPerson {
   password: string;
   role: 'global-admin';
   department?: Types.ObjectId;
@@ -20,15 +44,10 @@ export interface IAdmin extends Document {
   learners?: Types.ObjectId[];
   programLevels?: Types.ObjectId[];
   courses?: Types.ObjectId[];
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // Staff Interface
-export interface IStaff extends Document {
-  _id: Types.ObjectId;
-  name: string;
-  email: string;
+export interface IStaff extends IPerson {
   password: string;
   dateEmployed?: Date;
   instructorId?: string;
@@ -44,8 +63,6 @@ export interface IStaff extends Document {
   examsCreated?: Types.ObjectId[];
   department?: Types.ObjectId;
   createdBy?: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // Staff Role Interface
@@ -106,10 +123,7 @@ export interface IMasterTemplate extends Document {
 // Learner Interface
 // Deprecated fields removed in migration: isGraduated, isPromoted*, currentClassLevel,
 // classLevels, academicYear, yearGraduated, examResults, scormProgress.
-export interface ILearner extends Document {
-  _id: Types.ObjectId;
-  name: string;
-  email: string;
+export interface ILearner extends IPerson {
   password: string;
   learnerId?: string;
   role: 'learner';
@@ -117,8 +131,6 @@ export interface ILearner extends Document {
   isSuspended: boolean;
   isWithdrawn: boolean;
   createdBy?: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // Academic Year Interface

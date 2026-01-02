@@ -4,14 +4,14 @@
  */
 
 import Joi from 'joi';
-import { email, password, passwordConfirmation, objectId } from './common';
+import { email, password, passwordConfirmation, objectId, name } from './common';
 
 /**
  * Admin registration validation
  */
 export const registerAdmin = {
   body: Joi.object({
-    name: Joi.string().min(2).max(100).trim().required(),
+    name,
     email,
     password,
     passwordConfirmation:
@@ -24,7 +24,7 @@ export const registerAdmin = {
  */
 export const registerInstructor = {
   body: Joi.object({
-    name: Joi.string().min(2).max(100).trim().required(),
+    name,
     email,
     password,
     passwordConfirmation,
@@ -40,7 +40,7 @@ export const registerInstructor = {
  */
 export const registerLearner = {
   body: Joi.object({
-    name: Joi.string().min(2).max(100).trim().required(),
+    name,
     email,
     password,
     passwordConfirmation,

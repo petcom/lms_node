@@ -7,10 +7,11 @@ import generateToken from '../../utils/generateToken';
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
+import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
 // Request body interfaces
 interface RegisterStaffBody {
-  name: string;
+  name: PersonNameInput;
   email: string;
   password: string;
   department?: string;
@@ -23,7 +24,7 @@ interface LoginStaffBody {
 
 interface UpdateStaffProfileBody {
   email?: string;
-  name?: string;
+  name?: PersonNameInput;
   password?: string;
   department?: string;
 }
@@ -44,6 +45,7 @@ interface AdminUpdateStaffBody {
 export const adminRegisterStaff = expressAsyncHandler(
   async (req: Request<{}, {}, RegisterStaffBody>, res: Response): Promise<void> => {
     const { name, email, password, department } = req.body;
+    const normalizedName = normalizePersonName(name);
 
     // find the admin
     const adminFound = await Admin.findById(req.userAuth?._id);
@@ -74,7 +76,7 @@ export const adminRegisterStaff = expressAsyncHandler(
 
     // staff created
     const staffCreated = await Staff.create({
-      name,
+      name: normalizedName ?? name,
       email,
       password: hashedPassword,
       department: chosenDept ? new mongoose.Types.ObjectId(chosenDept) : undefined,
@@ -209,6 +211,13 @@ export const getStaffProfile = expressAsyncHandler(
 export const staffUpdateProfile = expressAsyncHandler(
   async (req: Request<{}, {}, UpdateStaffProfileBody>, res: Response): Promise<void> => {
     const { email, name, password, department } = req.body;
+    const normalizedName = normalizePersonName(name);
+    const updateFields: {
+      email?: string;
+      name?: PersonNameInput;
+      password?: string;
+      department?: mongoose.Types.ObjectId;
+    } = {};
 
     // if email is taken
     if (email) {
@@ -216,6 +225,7 @@ export const staffUpdateProfile = expressAsyncHandler(
       if (emailExists) {
         throw new Error('This email already exists');
       }
+      updateFields.email = email;
     }
 
     // department change (self) — only allow within own department scope
@@ -227,18 +237,19 @@ export const staffUpdateProfile = expressAsyncHandler(
       if (scope && scope !== 'all' && !scope.includes(department)) {
         throw new AuthorizationError('Access denied for this department');
       }
+      updateFields.department = new mongoose.Types.ObjectId(department);
     }
 
     // check if user is updating password
     if (password) {
+      updateFields.password = await hashPassword(password);
+      if (typeof name !== 'undefined') {
+        updateFields.name = normalizedName ?? name;
+      }
       // update user
       const staff = await Staff.findByIdAndUpdate(
         req.userAuth?._id,
-        {
-          email,
-          password: await hashPassword(password),
-          name,
-        },
+        updateFields,
         {
           new: true,
           runValidators: true,
@@ -250,14 +261,13 @@ export const staffUpdateProfile = expressAsyncHandler(
         message: 'Staff profile updated successfully',
       });
     } else {
+      if (typeof name !== 'undefined') {
+        updateFields.name = normalizedName ?? name;
+      }
       // update user email and name
       const staff = await Staff.findByIdAndUpdate(
         req.userAuth?._id,
-        {
-          email,
-          name,
-          department: department ? new mongoose.Types.ObjectId(department) : undefined,
-        },
+        updateFields,
         {
           new: true,
           runValidators: true,

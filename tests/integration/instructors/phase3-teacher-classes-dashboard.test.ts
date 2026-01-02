@@ -12,6 +12,7 @@ import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import CourseContent from '../../../model/Academic/CourseContent';
+import CourseEnrollment from '../../../model/Academic/CourseEnrollment';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
@@ -73,6 +74,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
   afterAll(async () => {
     await ClassModel.deleteMany({});
     await ClassEnrollment.deleteMany({});
+    await CourseEnrollment.deleteMany({});
     await Learner.deleteMany({});
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
@@ -88,6 +90,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
   beforeEach(async () => {
     await ClassModel.deleteMany({});
     await ClassEnrollment.deleteMany({});
+    await CourseEnrollment.deleteMany({});
     await Learner.deleteMany({});
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
@@ -188,6 +191,30 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
       },
     ] as any);
 
+    await CourseEnrollment.create([
+      {
+        learner: learner1._id,
+        course: course._id,
+        program: program._id,
+        programLevel: programLevel._id,
+        class: klass._id,
+        status: 'completed',
+        progress: 100,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+      {
+        learner: learner2._id,
+        course: course._id,
+        program: program._id,
+        programLevel: programLevel._id,
+        class: klass._id,
+        status: 'active',
+        progress: 50,
+        startedAt: new Date(),
+      },
+    ]);
+
     const classRes = await request(app)
       .get('/api/v1/staff/classes')
       .set('Authorization', `Bearer ${instructorToken}`);
@@ -195,7 +222,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
     expect(classRes.status).toBe(200);
     const { items } = classRes.body.data;
     expect(items[0].learners).toBe(2);
-    expect(items[0].completion).toBeGreaterThan(0);
+    expect(items[0].completion).toBe(50);
 
     const dashboardRes = await request(app)
       .get('/api/v1/staff/dashboard')

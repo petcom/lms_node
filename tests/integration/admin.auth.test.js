@@ -25,7 +25,7 @@ describe('Admin Authentication Integration Tests', () => {
   describe('POST /api/v1/staff/admins/register', () => {
     it('should register a new admin with valid data', async () => {
       const adminData = {
-        name: 'Test Admin',
+        name: { first: 'Test', last: 'Admin' },
         email: 'admin@test.com',
         password: 'Admin@123'
       };
@@ -36,14 +36,16 @@ describe('Admin Authentication Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.status).toBe('success');
-      expect(response.body.data).toHaveProperty('name', adminData.name);
+      expect(response.body.data).toHaveProperty('name');
+      expect(response.body.data.name).toHaveProperty('first', adminData.name.first);
+      expect(response.body.data.name).toHaveProperty('last', adminData.name.last);
       expect(response.body.data).toHaveProperty('email', adminData.email);
       expect(response.body.data).not.toHaveProperty('password');
     });
 
     it('should reject registration with weak password', async () => {
       const adminData = {
-        name: 'Test Admin',
+        name: { first: 'Test', last: 'Admin' },
         email: 'admin@test.com',
         password: 'weak'
       };
@@ -57,7 +59,7 @@ describe('Admin Authentication Integration Tests', () => {
 
     it('should reject registration with duplicate email', async () => {
       const adminData = {
-        name: 'Test Admin',
+        name: { first: 'Test', last: 'Admin' },
         email: 'admin@test.com',
         password: 'Admin@123'
       };
@@ -78,14 +80,14 @@ describe('Admin Authentication Integration Tests', () => {
     it('should reject registration with missing required fields', async () => {
       const response = await request(app)
         .post('/api/v1/staff/admins/register')
-        .send({ name: 'Test Admin' });
+        .send({ name: { first: 'Test', last: 'Admin' } });
 
       expect(response.status).toBe(400);
     });
 
     it('should reject registration with invalid email format', async () => {
       const adminData = {
-        name: 'Test Admin',
+        name: { first: 'Test', last: 'Admin' },
         email: 'invalid-email',
         password: 'Admin@123'
       };
@@ -104,7 +106,7 @@ describe('Admin Authentication Integration Tests', () => {
       await request(app)
         .post('/api/v1/staff/admins/register')
         .send({
-          name: 'Test Admin',
+          name: { first: 'Test', last: 'Admin' },
           email: 'admin@test.com',
           password: 'Admin@123'
         });
@@ -164,7 +166,7 @@ describe('Admin Authentication Integration Tests', () => {
       await request(app)
         .post('/api/v1/staff/admins/register')
         .send({
-          name: 'Test Admin',
+          name: { first: 'Test', last: 'Admin' },
           email: 'admin@test.com',
           password: 'Admin@123'
         });
@@ -185,7 +187,9 @@ describe('Admin Authentication Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveProperty('name', 'Test Admin');
+      expect(response.body.data).toHaveProperty('name');
+      expect(response.body.data.name).toHaveProperty('first', 'Test');
+      expect(response.body.data.name).toHaveProperty('last', 'Admin');
       expect(response.body.data).toHaveProperty('email', 'admin@test.com');
       expect(response.body.data).not.toHaveProperty('password');
     });

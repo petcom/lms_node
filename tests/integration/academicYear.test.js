@@ -27,7 +27,7 @@ describe('Academic Year Integration Tests', () => {
     const registerResponse = await request(app)
       .post('/api/v1/staff/admins/register')
       .send({
-        name: 'Test Admin',
+        name: { first: 'Test', last: 'Admin' },
         email: 'admin@test.com',
         password: 'Admin@123'
       });

@@ -7,10 +7,11 @@ import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
 import Admin from '../../model/Staff/Admin';
 import { ILearner } from '../../types/models';
+import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
 // Request body interfaces
 interface RegisterLearnerBody {
-  name: string;
+  name: PersonNameInput;
   email: string;
   password: string;
 }
@@ -26,7 +27,7 @@ interface UpdateProfileBody {
 }
 
 interface AdminUpdateLearnerBody {
-  name?: string;
+  name?: PersonNameInput;
   email?: string;
   isSuspended?: boolean;
   isWithdrawn?: boolean;
@@ -50,6 +51,7 @@ interface AnsweredQuestion {
 export const adminRegisterLearner = AsyncHandler(
   async (req: Request<{}, {}, RegisterLearnerBody>, res: Response): Promise<void> => {
     const { name, email, password } = req.body;
+    const normalizedName = normalizePersonName(name);
     // find the admin
     const adminFound = await Admin.findById(req.userAuth?._id);
     if (!adminFound) {
@@ -64,7 +66,7 @@ export const adminRegisterLearner = AsyncHandler(
     const hashedPassword = await hashPassword(password);
     // Learner created
     const learnerRegistered = await Learner.create({
-      name,
+      name: normalizedName ?? name,
       email,
       password: hashedPassword,
     });
@@ -274,22 +276,31 @@ export const adminUpdateLearner = AsyncHandler(
     res: Response
   ): Promise<void> => {
     const { name, email, isSuspended, isWithdrawn } = req.body;
+    const normalizedName = normalizePersonName(name);
 
     // find the learner by id
     const learnerFound = await Learner.findById(req.params.learnerID);
     if (!learnerFound) {
       throw new Error('Learner not found');
     }
+    const updateFields: {
+      name?: PersonNameInput;
+      email?: string;
+      isSuspended?: boolean;
+      isWithdrawn?: boolean;
+    } = {
+      email,
+      isSuspended,
+      isWithdrawn,
+    };
+    if (typeof name !== 'undefined') {
+      updateFields.name = normalizedName ?? name;
+    }
     // update
     const learnerUpdated = await Learner.findByIdAndUpdate(
       req.params.learnerID,
       {
-        $set: {
-          name,
-          email,
-          isSuspended,
-          isWithdrawn,
-        },
+        $set: updateFields,
       },
       {
         new: true,

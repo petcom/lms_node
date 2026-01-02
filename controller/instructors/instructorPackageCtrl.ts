@@ -3,11 +3,13 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import ContentAttempt from '../../model/Academic/ContentAttempt';
+import CourseEnrollment from '../../model/Academic/CourseEnrollment';
 import CourseContent from '../../model/Academic/CourseContent';
 import ClassModel from '../../model/Academic/Class';
 import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import Learner from '../../model/Academic/Learner';
+import { getPersonDisplayName } from '../../utils/person';
 
 const asObjectId = (value: string) => new mongoose.Types.ObjectId(value);
 
@@ -152,6 +154,36 @@ export const listInstructorClasses = asyncHandler(async (req: Request, res: Resp
     return acc;
   }, {});
 
+  const courseEnrollmentAgg =
+    classIds.length === 0
+      ? []
+      : await CourseEnrollment.aggregate([
+          {
+            $match: {
+              class: { $in: classIds.map((id) => new mongoose.Types.ObjectId(id)) },
+            },
+          },
+          {
+            $group: {
+              _id: '$class',
+              completed: {
+                $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+              },
+              total: { $sum: 1 },
+            },
+          },
+        ]);
+
+  const courseEnrollmentMap = courseEnrollmentAgg.reduce<
+    Record<string, { completed: number; total: number }>
+  >((acc, cur) => {
+    acc[cur._id.toString()] = {
+      completed: cur.completed,
+      total: cur.total,
+    };
+    return acc;
+  }, {});
+
   const items = classes.map((cls) => {
     const clsId = cls._id.toString();
     const classLearners = learnersByClass[clsId] || [];
@@ -166,8 +198,11 @@ export const listInstructorClasses = asyncHandler(async (req: Request, res: Resp
         passedAttempts += stats.passed;
       }
     });
+    const classCourseStats = courseEnrollmentMap[clsId];
     const completion =
-      totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
+      classCourseStats && classCourseStats.total > 0
+        ? Math.round((classCourseStats.completed / classCourseStats.total) * 100)
+        : 0;
     const passRate = totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0;
 
     return {
@@ -263,7 +298,7 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
   ).map((id) => new mongoose.Types.ObjectId(id));
   const learners = await Learner.find({ _id: { $in: learnerIds } }).select('name');
   const learnerNameMap = learners.reduce<Record<string, string>>((acc, s) => {
-    acc[s._id.toString()] = s.name;
+    acc[s._id.toString()] = getPersonDisplayName((s as any).name);
     return acc;
   }, {});
 

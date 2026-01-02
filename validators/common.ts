@@ -50,16 +50,29 @@ export const passwordConfirmation = Joi.string().valid(Joi.ref('password')).requ
 /**
  * Name validation pattern (for first/last name)
  */
-export const name = Joi.string()
+const nameString = Joi.string()
   .min(2)
-  .max(50)
+  .max(100)
   .trim()
   .pattern(/^[a-zA-Z\s'-]+$/)
-  .required()
   .messages({
     'string.min': 'Name must be at least 2 characters long',
-    'string.max': 'Name cannot exceed 50 characters',
+    'string.max': 'Name cannot exceed 100 characters',
     'string.pattern.base': 'Name can only contain letters, spaces, hyphens, and apostrophes',
+  });
+
+export const name = Joi.alternatives()
+  .try(
+    Joi.object({
+      first: Joi.string().min(1).max(50).trim().required(),
+      middle: Joi.string().min(1).max(50).trim(),
+      last: Joi.string().min(1).max(50).trim().required(),
+      display: Joi.string().min(1).max(100).trim(),
+    }),
+    nameString
+  )
+  .required()
+  .messages({
     'any.required': 'Name is required',
   });
 

@@ -12,6 +12,7 @@ import Learner from '../../model/Academic/Learner';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
+import { getPersonDisplayName } from '../../utils/person';
 import {
   calculateBestScore,
   calculateAverageScore,
@@ -216,7 +217,7 @@ export const getLearnerProgress = async (req: Request, res: Response) => {
       success: true,
       data: {
         learnerId: learner._id,
-        learnerName: (learner as any).name,
+        learnerName: getPersonDisplayName((learner as any).name),
         learnerEmail: (learner as any).email,
         packages: paged.data,
         pagination: paged.pagination,
@@ -365,7 +366,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
       if (!learnerMap.has(learnerId)) {
         learnerMap.set(learnerId, {
           learnerId: learner._id,
-          learnerName: learner.name,
+          learnerName: getPersonDisplayName(learner.name),
           learnerEmail: learner.email,
           attempts: [],
         });
@@ -480,7 +481,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
         attemptId: attempt.attemptId,
         learner: {
           id: learner._id,
-          name: learner.name,
+          name: getPersonDisplayName(learner.name),
           email: learner.email,
         },
         package: {
@@ -605,7 +606,7 @@ export const exportTrackingData = async (req: Request, res: Response) => {
 
       return {
         learnerId: learner._id,
-        learnerName: learner.name,
+        learnerName: getPersonDisplayName(learner.name),
         learnerEmail: learner.email,
         packageId: pkg._id,
         packageTitle: pkg.title,

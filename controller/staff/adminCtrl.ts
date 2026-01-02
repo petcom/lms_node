@@ -8,10 +8,11 @@ import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/
 import Staff from '../../model/Staff/Staff';
 import Learner from '../../model/Academic/Learner';
 import logAudit from '../../utils/auditLogger';
+import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
 // Request body interfaces
 interface RegisterAdminBody {
-  name: string;
+  name: PersonNameInput;
   email: string;
   password: string;
 }
@@ -23,7 +24,7 @@ interface LoginAdminBody {
 
 interface UpdateAdminBody {
   email?: string;
-  name?: string;
+  name?: PersonNameInput;
   password?: string;
   department?: string;
 }
@@ -36,6 +37,7 @@ interface UpdateAdminBody {
 export const registerAdminCtrl = expressAsyncHandler(
   async (req: Request<{}, {}, RegisterAdminBody>, res: Response): Promise<void> => {
     const { name, email, password } = req.body;
+    const normalizedName = normalizePersonName(name);
 
     // Check if admin already exists in the database
     const adminFound = await Admin.findOne({ email });
@@ -47,7 +49,7 @@ export const registerAdminCtrl = expressAsyncHandler(
 
     // register user
     const user = await Admin.create({
-      name,
+      name: normalizedName ?? name,
       email,
       password: await hashPassword(password),
     });
@@ -159,6 +161,13 @@ export const getAdminProfileCtrl = expressAsyncHandler(
 export const updateAdminCtrl = expressAsyncHandler(
   async (req: Request<{}, {}, UpdateAdminBody>, res: Response): Promise<void> => {
     const { email, name, password, department } = req.body;
+    const normalizedName = normalizePersonName(name);
+    const updateFields: {
+      email?: string;
+      password?: string;
+      name?: PersonNameInput;
+      department?: mongoose.Types.ObjectId;
+    } = {};
 
     // if email is taken
     if (email) {
@@ -166,6 +175,7 @@ export const updateAdminCtrl = expressAsyncHandler(
       if (emailExists) {
         throw new Error('This email already exists');
       }
+      updateFields.email = email;
     }
 
     // department scope validation
@@ -177,19 +187,19 @@ export const updateAdminCtrl = expressAsyncHandler(
       if (scope && scope !== 'all' && !scope.includes(department)) {
         throw new AuthorizationError('Access denied for this department');
       }
+      updateFields.department = new mongoose.Types.ObjectId(department);
     }
 
     // check if user is updating password
     if (password) {
+      updateFields.password = await hashPassword(password);
+      if (typeof name !== 'undefined') {
+        updateFields.name = normalizedName ?? name;
+      }
       // update user
       const admin = await Admin.findByIdAndUpdate(
         req.userAuth?._id,
-        {
-          email,
-          password: await hashPassword(password),
-          name,
-          department: department ? new mongoose.Types.ObjectId(department) : undefined,
-        },
+        updateFields,
         {
           new: true,
           runValidators: true,
@@ -201,14 +211,13 @@ export const updateAdminCtrl = expressAsyncHandler(
         message: 'Admin profile updated successfully',
       });
     } else {
+      if (typeof name !== 'undefined') {
+        updateFields.name = normalizedName ?? name;
+      }
       // update user email and name
       const admin = await Admin.findByIdAndUpdate(
         req.userAuth?._id,
-        {
-          email,
-          name,
-          department: department ? new mongoose.Types.ObjectId(department) : undefined,
-        },
+        updateFields,
         {
           new: true,
           runValidators: true,

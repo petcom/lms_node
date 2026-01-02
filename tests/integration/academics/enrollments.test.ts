@@ -210,4 +210,40 @@ describe('Enrollment APIs', () => {
     expect(reportRes.body.data.programEnrollments.length).toBeGreaterThan(0);
     expect(reportRes.body.data.courseEnrollments.length).toBeGreaterThan(0);
   });
+
+  it('allows a learner to enroll in multiple programs', async () => {
+    const programBeta = await Program.create({
+      name: 'Program Beta',
+      description: 'Beta desc',
+      duration: '2 years',
+      createdBy: masterAdminId,
+      department: masterDepartmentId,
+    });
+
+    const firstRes = await request(app)
+      .post('/api/v1/program-enrollments')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        learner: learnerId.toString(),
+        program: programId.toString(),
+      });
+
+    const secondRes = await request(app)
+      .post('/api/v1/program-enrollments')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        learner: learnerId.toString(),
+        program: programBeta._id.toString(),
+      });
+
+    expect(firstRes.status).toBe(201);
+    expect(secondRes.status).toBe(201);
+
+    const listRes = await request(app)
+      .get(`/api/v1/program-enrollments?learner=${learnerId.toString()}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.data.length).toBe(2);
+  });
 });

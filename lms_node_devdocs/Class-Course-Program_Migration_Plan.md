@@ -252,26 +252,29 @@ Status: ⚠️ partial (see line items)
 - Complete contract alignment + append “Changes (Phase 4)” sections to all contract docs. (verified)
 
 ## Phase 5: Test Migration
+Status: ✅ completed
 Update integration and unit tests:
-- Replace `ClassLevel` fixtures with `ProgramLevel`.
-- Replace SCORM-only attempt tests with `ContentAttempt`.
+- Replace `ClassLevel` fixtures with `ProgramLevel`. (verified)
+- Replace SCORM-only attempt tests with `ContentAttempt` (runtime sync assertions). (verified)
 - Add tests for:
-  - Multi-program enrollment
-  - Course completion deriving program completion
-  - Class progress derived by ProgramLevel courses
+  - Multi-program enrollment (verified in `tests/integration/academics/enrollments.test.ts`)
+  - Course completion deriving program completion (verified in `tests/integration/academics/enrollments.test.ts`)
+  - Class progress derived by ProgramLevel courses (verified in `tests/integration/instructors/phase3-teacher-classes-dashboard.test.ts`)
 
 Deliverables:
-- Green test suite
-- Updated test helpers and fixtures
+- Green targeted test suites (verified: `tests/integration/academics/enrollments.test.ts`, `tests/integration/instructors/phase3-teacher-classes-dashboard.test.ts`, `tests/integration/scorm/phase3-runtime-api.test.ts`)
+- Updated test helpers and fixtures (verified)
 
 ## Phase 6: Cleanup & Deprecation Removal
-- Remove legacy fields from Learner model and related code paths.
-- Remove unused models/endpoints.
-- Update docs and contracts.
+Status: ⚠️ partial
+- Remove legacy fields from Learner model and related code paths. (verified)
+- Standardize person name normalization + display handling in controllers/reports. (verified)
+- Remove unused models/endpoints. (not verified)
+- Update docs and contracts. (not verified)
 
 Deliverables:
-- Clean compile/test
-- Updated docs in `lms_node_devdocs/`
+- Clean compile/test (targeted suites verified; full suite not run)
+- Updated docs in `lms_node_devdocs/` (not verified)
 
 ## Proposed Order of Execution
 1) Types & schemas
@@ -295,7 +298,7 @@ Deliverables:
 - In-progress order:
   1) ContentAttempt/SCORM attempt unification ✅ completed
   2) Enrollment endpoints (`ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`) ✅ completed
-  3) Reporting endpoints for program/course progress ⏳ pending
+  3) Reporting endpoints for program/course progress ✅ completed
 - Remaining:
   - Update academic workflows to use `ProgramLevel` and `Course` (replace `ClassLevel` + `Subject` references).
   - Deprecate and remove legacy collections after migration validation.

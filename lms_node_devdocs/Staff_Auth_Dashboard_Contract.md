@@ -56,7 +56,37 @@ Response:
 {
   "status": "success",
   "message": "Staff profile fetched successfully",
-  "data": { ... }
+  "data": {
+    "_id": "staff-id",
+    "name": {
+      "first": "Ada",
+      "middle": "M",
+      "last": "Lovelace",
+      "display": "Lovelace, Ada M."
+    },
+    "email": "staff@example.com",
+    "role": "staff",
+    "roles": ["instructor"],
+    "department": "dept-id",
+    "addresses": [
+      {
+        "line1": "123 Main St",
+        "line2": "Suite 200",
+        "city": "Boston",
+        "region": "MA",
+        "postalCode": "02110",
+        "country": "US",
+        "isPrimaryCorrespondence": true,
+        "isPrimaryBilling": false
+      }
+    ],
+    "honor": {
+      "sex": "Female",
+      "gender": "Female",
+      "pronouns": "She/Her",
+      "honorific": "Dr."
+    }
+  }
 }
 ```
 
@@ -90,3 +120,6 @@ Notes:
 
 ## Changes (Phase 4)
 - New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
+
+## Changes (Phase 4.1)
+- Added structured person profile fields (`name`, `addresses`, `honor`).

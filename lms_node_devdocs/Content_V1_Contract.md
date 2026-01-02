@@ -206,6 +206,74 @@ Example Response:
 }
 ```
 
+### Reports (Normalized Attempts)
+GET `/reports`
+
+Query:
+- `courseId=<ObjectId>` (optional)
+- `learnerId=<ObjectId>` (optional)
+- `contentType=scorm|custom` (optional)
+- `customType=exam|quiz|practice|other` (optional)
+
+Response:
+```
+{
+  "status": "success",
+  "message": "Content reports fetched successfully",
+  "items": [
+    {
+      "contentId": "content-id",
+      "contentType": "scorm" | "custom",
+      "customType": "exam" | "quiz" | "practice" | "other" | null,
+      "title": "Content Title",
+      "status": "in_progress" | "completed" | "abandoned",
+      "progressPercent": 0,
+      "score": 85,
+      "maxScore": 100,
+      "passed": true,
+      "lastActivityAt": "ISO-8601"
+    }
+  ]
+}
+```
+
+### Learner Progress (Programs + Courses + Attempts)
+GET `/reports/learner/:learnerId`
+
+Query:
+- `programId=<ObjectId>` (optional)
+- `courseId=<ObjectId>` (optional)
+- `contentType=scorm|custom` (optional)
+- `customType=exam|quiz|practice|other` (optional)
+
+Response:
+```
+{
+  "status": "success",
+  "message": "Learner progress fetched successfully",
+  "data": {
+    "programEnrollments": [ { "...": "..." } ],
+    "courseEnrollments": [ { "...": "..." } ],
+    "contentAttempts": [ { "...": "..." } ],
+    "programProgress": [
+      {
+        "programId": "program-id",
+        "status": "active" | "completed" | "withdrawn",
+        "totalCourses": 3,
+        "completedCourses": 2,
+        "completionPercent": 67,
+        "enrolledAt": "ISO-8601",
+        "completedAt": "ISO-8601" | null
+      }
+    ]
+  }
+}
+```
+
+## Changes (Phase 4)
+- Reporting now uses normalized `ContentAttempt` records.
+- Added learner progress aggregation endpoint `/reports/learner/:learnerId`.
+
 GET `/reports`
 
 Query:

@@ -100,3 +100,6 @@ Body (any):
 
 ### Delete
 DELETE `/course-enrollments/:id`
+
+## Changes (Phase 4)
+- Program enrollment completion now updates when all course enrollments in a program are completed.

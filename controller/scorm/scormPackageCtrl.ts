@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import ScormPackage from '../../model/Scorm/ScormPackage';
+import CourseContent from '../../model/Academic/CourseContent';
 import { PackageValidator } from '../../utils/scorm/packageValidator';
 import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
@@ -176,6 +177,26 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
       storageProvider: process.env.SCORM_STORAGE_PROVIDER || 'local',
       storagePath: packageId,
     });
+
+    if (scormPackage.course) {
+      const existingCourseContent = await CourseContent.findOne({
+        course: scormPackage.course,
+        contentType: 'scorm',
+        scormPackageId: scormPackage._id,
+      }).lean();
+      if (!existingCourseContent) {
+        const nextOrder =
+          (await CourseContent.countDocuments({ course: scormPackage.course })) + 1;
+        await CourseContent.create({
+          course: scormPackage.course,
+          contentType: 'scorm',
+          scormPackageId: scormPackage._id,
+          order: nextOrder,
+          isRequired: true,
+          createdBy: req.userAuth!._id,
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -526,6 +547,25 @@ export const clonePackage = asyncHandler(
         programs: [],
       },
     });
+
+    if (clone.course) {
+      const existingCourseContent = await CourseContent.findOne({
+        course: clone.course,
+        contentType: 'scorm',
+        scormPackageId: clone._id,
+      }).lean();
+      if (!existingCourseContent) {
+        const nextOrder = (await CourseContent.countDocuments({ course: clone.course })) + 1;
+        await CourseContent.create({
+          course: clone.course,
+          contentType: 'scorm',
+          scormPackageId: clone._id,
+          order: nextOrder,
+          isRequired: true,
+          createdBy: req.userAuth!._id,
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,

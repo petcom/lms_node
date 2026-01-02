@@ -15,6 +15,7 @@ import {
   recordCustomProgress,
   listAttempts,
   listReports,
+  getLearnerProgressReport,
 } from '../../controller/content/contentCtrl';
 import {
   contentListQuery,
@@ -25,6 +26,7 @@ import {
   courseIdParam,
   customProgress,
   reportsQuery,
+  learnerProgressParams,
 } from '../../validators/contentValidation';
 
 const contentRouter: Router = express.Router();
@@ -97,6 +99,15 @@ contentRouter.post(
   isAuthenticated(),
   validate(customProgress),
   recordCustomProgress
+);
+
+contentRouter.get(
+  '/reports/learner/:learnerId',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('global-admin', 'staff', 'learner'),
+  validate(learnerProgressParams),
+  getLearnerProgressReport
 );
 
 contentRouter.get(

@@ -30,7 +30,7 @@ const examRouter: Router = express.Router();
  *             required:
  *               - name
  *               - description
- *               - subject
+ *               - course
  *               - program
  *               - duration
  *             properties:
@@ -38,9 +38,11 @@ const examRouter: Router = express.Router();
  *                 type: string
  *               description:
  *                 type: string
- *               subject:
+ *               course:
  *                 type: string
  *               program:
+ *                 type: string
+ *               programLevel:
  *                 type: string
  *               duration:
  *                 type: number

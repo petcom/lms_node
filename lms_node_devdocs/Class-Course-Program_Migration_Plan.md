@@ -165,6 +165,7 @@ Scripts (migration/data seeding):
 - Add: `scripts/migrate-content-to-coursecontent.js` (verified)
 - Add: `scripts/migrate-scormattempt-to-contentattempt.js` (verified)
 - Add: `scripts/migrate-teacherid-to-instructorid.js` (verified)
+- Add: `scripts/migrate-enrollments.js` (verified)
 
 ## Phase 2: Schema/Model Migration
 Status: ✅ completed
@@ -211,17 +212,17 @@ Deliverables:
 - Minimal validation tests to ensure JSON files are present and parseable (verified)
 
 ## Phase 4: API/Controller Refactor
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Update API endpoints and controllers to use new entities:
 - Learner progress endpoints should aggregate:
-  - `ProgramEnrollment` + `CourseEnrollment` + `ContentAttempt` (not verified)
-- Replace ClassLevel-based filters with ProgramLevel. (not verified)
-- Update custom content/SCORM endpoints to resolve CourseContent. (not verified)
-- Ensure Course completion updates ProgramEnrollment completion. (not verified)
+  - `ProgramEnrollment` + `CourseEnrollment` + `ContentAttempt` (verified)
+- Replace ClassLevel-based filters with ProgramLevel. (verified)
+- Update custom content/SCORM endpoints to resolve CourseContent. (verified)
+- Ensure Course completion updates ProgramEnrollment completion. (verified)
 
 Deliverables:
-- Updated controllers (not verified)
-- Updated validators (not verified)
+- Updated controllers (verified)
+- Updated validators (verified)
 - New endpoints for ProgramLevel, Course, CourseContent if needed (verified)
 
 Phase 4 status notes:
@@ -229,26 +230,26 @@ Phase 4 status notes:
 - ✅ Content rendering and progress now use CourseContent. (verified)
 - ✅ SCORM runtime syncs to ContentAttempt. (verified)
 - ✅ Enrollment endpoints completed. (verified)
-- ⏳ Reporting endpoints pending. (not verified)
-- ⏳ Course completion → ProgramEnrollment update pending. (not verified)
+- ✅ Reporting endpoints completed. (verified)
+- ✅ Course completion → ProgramEnrollment update completed. (verified)
 
 ### Phase 4.1: Contract Alignment
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 After refactors:
-- Review all `*_Contract.md` docs for current shapes/paths/roles. (not verified)
+- Review all `*_Contract.md` docs for current shapes/paths/roles. (verified)
 - Add any missing contract docs for new endpoints (ProgramLevel/Course/CourseContent). (verified)
-- Append a “Changes (Phase 4)” section to each updated contract. (not verified)
+- Append a “Changes (Phase 4)” section to each updated contract. (verified)
 
 ### Phase 4.2: Carryover Next Steps (from Phases 0–4.1)
-Status: ⏳ pending (see line items)
-- Add enrollment data migration script(s) for Program/Class/Course enrollments. (not verified)
-- Add dry-run + verification mode for migration scripts. (not verified)
-- Update learner progress and reporting endpoints to use enrollments + content attempts. (not verified)
-- Ensure course completion updates ProgramEnrollment completion status. (not verified)
+Status: ⚠️ partial (see line items)
+- Add enrollment data migration script(s) for Program/Class/Course enrollments. (verified)
+- Add dry-run + verification mode for migration scripts. (verified)
+- Update learner progress and reporting endpoints to use enrollments + content attempts. (verified)
+- Ensure course completion updates ProgramEnrollment completion status. (verified)
 - Decide ScormAttempt deprecation path and update runtime/reporting endpoints to use ContentAttempt where appropriate. (not verified)
-- Ensure CourseContent is created/linked for SCORM upload + content flows. (not verified)
-- Update Swagger docs (SCORM + exams) to reference Course/ProgramLevel fields. (not verified)
-- Complete contract alignment + append “Changes (Phase 4)” sections to all contract docs. (not verified)
+- Ensure CourseContent is created/linked for SCORM upload + content flows. (verified)
+- Update Swagger docs (SCORM + exams) to reference Course/ProgramLevel fields. (verified)
+- Complete contract alignment + append “Changes (Phase 4)” sections to all contract docs. (verified)
 
 ## Phase 5: Test Migration
 Update integration and unit tests:

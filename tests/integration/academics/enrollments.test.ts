@@ -164,4 +164,50 @@ describe('Enrollment APIs', () => {
     expect(listRes.status).toBe(200);
     expect(listRes.body.data.length).toBeGreaterThan(0);
   });
+
+  it('completes course enrollment and updates program enrollment status', async () => {
+    const programEnrollmentRes = await request(app)
+      .post('/api/v1/program-enrollments')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        learner: learnerId.toString(),
+        program: programId.toString(),
+      });
+
+    expect(programEnrollmentRes.status).toBe(201);
+
+    const courseRes = await request(app)
+      .post('/api/v1/course-enrollments')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        learner: learnerId.toString(),
+        course: courseId.toString(),
+        classId: classId.toString(),
+        progress: 0,
+      });
+
+    expect(courseRes.status).toBe(201);
+
+    const updateRes = await request(app)
+      .put(`/api/v1/course-enrollments/${courseRes.body.data._id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'completed', progress: 100 });
+
+    expect(updateRes.status).toBe(200);
+
+    const updatedProgram = await ProgramEnrollment.findOne({
+      learner: learnerId,
+      program: programId,
+    }).lean();
+
+    expect(updatedProgram?.status).toBe('completed');
+
+    const reportRes = await request(app)
+      .get(`/api/v1/content/reports/learner/${learnerId.toString()}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(reportRes.status).toBe(200);
+    expect(reportRes.body.data.programEnrollments.length).toBeGreaterThan(0);
+    expect(reportRes.body.data.courseEnrollments.length).toBeGreaterThan(0);
+  });
 });

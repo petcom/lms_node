@@ -8,8 +8,9 @@ import RenderedCourse from '../../model/Content/RenderedCourse';
 import LearnerProgress from '../../model/Content/LearnerProgress';
 import ContentAttempt from '../../model/Academic/ContentAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
-import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import Department from '../../model/Academic/Department';
+import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
+import CourseEnrollment from '../../model/Academic/CourseEnrollment';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import { IDepartment } from '../../types/models';
 
@@ -115,13 +116,6 @@ const renderCourseHtml = async (
     </main>
   </body>
 </html>`;
-};
-
-const mapScormStatus = (status?: string): 'in_progress' | 'completed' | 'failed' => {
-  if (!status) return 'in_progress';
-  if (status === 'passed' || status === 'completed') return 'completed';
-  if (status === 'failed') return 'failed';
-  return 'in_progress';
 };
 
 export const listContent = asyncHandler(async (req: Request, res: Response) => {
@@ -648,43 +642,53 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
   };
 
   const filter: any = {};
-  if (courseId) filter.courseId = new mongoose.Types.ObjectId(courseId);
-  if (learnerId) filter.learnerId = new mongoose.Types.ObjectId(learnerId);
+  if (learnerId) filter.learner = new mongoose.Types.ObjectId(learnerId);
   if (contentType) filter.contentType = contentType;
   if (customType) filter.customType = customType;
 
-  const progressItems = await LearnerProgress.find(filter).lean();
-
-  let scormAttempts: any[] = [];
-  if (!contentType || contentType === 'scorm') {
-    const scormFilter: any = {};
-    if (learnerId) {
-      scormFilter.learner = new mongoose.Types.ObjectId(learnerId);
-    }
-    if (courseId) {
-      const courseContents = await CourseContent.find({
-        course: new mongoose.Types.ObjectId(courseId),
-        contentType: 'scorm',
-      })
-        .select('scormPackageId')
-        .lean();
-      const scormIds = courseContents
-        .map((item: any) => item.scormPackageId)
-        .filter(Boolean);
-      if (scormIds.length) {
-        scormFilter.package = { $in: scormIds };
-      }
-    }
-    scormAttempts = await ScormAttempt.find(scormFilter).lean();
+  let courseContentIds: mongoose.Types.ObjectId[] | null = null;
+  if (courseId) {
+    const contents = await CourseContent.find({
+      course: new mongoose.Types.ObjectId(courseId),
+      ...(contentType ? { contentType } : {}),
+    })
+      .select('_id')
+      .lean();
+    courseContentIds = contents.map((item) => item._id);
+    filter.courseContent = { $in: courseContentIds };
   }
 
-  const customIds = progressItems
-    .filter((item) => item.contentType === 'custom')
-    .map((item) => item.contentId);
-  const scormIds = [
-    ...progressItems.filter((item) => item.contentType === 'scorm').map((item) => item.contentId),
-    ...scormAttempts.map((attempt) => attempt.package),
-  ];
+  const attempts = await ContentAttempt.find(filter).lean();
+  const attemptCourseContentIds =
+    courseContentIds ?? attempts.map((attempt) => attempt.courseContent as any);
+
+  const courseContents = await CourseContent.find({
+    _id: { $in: attemptCourseContentIds },
+  })
+    .select('contentType scormPackageId customContentId')
+    .lean();
+
+  const contentMap = new Map<
+    string,
+    { contentId: string; contentType: 'scorm' | 'custom' }
+  >();
+  const customIds: mongoose.Types.ObjectId[] = [];
+  const scormIds: mongoose.Types.ObjectId[] = [];
+
+  courseContents.forEach((item: any) => {
+    const contentId =
+      item.contentType === 'custom' ? item.customContentId : item.scormPackageId;
+    if (!contentId) return;
+    contentMap.set(item._id.toString(), {
+      contentId: contentId.toString(),
+      contentType: item.contentType,
+    });
+    if (item.contentType === 'custom') {
+      customIds.push(contentId);
+    } else {
+      scormIds.push(contentId);
+    }
+  });
 
   const [customContent, scormContent] = await Promise.all([
     CustomContent.find({ _id: { $in: customIds } }).select('title').lean(),
@@ -695,36 +699,113 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
   customContent.forEach((item) => titleMap.set(item._id.toString(), item.title));
   scormContent.forEach((item) => titleMap.set(item._id.toString(), item.title));
 
-  const items = [
-    ...progressItems.map((item) => ({
-      contentId: item.contentId.toString(),
-      contentType: item.contentType,
-      customType: item.customType || null,
-      title: titleMap.get(item.contentId.toString()) || 'Unknown',
-      status: item.status,
-      progressPercent: item.progressPercent,
-      score: item.score,
-      maxScore: item.maxScore,
-      passed: item.passed,
-      lastActivityAt: item.lastActivityAt,
-    })),
-    ...scormAttempts.map((attempt) => ({
-      contentId: attempt.package.toString(),
-      contentType: 'scorm',
-      customType: null,
-      title: titleMap.get(attempt.package.toString()) || 'Unknown',
-      status: mapScormStatus(attempt.status),
-      progressPercent: ['passed', 'completed'].includes(attempt.status) ? 100 : 0,
-      score: attempt.cmi?.score?.raw ?? 0,
-      maxScore: attempt.cmi?.score?.max ?? 100,
-      passed: attempt.status === 'passed',
-      lastActivityAt: attempt.lastAccessedAt,
-    })),
-  ];
+  const items = attempts.map((attempt: any) => {
+    const contentInfo = contentMap.get(attempt.courseContent?.toString()) || {
+      contentId: attempt.courseContent?.toString() || '',
+      contentType: attempt.contentType,
+    };
+    return {
+      contentId: contentInfo.contentId,
+      contentType: contentInfo.contentType,
+      customType: attempt.customType || null,
+      title: titleMap.get(contentInfo.contentId) || 'Unknown',
+      status: attempt.status,
+      progressPercent: attempt.status === 'completed' ? 100 : 0,
+      score: attempt.score ?? 0,
+      maxScore: attempt.maxScore ?? 100,
+      passed: attempt.passed,
+      lastActivityAt: attempt.updatedAt || attempt.createdAt,
+    };
+  });
 
   res.status(200).json({
     status: 'success',
     message: 'Content reports fetched successfully',
     items,
+  });
+});
+
+export const getLearnerProgressReport = asyncHandler(async (req: Request, res: Response) => {
+  const { learnerId } = req.params as { learnerId: string };
+  const { programId, courseId, contentType, customType } = req.query as {
+    programId?: string;
+    courseId?: string;
+    contentType?: 'scorm' | 'custom';
+    customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  };
+
+  if (!mongoose.isValidObjectId(learnerId)) {
+    throw new ValidationError('Invalid learner id');
+  }
+
+  const user = req.userAuth;
+  if (user?.role === 'learner' && user?._id?.toString() !== learnerId) {
+    throw new AuthorizationError('Learners can only view their own progress');
+  }
+
+  const learnerObjectId = new mongoose.Types.ObjectId(learnerId);
+
+  const programFilter: any = { learner: learnerObjectId };
+  if (programId) programFilter.program = new mongoose.Types.ObjectId(programId);
+
+  const courseFilter: any = { learner: learnerObjectId };
+  if (programId) courseFilter.program = new mongoose.Types.ObjectId(programId);
+  if (courseId) courseFilter.course = new mongoose.Types.ObjectId(courseId);
+
+  const [programEnrollments, courseEnrollments] = await Promise.all([
+    ProgramEnrollment.find(programFilter).lean(),
+    CourseEnrollment.find(courseFilter).lean(),
+  ]);
+
+  const contentFilter: any = { learner: learnerObjectId };
+  if (contentType) contentFilter.contentType = contentType;
+  if (customType) contentFilter.customType = customType;
+  if (courseId) {
+    const courseContents = await CourseContent.find({
+      course: new mongoose.Types.ObjectId(courseId),
+      ...(contentType ? { contentType } : {}),
+    })
+      .select('_id')
+      .lean();
+    contentFilter.courseContent = { $in: courseContents.map((item) => item._id) };
+  }
+
+  const contentAttempts = await ContentAttempt.find(contentFilter)
+    .populate('courseContent', 'course contentType scormPackageId customContentId')
+    .lean();
+
+  const programProgress = await Promise.all(
+    programEnrollments.map(async (enrollment: any) => {
+      const program = enrollment.program;
+      const totalCourses = await Course.countDocuments({ program });
+      const completedCourses = await CourseEnrollment.countDocuments({
+        learner: learnerObjectId,
+        program,
+        status: 'completed',
+      });
+      const completionPercent =
+        totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+
+      return {
+        programId: program.toString(),
+        status: enrollment.status,
+        totalCourses,
+        completedCourses,
+        completionPercent,
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: enrollment.completedAt || null,
+      };
+    })
+  );
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Learner progress fetched successfully',
+    data: {
+      programEnrollments,
+      courseEnrollments,
+      contentAttempts,
+      programProgress,
+    },
   });
 });

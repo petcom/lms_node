@@ -86,6 +86,9 @@ Base URL: `/api/v1/templates`
   }
 }
 ```
+
+## Changes (Phase 4)
+- No contract changes in this phase.
 Note: `passingStyleScore` is inherited from the department (parent chain, master fallback).
 
 ## Endpoints

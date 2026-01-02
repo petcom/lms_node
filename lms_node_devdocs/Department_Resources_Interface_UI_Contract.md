@@ -22,7 +22,7 @@ Response:
   "items": [
     {
       "id": "user-id",
-      "name": "Full Name",
+      "name": "Last, First M.",
       "email": "email@example.com",
       "role": "global-admin" | "staff",
       "roles": ["instructor","content-admin"],
@@ -38,6 +38,9 @@ Response:
   ]
 }
 ```
+
+Notes:
+- `name` is a display string derived from the structured `name` fields stored on the user (`first`, `middle`, `last`).
 
 ## Staff Users (Update Department)
 PATCH `/staffusers/:id/department`
@@ -134,9 +137,9 @@ Body (custom exam only):
   "title": "Content Title",
   "description": "Content description",
   "customType": "exam" | "quiz" | "practice" | "other",
-  "subject": "<ObjectId>",
+  "course": "<ObjectId>",
   "program": "<ObjectId>",
-  "classLevel": "<ObjectId>",
+  "programLevel": "<ObjectId>",
   "academicTerm": "<ObjectId>",
   "academicYear": "<ObjectId>",
   "passMark": 30,
@@ -148,6 +151,9 @@ Body (custom exam only):
 }
 ```
 
+## Changes (Phase 4)
+- Content create/update now uses `course` + `programLevel` instead of legacy `subject` + `classLevel`.
+
 ## Content (Update)
 PATCH `/content/:id`
 
@@ -158,9 +164,9 @@ Body:
   "title": "Content Title",
   "description": "Content description",
   "departmentId": "<ObjectId>" | null,
-  "subject": "<ObjectId>",
+  "course": "<ObjectId>",
   "program": "<ObjectId>",
-  "classLevel": "<ObjectId>",
+  "programLevel": "<ObjectId>",
   "academicTerm": "<ObjectId>",
   "academicYear": "<ObjectId>",
   "customType": "exam" | "quiz" | "practice" | "other",

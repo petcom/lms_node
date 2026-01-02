@@ -84,3 +84,15 @@ export const reportsQuery = {
     customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
   }),
 };
+
+export const learnerProgressParams = {
+  params: Joi.object({
+    learnerId: objectId.required(),
+  }),
+  query: Joi.object({
+    programId: objectId,
+    courseId: objectId,
+    contentType: Joi.string().valid('scorm', 'custom'),
+    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+  }),
+};

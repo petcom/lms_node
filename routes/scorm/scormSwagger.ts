@@ -31,9 +31,15 @@
  *               description:
  *                 type: string
  *                 example: Learn the fundamentals of JavaScript
- *               subject:
+ *               course:
  *                 type: string
  *                 example: 507f1f77bcf86cd799439011
+ *               program:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439022
+ *               programLevel:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439033
  *               isGraded:
  *                 type: boolean
  *                 example: true

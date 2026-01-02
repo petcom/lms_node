@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import Course from '../../model/Content/Course';
 import ClassModel from '../../model/Academic/Class';
 import CourseEnrollment from '../../model/Academic/CourseEnrollment';
+import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 interface CreateCourseEnrollmentBody {
@@ -25,6 +26,45 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
   if (!departmentId) return;
   if (scope && scope !== 'all' && !scope.includes(departmentId)) {
     throw new AuthorizationError('Access denied for this department');
+  }
+};
+
+const updateProgramEnrollmentStatus = async (
+  learnerId: mongoose.Types.ObjectId,
+  programId: mongoose.Types.ObjectId
+) => {
+  const programEnrollment = await ProgramEnrollment.findOne({
+    learner: learnerId,
+    program: programId,
+  });
+  if (!programEnrollment || programEnrollment.status === 'withdrawn') {
+    return;
+  }
+
+  const totalCourses = await Course.countDocuments({ program: programId });
+  if (totalCourses === 0) {
+    return;
+  }
+
+  const completedCourses = await CourseEnrollment.countDocuments({
+    learner: learnerId,
+    program: programId,
+    status: 'completed',
+  });
+
+  if (completedCourses >= totalCourses) {
+    if (programEnrollment.status !== 'completed') {
+      programEnrollment.status = 'completed';
+      programEnrollment.completedAt = programEnrollment.completedAt || new Date();
+      await programEnrollment.save();
+    }
+    return;
+  }
+
+  if (programEnrollment.status === 'completed') {
+    programEnrollment.status = 'active';
+    programEnrollment.completedAt = undefined;
+    await programEnrollment.save();
   }
 };
 
@@ -68,6 +108,8 @@ export const createCourseEnrollment = AsyncHandler(
       startedAt: startedAt ? new Date(startedAt) : undefined,
       completedAt: status === 'completed' ? new Date() : undefined,
     });
+
+    await updateProgramEnrollmentStatus(enrollment.learner, enrollment.program);
 
     res.status(201).json({
       status: 'success',
@@ -129,6 +171,8 @@ export const updateCourseEnrollment = AsyncHandler(
 
     await enrollment.save();
 
+    await updateProgramEnrollmentStatus(enrollment.learner, enrollment.program);
+
     res.status(200).json({
       status: 'success',
       message: 'Course enrollment updated',
@@ -150,6 +194,8 @@ export const deleteCourseEnrollment = AsyncHandler(
     assertScopeAccess(scope, departmentId);
 
     await CourseEnrollment.findByIdAndDelete(req.params.id);
+
+    await updateProgramEnrollmentStatus(enrollment.learner, enrollment.program);
 
     res.status(200).json({
       status: 'success',

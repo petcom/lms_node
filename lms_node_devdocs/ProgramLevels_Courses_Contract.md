@@ -126,3 +126,6 @@ Body (any):
 
 ### Delete
 DELETE `/course-contents/:id`
+
+## Changes (Phase 4)
+- No endpoint shape changes; contract remains current for ProgramLevel, Course, and CourseContent routes.

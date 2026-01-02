@@ -174,6 +174,69 @@ export const updateCourseContent = {
 };
 
 /**
+ * Enrollment validation
+ */
+export const createProgramEnrollment = {
+  body: Joi.object({
+    learner: objectId.required(),
+    program: objectId.required(),
+    status: Joi.string().valid('active', 'completed', 'withdrawn'),
+    enrolledAt: Joi.date().iso(),
+  }),
+};
+
+export const updateProgramEnrollment = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    status: Joi.string().valid('active', 'completed', 'withdrawn'),
+    completedAt: Joi.date().iso(),
+    withdrawnAt: Joi.date().iso(),
+  }).min(1),
+};
+
+export const createClassEnrollment = {
+  body: Joi.object({
+    learner: objectId.required(),
+    classId: objectId.required(),
+    enrolledAt: Joi.date().iso(),
+  }),
+};
+
+export const updateClassEnrollment = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    completedAt: Joi.date().iso(),
+    withdrawnAt: Joi.date().iso(),
+  }).min(1),
+};
+
+export const createCourseEnrollment = {
+  body: Joi.object({
+    learner: objectId.required(),
+    course: objectId.required(),
+    classId: objectId,
+    status: Joi.string().valid('active', 'completed', 'withdrawn'),
+    progress: Joi.number().min(0).max(100),
+    startedAt: Joi.date().iso(),
+  }),
+};
+
+export const updateCourseEnrollment = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    status: Joi.string().valid('active', 'completed', 'withdrawn'),
+    progress: Joi.number().min(0).max(100),
+    completedAt: Joi.date().iso(),
+  }).min(1),
+};
+
+/**
  * Subject validation
  */
 export const createSubject = {

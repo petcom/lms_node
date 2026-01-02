@@ -21,6 +21,9 @@ import programRouter from '../routes/academics/program';
 import programLevelRouter from '../routes/academics/programLevel';
 import courseRouter from '../routes/academics/course';
 import courseContentRouter from '../routes/academics/courseContent';
+import programEnrollmentRouter from '../routes/academics/programEnrollment';
+import classEnrollmentRouter from '../routes/academics/classEnrollment';
+import courseEnrollmentRouter from '../routes/academics/courseEnrollment';
 import subjectRouter from '../routes/academics/subject';
 import yearGroupRouter from '../routes/academics/yearGroup';
 import staffRouter from '../routes/staff/staffRouter';
@@ -159,6 +162,9 @@ app.use('/api/v1/programs', programRouter); // Program routes
 app.use('/api/v1/program-levels', programLevelRouter); // Program level routes
 app.use('/api/v1/courses', courseRouter); // Course routes
 app.use('/api/v1/course-contents', courseContentRouter); // Course content routes
+app.use('/api/v1/program-enrollments', programEnrollmentRouter); // Program enrollment routes
+app.use('/api/v1/class-enrollments', classEnrollmentRouter); // Class enrollment routes
+app.use('/api/v1/course-enrollments', courseEnrollmentRouter); // Course enrollment routes
 app.use('/api/v1/subjects', subjectRouter); // Subject routes
 app.use('/api/v1/year-groups', yearGroupRouter); // Year Group routes
 app.use('/api/v1/staff', staffRouter); // Staff routes

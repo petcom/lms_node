@@ -24,6 +24,7 @@ All changes are allowed (no clients attached). This plan covers:
 - Data migration scripts
 
 ## Phase 0: Inventory & Baseline
+Status: ✅ completed
 - Freeze new feature work.
 - Export list of all usages of:
   - `ClassLevel`, `classLevels`, `currentClassLevel`
@@ -38,6 +39,7 @@ Deliverables:
 - Mapping table (old → new fields)
 
 ## Phase 1: Type System Update (types.ts)
+Status: ✅ completed
 Update `types/models.ts` to reflect the ERDs:
 - **Learner**
   - Add `globalStatus: 'active' | 'inactive'`
@@ -82,6 +84,7 @@ Instructor                               -> Instructor (type/interface/collectio
 ```
 
 ### Phase 1 File Checklist (Types Only)
+Status: ✅ completed
 Update or add type definitions in:
 - `types/models.ts`
 - `types/auth.ts` (if role or enrollment types are referenced)
@@ -206,7 +209,7 @@ Deliverables:
 - Minimal validation tests to ensure JSON files are present and parseable
 
 ## Phase 4: API/Controller Refactor
-Status: ✅ completed
+Status: ⏳ in progress
 Update API endpoints and controllers to use new entities:
 - Learner progress endpoints should aggregate:
   - `ProgramEnrollment` + `CourseEnrollment` + `ContentAttempt`
@@ -219,12 +222,32 @@ Deliverables:
 - Updated validators
 - New endpoints for ProgramLevel, Course, CourseContent if needed
 
+Phase 4 status notes:
+- ✅ ProgramLevel/Course/CourseContent endpoints added.
+- ✅ Content rendering and progress now use CourseContent.
+- ✅ SCORM runtime syncs to ContentAttempt.
+- ⏳ Enrollment endpoints pending (next step).
+- ⏳ Reporting endpoints pending (after enrollments).
+- ⏳ Course completion → ProgramEnrollment update pending.
+
 ### Phase 4.1: Contract Alignment
 Status: ✅ completed
 After refactors:
 - Review all `*_Contract.md` docs for current shapes/paths/roles.
 - Add any missing contract docs for new endpoints (ProgramLevel/Course/CourseContent).
 - Append a “Changes (Phase 4)” section to each updated contract.
+
+### Phase 4.2: Enrollment APIs
+Status: ✅ completed
+Implement enrollment endpoints for:
+- `ProgramEnrollment`
+- `ClassEnrollment`
+- `CourseEnrollment`
+
+Deliverables:
+- Controllers and routes for enrollment CRUD
+- Validation schemas for enrollment payloads
+- Contract doc: `lms_node_devdocs/Enrollment_Contract.md`
 
 ## Phase 5: Test Migration
 Update integration and unit tests:
@@ -268,9 +291,9 @@ Deliverables:
 
 ## Next Steps (Post Phase 4.1)
 - In-progress order:
-  1) ContentAttempt/SCORM attempt unification (in progress)
-  2) Enrollment endpoints (`ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`)
-  3) Reporting endpoints for program/course progress
+  1) ContentAttempt/SCORM attempt unification ✅ completed
+  2) Enrollment endpoints (`ProgramEnrollment`, `ClassEnrollment`, `CourseEnrollment`) ✅ completed
+  3) Reporting endpoints for program/course progress ⏳ pending
 - Remaining:
   - Update academic workflows to use `ProgramLevel` and `Course` (replace `ClassLevel` + `Subject` references).
   - Deprecate and remove legacy collections after migration validation.

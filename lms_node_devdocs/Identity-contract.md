@@ -58,12 +58,30 @@ PUT `/staff/:staffId/update`
 ### Admin Register Staff
 POST `/staff/admins/staff/register`
 
+Body (optional addition):
+```
+{
+  "departmentMemberships": [
+    { "departmentId": "DEPT_ID", "roles": ["department-admin", "content-admin"] }
+  ]
+}
+```
+
 ### Admin Directory
 GET `/staff/admins/staff`
 GET `/staff/admins/staff/:staffId`
 
 ### Admin Update Staff
 PUT `/staff/admins/staff/:staffId/update`
+
+Body (optional addition):
+```
+{
+  "departmentMemberships": [
+    { "departmentId": "DEPT_ID", "roles": ["instructor"] }
+  ]
+}
+```
 
 ## Learners
 ### Admin Register Learner

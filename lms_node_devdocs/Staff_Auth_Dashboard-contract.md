@@ -26,6 +26,9 @@ Response:
 }
 ```
 
+Notes:
+- `departmentMemberships` is the authoritative per-department role assignment list for staff.
+
 ### Token Info
 GET `/api/v1/auth/token-info`
 
@@ -68,6 +71,9 @@ Response:
     "role": "staff",
     "roles": ["instructor"],
     "department": "dept-id",
+    "departmentMemberships": [
+      { "departmentId": "dept-id", "roles": ["instructor"] }
+    ],
     "addresses": [
       {
         "line1": "123 Main St",

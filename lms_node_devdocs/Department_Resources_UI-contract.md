@@ -33,7 +33,13 @@ Response:
         "parentId": "parent-id" | null,
         "level": 0 | 1 | 2,
         "passingStyleScore": 80
-      } | null
+      } | null,
+      "departmentMemberships": [
+        {
+          "department": { "id": "dept-id", "name": "Department Name" },
+          "roles": ["instructor"]
+        }
+      ]
     }
   ]
 }
@@ -42,6 +48,7 @@ Response:
 Notes:
 - `name` is a display string derived from the structured `name` fields stored on the user (`first`, `middle`, `last`).
 - `role` reflects the canonical `User.role`; `roles` reflects `User.subroles` for staff subtypes.
+- `departmentMemberships` is included for multi-department staff; for non-global admin views it may be filtered to the scoped department.
 
 ## Content
 GET `/content`

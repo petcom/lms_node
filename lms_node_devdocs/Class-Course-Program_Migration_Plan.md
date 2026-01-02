@@ -39,7 +39,7 @@ Deliverables:
 - Mapping table (old → new fields) (verified) → `lms_node_devdocs/Class-Course-Program_Migration_Plan.md`
 
 ## Phase 1: Type System Update (types.ts)
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Update `types/models.ts` to reflect the ERDs:
 - **Learner**
   - Add `globalStatus: 'active' | 'inactive'` (verified)
@@ -57,7 +57,7 @@ Update `types/models.ts` to reflect the ERDs:
 
 Deliverables:
 - Updated `types/models.ts` (verified)
-- Deprecated fields documented in comments or a migration notes section (not verified)
+- Deprecated fields documented in comments or a migration notes section (verified)
 
 ### Old → New Field Mapping (Concrete)
 ```
@@ -84,10 +84,10 @@ Instructor                               -> Instructor (type/interface/collectio
 ```
 
 ### Phase 1 File Checklist (Types Only)
-Status: ⚠️ partial (see line items)
+Status: ✅ completed
 Update or add type definitions in:
 - `types/models.ts` (verified)
-- `types/auth.ts` (if role or enrollment types are referenced) (not verified)
+- `types/auth.ts` (if role or enrollment types are referenced) (verified)
 - `types/express.d.ts` (if request typings reference learner fields) (verified)
 
 Add new interfaces:
@@ -241,9 +241,9 @@ After refactors:
 
 ### Phase 4.2: Carryover Next Steps (from Phases 0–4.1)
 Status: ⏳ pending (see line items)
-- Complete Phase 0 inventory report of impacted files. (not verified)
-- Confirm final collection names for program/level/course/enrollment/attempts. (not verified)
-- Document deprecated learner fields in `types/models.ts` or migration notes. (not verified)
+- Complete Phase 0 inventory report of impacted files. (verified)
+- Confirm final collection names for program/level/course/enrollment/attempts. (verified)
+- Document deprecated learner fields in `types/models.ts` or migration notes. (verified)
 - Replace `ClassLevel` usage with `ProgramLevel` throughout models/controllers/routes/tests. (not verified)
 - Replace `Subject` program/classLevel links with `Course` usage. (not verified)
 - Remove `ScormAttempt` model usage where `ContentAttempt` should replace it. (not verified)
@@ -252,6 +252,10 @@ Status: ⏳ pending (see line items)
 - Update learner progress and reporting endpoints to use enrollments + content attempts. (not verified)
 - Ensure course completion updates ProgramEnrollment completion status. (not verified)
 - Add “Changes (Phase 4)” sections to `lms_node_devdocs/ProgramLevels_Courses_Contract.md` and `lms_node_devdocs/Enrollment_Contract.md`. (not verified)
+- Update admin/staff models to remove legacy `classLevel`/`subject` usage. (not verified)
+- Update SCORM report filters to use ProgramLevel/Course instead of ClassLevel/Subject. (not verified)
+- Update remaining tests referencing ClassLevel/Subject to ProgramLevel/Course. (not verified)
+- Remove or replace `routes/academics/classLevel.ts` and `controller/academics/classLevelCtrl.ts`. (not verified)
 
 ## Phase 5: Test Migration
 Update integration and unit tests:

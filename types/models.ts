@@ -105,6 +105,8 @@ export interface IMasterTemplate extends Document {
 }
 
 // Learner Interface
+// Deprecated fields removed in migration: isGraduated, isPromoted*, currentClassLevel,
+// classLevels, academicYear, yearGraduated, examResults, scormProgress.
 export interface ILearner extends Document {
   _id: Types.ObjectId;
   name: string;

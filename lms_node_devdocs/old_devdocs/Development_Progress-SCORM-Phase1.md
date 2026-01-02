@@ -21,7 +21,7 @@ Create the foundational infrastructure for SCORM support:
 ## Task Checklist
 
 ### 1. TypeScript Type Definitions
-- [ ] Create `types/scorm.ts` with all SCORM interfaces
+- [ ] Create `types/scorm-types.ts` with all SCORM interfaces
   - [ ] IScormPackage interface
   - [ ] IScormAttempt interface
   - [ ] IScormManifest interface
@@ -129,7 +129,7 @@ Create the foundational infrastructure for SCORM support:
 
 ## Files Created
 
-- [ ] `types/scorm.ts`
+- [ ] `types/scorm-types.ts`
 - [ ] `model/Scorm/ScormPackage.ts`
 - [ ] `model/Scorm/ScormAttempt.ts`
 - [ ] `utils/scorm/storage/StorageProvider.ts`

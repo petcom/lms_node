@@ -41,7 +41,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 **Key Files:**
 - `SCORM_Implementation_Plan.md`
 - `tsconfig.json`
-- `types/scorm.ts`
+- `types/scorm-types.ts`
 
 ---
 
@@ -251,7 +251,7 @@ The SCORM (Sharable Content Object Reference Model) implementation for the LMS i
 **Status:** 100% Complete
 
 **Changes:**
-- ✅ Added `scormProgress` field to Learner interface (`types/models.ts`)
+- ✅ Added `scormProgress` field to Learner interface (`types/models-types.ts`)
 - ✅ Added `scormProgress` schema to Learner model (`model/Academic/Learner.ts`)
 - ✅ Added SCORM-specific indexes for query optimization
 - ✅ Integrated with existing academic system

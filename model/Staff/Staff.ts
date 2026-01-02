@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IStaff } from '../../types/models';
+import { IStaff } from '../../types/models-types';
 
 const nameSchema = new Schema(
   {

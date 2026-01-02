@@ -90,6 +90,25 @@ export interface ILookup extends Document {
   updatedAt: Date;
 }
 
+export interface ISettings extends Document {
+  _id: Types.ObjectId;
+  scope: 'global';
+  pagination: {
+    defaultLimit: number;
+    maxLimit: number;
+    overrides?: Record<
+      string,
+      {
+        limit?: number;
+        maxLimit?: number;
+      }
+    >;
+  };
+  updatedBy?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Department Master CSS Interface
 export interface IDepartmentMasterCSS extends Document {
   _id: Types.ObjectId;

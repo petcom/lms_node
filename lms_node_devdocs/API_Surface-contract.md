@@ -8,19 +8,19 @@ Base URL: `/api/v1`
 
 ## Shared Data Shapes
 - `Person` shapes are defined in `lms_node_devdocs/Person_Types.md`.
-- Identity endpoints are defined in `lms_node_devdocs/Identity_Contract.md`.
+- Identity endpoints are defined in `lms_node_devdocs/Identity-contract.md`.
 - Programs, ProgramLevels, Courses, CourseContent are defined in
-  `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
+  `lms_node_devdocs/ProgramLevels_Courses-contract.md`.
 - Academic years/terms/year groups are defined in
-  `lms_node_devdocs/Academic_Calendar_Contract.md`.
-- Enrollments are defined in `lms_node_devdocs/Enrollment_Contract.md`.
+  `lms_node_devdocs/Academic_Calendar-contract.md`.
+- Enrollments are defined in `lms_node_devdocs/Enrollment-contract.md`.
 - Exams, questions, and results are defined in
-  `lms_node_devdocs/Academic_Assessments_Contract.md`.
-- Content and SCORM pipeline are defined in `lms_node_devdocs/Content_V1_Contract.md`.
+  `lms_node_devdocs/Academic_Assessments-contract.md`.
+- Content and SCORM pipeline are defined in `lms_node_devdocs/Content_V1-contract.md`.
 - Department resources and hierarchy shapes are defined in
-  `lms_node_devdocs/Department_Resources_UI_Contract.md`.
-- Templates are defined in `lms_node_devdocs/Master_Templates_UI_Contract.md`.
-- Metrics + permissions are defined in `lms_node_devdocs/Platform_Admin_Contract.md`.
+  `lms_node_devdocs/Department_Resources_UI-contract.md`.
+- Templates are defined in `lms_node_devdocs/Master_Templates_UI-contract.md`.
+- Metrics + permissions are defined in `lms_node_devdocs/Platform_Admin-contract.md`.
 
 ## Authentication + Password
 ### Auth
@@ -80,7 +80,7 @@ Base URL: `/api/v1`
 
 ## Academic Catalog
 ### Academic Years / Terms / Year Groups
-- See `lms_node_devdocs/Academic_Calendar_Contract.md`.
+- See `lms_node_devdocs/Academic_Calendar-contract.md`.
 
 ### Programs / Levels / Courses / CourseContent
 - GET `/programs`
@@ -90,20 +90,20 @@ Base URL: `/api/v1`
 - PATCH `/programs/:id/archive`
 - PATCH `/programs/:id/unarchive`
 
-- See `lms_node_devdocs/ProgramLevels_Courses_Contract.md` for ProgramLevel/Course/CourseContent endpoints.
+- See `lms_node_devdocs/ProgramLevels_Courses-contract.md` for ProgramLevel/Course/CourseContent endpoints.
 
 ## Enrollments
-- See `lms_node_devdocs/Enrollment_Contract.md` for:
+- See `lms_node_devdocs/Enrollment-contract.md` for:
   - `/program-enrollments`
   - `/class-enrollments`
   - `/course-enrollments`
 
 ## Exams + Questions + Results
 ### Exams + Questions + Results
-- See `lms_node_devdocs/Academic_Assessments_Contract.md`.
+- See `lms_node_devdocs/Academic_Assessments-contract.md`.
 
 ## Content (Unified) + SCORM
-- See `lms_node_devdocs/Content_V1_Contract.md` for:
+- See `lms_node_devdocs/Content_V1-contract.md` for:
   - `/content/*`
   - `/content/scorm/*`
 
@@ -125,7 +125,11 @@ Base URL: `/api/v1`
 - PATCH `/department-resources/courses/:id`
 
 ## Templates
-- See `lms_node_devdocs/Master_Templates_UI_Contract.md` for `/templates/*` and master-css endpoints.
+- See `lms_node_devdocs/Master_Templates_UI-contract.md` for `/templates/*` and master-css endpoints.
+
+## Settings
+- GET `/settings`
+- PUT `/settings`
 
 ## Permissions + Metrics
 - GET `/permissions/matrix`

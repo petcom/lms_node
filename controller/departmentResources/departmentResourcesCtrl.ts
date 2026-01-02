@@ -10,8 +10,9 @@ import Exam from '../../model/Academic/Exam';
 import Course from '../../model/Content/Course';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
-import { IDepartment } from '../../types/models';
+import { IDepartment } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 
 type DepartmentSummary = {
   id: string;
@@ -63,15 +64,12 @@ const toDepartmentSummary = (
   passingStyleScore,
 });
 
-const parsePagination = (req: Request): { skip: number; limit: number } | null => {
-  const page = Number(req.query.page);
-  const limit = Number(req.query.limit);
-  if (!Number.isFinite(page) || !Number.isFinite(limit)) {
-    return null;
-  }
-  const safePage = Math.max(1, page);
-  const safeLimit = Math.max(1, limit);
-  return { skip: (safePage - 1) * safeLimit, limit: safeLimit };
+const parsePagination = async (
+  req: Request
+): Promise<{ skip: number; limit: number; page: number }> => {
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('departmentResources', req.query.limit);
+  return { skip: (page - 1) * limit, limit, page };
 };
 
 const getDisplayName = (name: any): string => {
@@ -276,21 +274,18 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const pagination = parsePagination(req);
-  if (pagination) {
-    const paged = items.slice(pagination.skip, pagination.skip + pagination.limit);
-    res.status(200).json({
-      status: 'success',
-      message: 'Staff users fetched successfully',
-      items: paged,
-    });
-    return;
-  }
-
+  const pagination = await parsePagination(req);
+  const paged = items.slice(pagination.skip, pagination.skip + pagination.limit);
   res.status(200).json({
     status: 'success',
     message: 'Staff users fetched successfully',
-    items,
+    items: paged,
+    pagination: {
+      page: pagination.page,
+      limit: pagination.limit,
+      total: items.length,
+      pages: Math.ceil(items.length / pagination.limit) || 1,
+    },
   });
 });
 
@@ -367,21 +362,18 @@ export const listDepartmentContent = AsyncHandler(
       });
     });
 
-    const pagination = parsePagination(req);
-    if (pagination) {
-      const paged = items.slice(pagination.skip, pagination.skip + pagination.limit);
-      res.status(200).json({
-        status: 'success',
-        message: 'Department content fetched successfully',
-        items: paged,
-      });
-      return;
-    }
-
+    const pagination = await parsePagination(req);
+    const paged = items.slice(pagination.skip, pagination.skip + pagination.limit);
     res.status(200).json({
       status: 'success',
       message: 'Department content fetched successfully',
-      items,
+      items: paged,
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total: items.length,
+        pages: Math.ceil(items.length / pagination.limit) || 1,
+      },
     });
   }
 );

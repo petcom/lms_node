@@ -40,7 +40,7 @@ Deliverables:
 
 ## Phase 1: Type System Update (types.ts)
 Status: ✅ completed
-Update `types/models.ts` to reflect the ERDs:
+Update `types/models-types.ts` to reflect the ERDs:
 - **Learner**
   - Add `globalStatus: 'active' | 'inactive'` (verified)
   - Remove or deprecate: `isGraduated`, `isPromoted*`, `currentClassLevel`, `classLevels`, `academicYear`, `yearGraduated`, `examResults`, `scormProgress` (verified in types)
@@ -56,7 +56,7 @@ Update `types/models.ts` to reflect the ERDs:
 - **ContentAttempt** (new, unified) (verified in types)
 
 Deliverables:
-- Updated `types/models.ts` (verified)
+- Updated `types/models-types.ts` (verified)
 - Deprecated fields documented in comments or a migration notes section (verified)
 
 ### Old → New Field Mapping (Concrete)
@@ -86,9 +86,9 @@ Instructor                               -> Instructor (type/interface/collectio
 ### Phase 1 File Checklist (Types Only)
 Status: ✅ completed
 Update or add type definitions in:
-- `types/models.ts` (verified)
-- `types/auth.ts` (if role or enrollment types are referenced) (verified)
-- `types/express.d.ts` (if request typings reference learner fields) (verified)
+- `types/models-types.ts` (verified)
+- `types/auth-types.ts` (if role or enrollment types are referenced) (verified)
+- `types/express-types.d.ts` (if request typings reference learner fields) (verified)
 
 Add new interfaces:
 - `IProgramLevel` (verified)
@@ -236,7 +236,7 @@ Phase 4 status notes:
 ### Phase 4.1: Contract Alignment
 Status: ✅ completed
 After refactors:
-- Review all `*_Contract.md` docs for current shapes/paths/roles. (verified)
+- Review all `*-contract.md` docs for current shapes/paths/roles. (verified)
 - Add any missing contract docs for new endpoints (ProgramLevel/Course/CourseContent). (verified)
 - Append a “Changes (Phase 4)” section to each updated contract. (verified)
 

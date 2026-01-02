@@ -1,5 +1,5 @@
 import AdmZip from 'adm-zip';
-import { IValidationResult, ScormVersion } from '../../types/scorm';
+import { IValidationResult, ScormVersion } from '../../types/scorm-types';
 
 /**
  * SCORM Package Validator

@@ -1,13 +1,13 @@
 // Central export for all type definitions
 
 // Model types
-export * from './models';
+export * from './models-types';
 
 // Authentication types
-export * from './auth';
+export * from './auth-types';
 
 // API response types
-export * from './api';
+export * from './api-types';
 
 // Validation types
-export * from './validation';
+export * from './validation-types';

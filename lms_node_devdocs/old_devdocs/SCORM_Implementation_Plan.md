@@ -1255,7 +1255,7 @@ describe('Learner SCORM Workflow', () => {
 - [ ] Basic file structure setup
 
 **Tasks:**
-1. Create `types/scorm.ts` with all interfaces
+1. Create `types/scorm-types.ts` with all interfaces
 2. Create `model/Scorm/ScormPackage.ts`
 3. Create `model/Scorm/ScormAttempt.ts`
 4. Implement `utils/scorm/packageValidator.ts`

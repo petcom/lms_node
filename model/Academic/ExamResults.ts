@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IExamResult } from '../../types/models';
+import { IExamResult } from '../../types/models-types';
 
 /**
  * Exam Result Schema

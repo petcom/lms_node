@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IAcademicTerm } from '../../types/models';
+import { IAcademicTerm } from '../../types/models-types';
 
 /**
  * Academic Term Schema

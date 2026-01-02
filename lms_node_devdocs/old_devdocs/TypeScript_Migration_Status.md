@@ -109,10 +109,10 @@ All source JavaScript files have been deleted except:
 
 **Achievements:**
 - ✅ Created comprehensive type system in `types/` directory:
-  - `types/models.ts` - All Mongoose model interfaces (15 interfaces)
-  - `types/auth.ts` - Authentication types (JWTPayload, TokenPair, etc.)
-  - `types/api.ts` - API response types (generic ApiResponse<T>, PaginatedResponse<T>)
-  - `types/validation.ts` - Validation types
+  - `types/models-types.ts` - All Mongoose model interfaces (15 interfaces)
+  - `types/auth-types.ts` - Authentication types (JWTPayload, TokenPair, etc.)
+  - `types/api-types.ts` - API response types (generic ApiResponse<T>, PaginatedResponse<T>)
+  - `types/validation-types.ts` - Validation types
   - `types/express.d.ts` - Express Request/Response augmentation
 - ✅ Converted 7 error classes to TypeScript with proper inheritance
 - ✅ Converted 8 utility modules:

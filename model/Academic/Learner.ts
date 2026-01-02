@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { ILearner } from '../../types/models';
+import { ILearner } from '../../types/models-types';
 
 const nameSchema = new Schema(
   {

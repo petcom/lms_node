@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import { NotFoundError } from '../../utils/errors';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 
 /**
  * @desc    Get learner's attempts for a package
@@ -233,7 +234,9 @@ export const completeAttempt = asyncHandler(async (req: Request, res: Response) 
  * @access  Private (Instructor/Admin)
  */
 export const getAllAttempts = asyncHandler(async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, packageId, learnerId, status } = req.query;
+  const { packageId, learnerId, status } = req.query;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('scormAttempts', req.query.limit);
 
   const query: any = {};
 
@@ -252,14 +255,14 @@ export const getAllAttempts = asyncHandler(async (req: Request, res: Response) =
     query.completionStatus = status;
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const skip = (page - 1) * limit;
 
   const attempts = await ScormAttempt.find(query)
     .populate('package', 'title version packageId')
     .populate('learner', 'name email')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(Number(limit))
+    .limit(limit)
     .select('-cmiData -rawCMI -sessionLog'); // Exclude large fields
 
   const total = await ScormAttempt.countDocuments(query);
@@ -268,10 +271,10 @@ export const getAllAttempts = asyncHandler(async (req: Request, res: Response) =
     success: true,
     data: attempts,
     pagination: {
-      page: Number(page),
-      limit: Number(limit),
+      page,
+      limit,
       total,
-      pages: Math.ceil(total / Number(limit)),
+      pages: Math.ceil(total / limit),
     },
   });
 });

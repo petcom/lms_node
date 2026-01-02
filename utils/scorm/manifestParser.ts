@@ -6,7 +6,7 @@ import {
   IScormMetadata,
   IScormItem,
   ScormVersion,
-} from '../../types/scorm';
+} from '../../types/scorm-types';
 
 /**
  * SCORM Manifest Parser

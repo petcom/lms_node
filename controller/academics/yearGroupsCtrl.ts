@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import Admin from '../../model/Staff/Admin';
 import YearGroup from '../../model/Academic/YearGroup';
-import { IYearGroup, IAdmin } from '../../types/models';
+import { IYearGroup, IAdmin } from '../../types/models-types';
 import { Types } from 'mongoose';
 
 // Request body interfaces

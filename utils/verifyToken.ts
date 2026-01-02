@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import TokenBlacklistModel from '../model/Auth/TokenBlacklist';
-import { JWTPayload } from '../types/auth';
-import { ITokenBlacklistModel } from '../types/models';
+import { JWTPayload } from '../types/auth-types';
+import { ITokenBlacklistModel } from '../types/models-types';
 
 // Type assertion for the model
 const TokenBlacklist = TokenBlacklistModel as unknown as ITokenBlacklistModel;

@@ -1,5 +1,5 @@
 import { AppError } from './AppError';
-import { ValidationErrorDetail } from '../../types/api';
+import { ValidationErrorDetail } from '../../types/api-types';
 
 /**
  * Validation Error

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { UserRole } from '../types/auth';
+import { UserRole } from '../types/auth-types';
 
 /**
  * Generate a token for a user using jsonwebtoken

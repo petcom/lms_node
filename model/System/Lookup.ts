@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { ILookup } from '../../types/models';
+import { ILookup } from '../../types/models-types';
 
 /**
  * Lookup Schema

@@ -135,7 +135,7 @@ AWS_S3_BUCKET=lms-scorm-content
 ## Files Created (16 total)
 
 **Core Files** (10):
-- `types/scorm.ts`
+- `types/scorm-types.ts`
 - `utils/scorm/storage/StorageProvider.ts`
 - `utils/scorm/storage/LocalStorageProvider.ts`
 - `utils/scorm/storage/S3StorageProvider.ts`

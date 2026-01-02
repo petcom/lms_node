@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IQuestion } from '../../types/models';
+import { IQuestion } from '../../types/models-types';
 
 /**
  * Question Schema

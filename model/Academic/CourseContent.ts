@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { ICourseContent } from '../../types/models';
+import { ICourseContent } from '../../types/models-types';
 
 /**
  * Course Content Schema

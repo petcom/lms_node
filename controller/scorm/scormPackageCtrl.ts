@@ -7,6 +7,7 @@ import { ManifestParser } from '../../utils/scorm/manifestParser';
 import { ScormZipExtractor } from '../../utils/scorm/scormZipExtractor';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 import logger from '../../utils/logger';
 import mongoose from 'mongoose';
 
@@ -245,18 +246,10 @@ export const uploadPackage = asyncHandler(async (req: Request, res: Response) =>
  * @access  Private (Instructor/Admin)
  */
 export const getAllPackages = asyncHandler(async (req: Request, res: Response) => {
-  const {
-    page = 1,
-    limit = 10,
-    course,
-    program,
-    programLevel,
-    isPublished,
-    status,
-    search,
-    department,
-    owner,
-  } = req.query;
+  const { course, program, programLevel, isPublished, status, search, department, owner } =
+    req.query;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('scormPackages', req.query.limit);
 
   const query: any = {};
 
@@ -333,7 +326,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     query.$and.push(staffScope);
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const skip = (page - 1) * limit;
 
   const packages = await ScormPackage.find(query)
     .populate({ path: 'uploadedBy', select: 'name email role' })
@@ -345,7 +338,7 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     .populate('assignedTo.programs', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(Number(limit));
+    .limit(limit);
 
   const total = await ScormPackage.countDocuments(query);
 
@@ -353,10 +346,10 @@ export const getAllPackages = asyncHandler(async (req: Request, res: Response) =
     success: true,
     data: packages,
     pagination: {
-      page: Number(page),
-      limit: Number(limit),
+      page,
+      limit,
       total,
-      pages: Math.ceil(total / Number(limit)),
+      pages: Math.ceil(total / limit),
     },
   });
 });

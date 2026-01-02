@@ -12,7 +12,7 @@ import Department from '../../model/Academic/Department';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import CourseEnrollment from '../../model/Academic/CourseEnrollment';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
-import { IDepartment } from '../../types/models';
+import { IDepartment } from '../../types/models-types';
 
 type DepartmentSummary = {
   id: string;

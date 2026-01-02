@@ -40,12 +40,12 @@ Files with references:
 - `tests/integration/instructors/phase3-teacher-classes-dashboard.test.ts`
 - `tests/integration/instructors/phase4-teacher-attempts.test.ts`
 - `tests/integration/instructors/phase5-teacher-assignments-list.test.ts`
-- `types/models.ts`
-- `types/scorm.ts`
+- `types/models-types.ts`
+- `types/scorm-types.ts`
 
 ### Learner program references
 - No `program` field found on `model/Academic/Learner.ts`.
-- `types/models.ts` includes `program` references on academic entities (Program, ProgramLevel, enrollments, courses).
+- `types/models-types.ts` includes `program` references on academic entities (Program, ProgramLevel, enrollments, courses).
 
 ### scormProgress / ScormAttempt
 Files with references:
@@ -67,7 +67,7 @@ Files with references:
 - `tests/integration/instructors/phase2-teacher-packages-assignments.test.ts`
 - `tests/integration/instructors/phase3-teacher-classes-dashboard.test.ts`
 - `tests/integration/instructors/phase4-teacher-attempts.test.ts`
-- `types/scorm.ts`
+- `types/scorm-types.ts`
 - `config/swagger.ts`
 - `scripts/migrate-scormattempt-to-contentattempt.js`
 

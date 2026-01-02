@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
-import { IScormAttempt } from '../../types/scorm';
+import { IScormAttempt } from '../../types/scorm-types';
 import { syncContentAttemptFromScorm } from '../../utils/scorm/contentAttemptSync';
 
 /**

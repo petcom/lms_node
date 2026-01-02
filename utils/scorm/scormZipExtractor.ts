@@ -1,6 +1,6 @@
 import AdmZip from 'adm-zip';
 import path from 'path';
-import { IStorageProvider } from '../../types/scorm';
+import { IStorageProvider } from '../../types/scorm-types';
 import { StorageFactory } from './storage/StorageFactory';
 
 /**

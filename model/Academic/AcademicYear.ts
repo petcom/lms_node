@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IAcademicYear } from '../../types/models';
+import { IAcademicYear } from '../../types/models-types';
 
 /**
  * Academic Year Schema

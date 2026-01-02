@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IRenderedCourse } from '../../types/models';
+import { IRenderedCourse } from '../../types/models-types';
 
 const renderedCourseSchema = new Schema<IRenderedCourse>(
   {

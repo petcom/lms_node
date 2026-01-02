@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Model, PopulateOptions } from 'mongoose';
+import { normalizePage, resolvePagination } from '../utils/pagination';
 
 interface PaginationInfo {
   next?: {
@@ -30,12 +31,13 @@ interface AdvancedResultsResponse<T> {
 const advancedResults = <T>(
   model: Model<T>,
   populate?: PopulateOptions | PopulateOptions[],
-  buildFilters?: (req: Request) => Record<string, any>
+  buildFilters?: (req: Request) => Record<string, any>,
+  options?: { resourceKey?: string }
 ) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 2;
+      const page = normalizePage(req.query.page);
+      const { limit } = await resolvePagination(options?.resourceKey, req.query.limit);
       const skip = (page - 1) * limit;
 
       const baseFilters = buildFilters ? buildFilters(req) : {};

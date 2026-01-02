@@ -1,4 +1,4 @@
-import { IStorageProvider } from '../../../types/scorm';
+import { IStorageProvider } from '../../../types/scorm-types';
 
 /**
  * Abstract base class for storage providers

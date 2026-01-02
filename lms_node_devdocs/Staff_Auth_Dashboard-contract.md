@@ -119,7 +119,7 @@ Notes:
 - No contract changes in this phase.
 
 ## Changes (Phase 4)
-- New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses_Contract.md`.
+- New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses-contract.md`.
 
 ## Changes (Phase 4.1)
 - Added structured person profile fields (`name`, `addresses`, `honor`).

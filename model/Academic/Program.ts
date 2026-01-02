@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IProgram } from '../../types/models';
+import { IProgram } from '../../types/models-types';
 
 /**
  * Program Schema

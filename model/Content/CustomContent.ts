@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { ICustomContent } from '../../types/models';
+import { ICustomContent } from '../../types/models-types';
 
 const customContentSchema = new Schema<ICustomContent>(
   {

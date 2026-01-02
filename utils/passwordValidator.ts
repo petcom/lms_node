@@ -1,4 +1,4 @@
-import { PasswordValidationResult, PasswordStrength } from '../types/auth';
+import { PasswordValidationResult, PasswordStrength } from '../types/auth-types';
 
 /**
  * Password validation configuration

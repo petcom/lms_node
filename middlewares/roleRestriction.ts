@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { isValidRole } from '../utils/roles';
 import { AuthenticationError, AuthorizationError } from '../utils/errors';
-import { UserRole } from '../types/auth';
+import { UserRole } from '../types/auth-types';
 
 /**
  * Role-based access control middleware

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IDepartmentMasterCSS } from '../../types/models';
+import { IDepartmentMasterCSS } from '../../types/models-types';
 
 const departmentMasterCssSchema = new Schema<IDepartmentMasterCSS>(
   {

@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
-import { IScormPackage } from '../../types/scorm';
+import { IScormPackage } from '../../types/scorm-types';
 
 /**
  * SCORM Package Schema

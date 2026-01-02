@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IContentAttempt } from '../../types/models';
+import { IContentAttempt } from '../../types/models-types';
 
 /**
  * Content Attempt Schema

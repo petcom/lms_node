@@ -10,6 +10,7 @@ import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import Learner from '../../model/Academic/Learner';
 import { getPersonDisplayName } from '../../utils/person';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 
 const asObjectId = (value: string) => new mongoose.Types.ObjectId(value);
 
@@ -90,8 +91,8 @@ export const listInstructorClasses = asyncHandler(async (req: Request, res: Resp
   const instructorId = req.userAuth!._id.toString();
   const role = req.userAuth!.role;
   const search = (req.query.search as string) || '';
-  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
-  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('staffDashboard', req.query.limit);
 
   const classFilter: any = {};
   if (search) {
@@ -302,8 +303,8 @@ export const listInstructorAttempts = asyncHandler(async (req: Request, res: Res
     return acc;
   }, {});
 
-  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
-  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('staffDashboard', req.query.limit);
   const skip = (page - 1) * limit;
 
   const packageIdParam = req.query.packageId as string | undefined;
@@ -412,8 +413,8 @@ export const listInstructorAssignments = asyncHandler(async (req: Request, res: 
     pkgFilter.uploadedBy = new mongoose.Types.ObjectId(instructorId);
   }
 
-  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
-  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('staffDashboard', req.query.limit);
   const skip = (page - 1) * limit;
 
   const [packages, total] = await Promise.all([
@@ -449,8 +450,8 @@ export const listInstructorAssignments = asyncHandler(async (req: Request, res: 
 
 export const listInstructorPackages = asyncHandler(async (req: Request, res: Response) => {
   const { search, status } = req.query as { search?: string; status?: string };
-  const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
-  const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
+  const page = normalizePage(req.query.page);
+  const { limit } = await resolvePagination('staffDashboard', req.query.limit);
 
   const role = req.userAuth!.role;
   const userId = req.userAuth!._id?.toString();

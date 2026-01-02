@@ -42,6 +42,7 @@ import permissionsRouter from '../routes/permissionsRouter';
 import departmentResourcesRouter from '../routes/departmentResources/departmentResourcesRouter';
 import contentRouter from '../routes/content/contentRouter';
 import templatesRouter from '../routes/templates/templatesRouter';
+import settingsRouter from '../routes/settingsRouter';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -181,6 +182,7 @@ app.use('/api/v1/department-resources', departmentResourcesRouter); // Departmen
 app.use('/api/v1/permissions', permissionsRouter); // Permissions matrix
 app.use('/api/v1/content', contentRouter); // Unified content API
 app.use('/api/v1/templates', templatesRouter); // Master templates
+app.use('/api/v1/settings', settingsRouter); // Global settings
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects
 app.get('/learner/dashboard', (_req, res) => res.redirect('/'));

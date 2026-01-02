@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IClassEnrollment } from '../../types/models';
+import { IClassEnrollment } from '../../types/models-types';
 
 /**
  * Class Enrollment Schema

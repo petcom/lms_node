@@ -8,7 +8,7 @@ import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
 import Course from '../../model/Content/Course';
 import ScormPackage from '../../model/Scorm/ScormPackage';
-import { IDepartment } from '../../types/models';
+import { IDepartment } from '../../types/models-types';
 import {
   AuthorizationError,
   ConflictError,

@@ -5,7 +5,7 @@ import {
   PaginationMeta,
   ApiError,
   ValidationErrorDetail,
-} from '../types/api';
+} from '../types/api-types';
 
 /**
  * Options for success response

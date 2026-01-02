@@ -6,7 +6,7 @@ import generateToken from '../../utils/generateToken';
 import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
 import Admin from '../../model/Staff/Admin';
-import { ILearner } from '../../types/models';
+import { ILearner } from '../../types/models-types';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
 // Request body interfaces

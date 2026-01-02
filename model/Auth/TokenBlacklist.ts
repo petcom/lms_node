@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { ITokenBlacklist, ITokenBlacklistModel } from '../../types/models';
+import { ITokenBlacklist, ITokenBlacklistModel } from '../../types/models-types';
 
 /**
  * Token Blacklist Schema

@@ -3,7 +3,7 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Course from '../../model/Content/Course';
 import Program from '../../model/Academic/Program';
-import { ICourse } from '../../types/models';
+import { ICourse } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 interface CreateCourseBody {

@@ -6,7 +6,7 @@
  * Supports both SCORM 1.2 and SCORM 2004.
  */
 
-import { ScormVersion } from '../../types/scorm';
+import { ScormVersion } from '../../types/scorm-types';
 
 /**
  * SCORM 1.2 Error Codes

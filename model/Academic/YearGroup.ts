@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IYearGroup } from '../../types/models';
+import { IYearGroup } from '../../types/models-types';
 
 /**
  * Year Group Schema

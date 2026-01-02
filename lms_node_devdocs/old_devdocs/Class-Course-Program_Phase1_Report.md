@@ -6,7 +6,7 @@
 - Refresh contract docs with current role/shape details
 
 ## Changes Completed
-- Added ERD-aligned interfaces to `types/models.ts` (`IProgramLevel`, `IProgramEnrollment`, `IClass`, `IClassEnrollment`, `ICourse`, `ICourseContent`, `ICourseEnrollment`, `IContentAttempt`).
+- Added ERD-aligned interfaces to `types/models-types.ts` (`IProgramLevel`, `IProgramEnrollment`, `IClass`, `IClassEnrollment`, `ICourse`, `ICourseContent`, `ICourseEnrollment`, `IContentAttempt`).
 - Updated role strings in code and docs to `global-admin | staff | learner`.
 - Department Resources: staff user responses now include `roles` array; `role` is limited to `global-admin | staff`.
 - Contract docs updated with new role strings, staff subtypes, and `passingStyleScore` in department summaries.

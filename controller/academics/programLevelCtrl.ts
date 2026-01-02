@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
-import { IAdmin, IProgramLevel } from '../../types/models';
+import { IAdmin, IProgramLevel } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';

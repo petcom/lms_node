@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import RefreshTokenModel from '../model/Auth/RefreshToken';
-import { TokenPair, UserRole } from '../types/auth';
-import { IRefreshTokenModel } from '../types/models';
+import { TokenPair, UserRole } from '../types/auth-types';
+import { IRefreshTokenModel } from '../types/models-types';
 
 // Type assertion for the model
 const RefreshToken = RefreshTokenModel as unknown as IRefreshTokenModel;

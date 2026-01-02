@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IMasterTemplate } from '../../types/models';
+import { IMasterTemplate } from '../../types/models-types';
 
 const templateRegionSchema = new Schema(
   {

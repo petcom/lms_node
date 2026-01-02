@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import Admin from '../../model/Staff/Admin';
 import AcademicTerm from '../../model/Academic/AcademicTerm';
-import { IAcademicTerm, IAdmin } from '../../types/models';
+import { IAcademicTerm, IAdmin } from '../../types/models-types';
 
 // Request body interfaces
 interface CreateAcademicTermBody {

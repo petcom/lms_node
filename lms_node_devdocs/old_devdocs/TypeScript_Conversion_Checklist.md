@@ -195,7 +195,7 @@
   - [x] Extend `Express.Request` interface
   - [x] Add `userAuth` property with User type
   - [x] Add proper typing for custom properties (advancedResults for pagination)
-- [x] Create `types/models.ts` for database model types
+- [x] Create `types/models-types.ts` for database model types
   - [x] Define `IAdmin` interface
   - [x] Define `IInstructor` interface
   - [x] Define `ILearner` interface
@@ -210,7 +210,7 @@
   - [x] Define `IYearGroup` interface
   - [x] Define `ITokenBlacklist` interface with model statics
   - [x] Define `IRefreshToken` interface with model methods
-- [x] Create `types/auth.ts` for authentication types
+- [x] Create `types/auth-types.ts` for authentication types
   - [x] Define `JWTPayload` interface
   - [x] Define `RefreshTokenPayload` interface
   - [x] Define `TokenPair` interface (with expiresIn)
@@ -218,19 +218,19 @@
   - [x] Define `AuthenticatedUser` interface
   - [x] Define `PasswordValidationResult` interface
   - [x] Define `PasswordStrength` type
-- [x] Create `types/api.ts` for API response types
+- [x] Create `types/api-types.ts` for API response types
   - [x] Define `ApiResponse<T>` generic interface
   - [x] Define `ApiError` interface
   - [x] Define `PaginationMeta` interface
   - [x] Define `PaginatedResponse<T>` interface
   - [x] Define `SuccessResponse<T>` interface
   - [x] Define `ValidationErrorDetail` interface
-- [x] Create `types/validation.ts` for validation types
+- [x] Create `types/validation-types.ts` for validation types
   - [x] Define validation schema types
   - [x] Define `ValidationTarget` type
   - [x] Define `CustomValidationError` interface
   - [x] Re-export Joi types
-- [x] Create `types/index.ts` for central exports
+- [x] Create `types/index-types.ts` for central exports
 - [x] **Verification:** All shared types compile without errors ✅
 - [x] **Verification:** Types are properly exported ✅
 
@@ -269,8 +269,8 @@
   - [x] Export functions with proper types
 - [x] Convert `utils/passwordValidator.js` to TypeScript
   - [x] Rename to `passwordValidator.ts`
-  - [x] Define `PasswordValidationResult` interface (in types/auth.ts)
-  - [x] Define `PasswordStrength` type (in types/auth.ts)
+  - [x] Define `PasswordValidationResult` interface (in types/auth-types.ts)
+  - [x] Define `PasswordStrength` type (in types/auth-types.ts)
   - [x] Type all validation functions (validatePassword, validatePasswordConfirmation, getPasswordStrength, getPasswordStrengthLabel)
   - [x] Export with proper types
 - [x] Convert `utils/generateToken.js` to TypeScript

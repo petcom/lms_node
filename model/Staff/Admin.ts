@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IAdmin } from '../../types/models';
+import { IAdmin } from '../../types/models-types';
 
 const nameSchema = new Schema(
   {

@@ -1,4 +1,4 @@
-import { IStorageProvider } from '../../../types/scorm';
+import { IStorageProvider } from '../../../types/scorm-types';
 import { LocalStorageProvider } from './LocalStorageProvider';
 import { S3StorageProvider } from './S3StorageProvider';
 

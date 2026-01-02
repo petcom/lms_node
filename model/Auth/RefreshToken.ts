@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IRefreshToken, IRefreshTokenModel } from '../../types/models';
+import { IRefreshToken, IRefreshTokenModel } from '../../types/models-types';
 
 /**
  * Refresh Token Schema

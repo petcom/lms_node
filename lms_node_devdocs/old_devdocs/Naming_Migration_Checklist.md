@@ -4,7 +4,7 @@
 Rename all occurrences of **learner → learner** and **instructor → instructor** across types, fields, enums, collection names, API paths, and docs.
 
 ## Phase A: Types & Models
-- `types/models.ts`
+- `types/models-types.ts`
   - `ILearner` → `ILearner`
   - `IStaff`/`IInstructor` → `IInstructor` (if split; otherwise rename staff-as-instructor)
   - Field names: `learnerId` → `learnerId`, `instructorId` → `instructorId`

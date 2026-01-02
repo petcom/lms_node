@@ -5,7 +5,7 @@ import { Types } from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Staff from '../../model/Staff/Staff';
 import Learner from '../../model/Academic/Learner';
-import { IAdmin, IStaff, ILearner } from '../../types/models';
+import { IAdmin, IStaff, ILearner } from '../../types/models-types';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import {
   validatePasswordConfirmation,

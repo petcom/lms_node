@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IStaffRole } from '../../types/models';
+import { IStaffRole } from '../../types/models-types';
 
 /**
  * Staff Role Schema

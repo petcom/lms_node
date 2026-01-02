@@ -3,7 +3,7 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
-import { IProgram, IAdmin } from '../../types/models';
+import { IProgram, IAdmin } from '../../types/models-types';
 import { AuthorizationError } from '../../utils/errors';
 
 const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';

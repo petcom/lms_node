@@ -18,7 +18,7 @@ const learnerRouter: Router = express.Router();
 
 /**
  * @swagger
- * /api/v1/learners/admin/register:
+ * /api/v1/learners/admins/register:
  *   post:
  *     summary: Admin registers a new learner
  *     tags: [Learners]
@@ -49,7 +49,7 @@ const learnerRouter: Router = express.Router();
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 learnerRouter.post(
-  '/admin/register',
+  '/admins/register',
   isAuthenticated(),
   roleRestriction('global-admin'),
   adminRegisterLearner
@@ -113,14 +113,14 @@ learnerRouter.post('/login', loginLearner);
  */
 learnerRouter.get('/profile', isAuthenticated(), roleRestriction('learner'), getLearnerProfile);
 learnerRouter.get(
-  '/admin',
+  '/admins',
   isAuthenticated(),
   roleRestriction('global-admin'),
   advancedResults(Learner),
   getAllLearnersByAdmin
 );
 learnerRouter.get(
-  '/:learnerID/admin',
+  '/:learnerID/admins',
   isAuthenticated(),
   roleRestriction('global-admin'),
   getLearnerByAdmin
@@ -135,7 +135,7 @@ learnerRouter.post(
 /** */
 learnerRouter.put('/update', isAuthenticated(), roleRestriction('learner'), learnerUpdateProfile); // learner only
 learnerRouter.put(
-  '/:learnerID/update/admin',
+  '/:learnerID/update/admins',
   isAuthenticated(),
   roleRestriction('global-admin'),
   adminUpdateLearner

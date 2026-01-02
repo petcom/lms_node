@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Staff from '../../model/Staff/Staff';
 import Admin from '../../model/Staff/Admin';
+import User from '../../model/Auth/User';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
 import { Types } from 'mongoose';
@@ -39,7 +40,7 @@ interface AdminUpdateStaffBody {
 
 /**
  * @description Admin Register Staff
- * @route       POST /api/v1/staff/admin/register
+ * @route       POST /api/v1/staff/admins/staff/register
  * @access      Private
  */
 export const adminRegisterStaff = expressAsyncHandler(
@@ -54,13 +55,19 @@ export const adminRegisterStaff = expressAsyncHandler(
     }
 
     // check if the staff member already exists
-    const existingStaff = await Staff.findOne({ email: email }).lean();
+    const existingStaff = await User.findOne({ email });
     if (existingStaff) {
       throw new Error('Staff member already employed');
     }
 
     // hash password
     const hashedPassword = await hashPassword(password);
+    const user = await User.create({
+      email,
+      passwordHash: hashedPassword,
+      role: 'staff',
+      status: 'active',
+    });
 
     // determine department
     const scope = req.departmentScope?.accessibleDepartmentIds;
@@ -76,9 +83,9 @@ export const adminRegisterStaff = expressAsyncHandler(
 
     // staff created
     const staffCreated = await Staff.create({
+      _id: user._id,
       name: normalizedName ?? name,
       email,
-      password: hashedPassword,
       department: chosenDept ? new mongoose.Types.ObjectId(chosenDept) : undefined,
     });
 
@@ -105,26 +112,28 @@ export const loginStaff = expressAsyncHandler(
     const { email, password } = req.body;
 
     // find the staff user obj
-    const staff = await Staff.findOne({ email });
+    const staffUser = await User.findOne({ email, role: 'staff' });
+    const staff = staffUser ? await Staff.findById(staffUser._id) : null;
     if (!staff) {
       res.json({ message: 'Invalid login credentials' });
       return;
     }
 
     // verify the password
-    const isMatched = await isPassMatched(password, staff.password);
+    const isMatched = staffUser ? await isPassMatched(password, staffUser.passwordHash) : false;
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
     } else {
-      const role = staff.role || 'staff';
-      const accessToken = generateToken(staff._id.toString(), role);
+      const accessToken = generateToken(staff._id.toString(), staffUser?.role || 'staff');
+      await User.updateOne({ _id: staff._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
         status: 'success',
         message: 'Staff logged in successfully',
         data: {
           accessToken,
-          role,
+          role: staffUser?.role || 'staff',
+          subroles: staffUser?.subroles || [],
         },
       });
     }
@@ -133,7 +142,7 @@ export const loginStaff = expressAsyncHandler(
 
 /**
  * @description Get All Staff
- * @route       GET /api/v1/staff/admin
+ * @route       GET /api/v1/staff/admins/staff
  * @access      Private global-admin only
  */
 export const getAllStaffAdmin = expressAsyncHandler(
@@ -144,7 +153,7 @@ export const getAllStaffAdmin = expressAsyncHandler(
 
 /**
  * @description Get Single Staff member
- * @route       GET /api/v1/staff/:staffID/admin
+ * @route       GET /api/v1/staff/admins/staff/:staffID
  * @access      Private global-admin only
  */
 export const getStaffByAdmin = expressAsyncHandler(
@@ -187,9 +196,7 @@ export const getStaffByAdmin = expressAsyncHandler(
  */
 export const getStaffProfile = expressAsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const staff = await Staff.findById(req.userAuth?._id).select(
-      '-password -createdAt -updatedAt'
-    );
+    const staff = await Staff.findById(req.userAuth?._id).select('-createdAt -updatedAt');
 
     if (!staff) {
       throw new Error('Staff member not found');
@@ -215,17 +222,18 @@ export const staffUpdateProfile = expressAsyncHandler(
     const updateFields: {
       email?: string;
       name?: PersonNameInput;
-      password?: string;
       department?: mongoose.Types.ObjectId;
     } = {};
+    const userUpdates: { email?: string; passwordHash?: string } = {};
 
     // if email is taken
     if (email) {
-      const emailExists = await Staff.findOne({ email });
-      if (emailExists) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists && emailExists._id.toString() !== req.userAuth?._id?.toString()) {
         throw new Error('This email already exists');
       }
       updateFields.email = email;
+      userUpdates.email = email;
     }
 
     // department change (self) — only allow within own department scope
@@ -242,7 +250,7 @@ export const staffUpdateProfile = expressAsyncHandler(
 
     // check if user is updating password
     if (password) {
-      updateFields.password = await hashPassword(password);
+      userUpdates.passwordHash = await hashPassword(password);
       if (typeof name !== 'undefined') {
         updateFields.name = normalizedName ?? name;
       }
@@ -255,6 +263,9 @@ export const staffUpdateProfile = expressAsyncHandler(
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: staff,
@@ -273,6 +284,9 @@ export const staffUpdateProfile = expressAsyncHandler(
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: staff,
@@ -284,7 +298,7 @@ export const staffUpdateProfile = expressAsyncHandler(
 
 /**
  * @description Admin updating Staff Profile
- * @route       UPDATE /api/v1/staff/:staffID/update/admin
+ * @route       UPDATE /api/v1/staff/admins/staff/:staffID/update
  * @access      Private admin only
  */
 export const adminUpdateStaff = expressAsyncHandler(

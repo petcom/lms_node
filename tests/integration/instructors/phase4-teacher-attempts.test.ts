@@ -12,6 +12,8 @@ import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import CourseContent from '../../../model/Academic/CourseContent';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
@@ -52,21 +54,32 @@ describe('Instructor Phase 4: Attempts Listing', () => {
 
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor1@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'staff',
+      status: 'active',
     });
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'global-admin',
+      status: 'active',
     });
   });
 
@@ -74,6 +87,7 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     await ClassModel.deleteMany({});
     await ClassEnrollment.deleteMany({});
     await Learner.deleteMany({});
+    await User.deleteMany({ role: 'learner' });
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
     await Course.deleteMany({});
@@ -82,6 +96,7 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     await ScormPackage.deleteMany({});
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
     await mongoose.connection.close();
   });
 
@@ -141,8 +156,13 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     const learner = await Learner.create({
       name: { first: 'Learner', last: 'One' },
       email: 's1@example.com',
-      password: 'pw',
+    });
+    await User.create({
+      _id: learner._id,
+      email: 's1@example.com',
+      passwordHash: await hashPassword('Learner123!'),
       role: 'learner',
+      status: 'active',
     });
 
     await ClassEnrollment.create({
@@ -169,7 +189,7 @@ describe('Instructor Phase 4: Attempts Listing', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.items.length).toBe(1);
-    expect(res.body.data.items[0].learnerName).toBe('Learner One');
+    expect(res.body.data.items[0].learnerName).toBe('One, Learner');
     expect(res.body.data.items[0].packageTitle).toBe('Pkg1');
     expect(res.body.data.items[0].status).toBe('completed');
   });

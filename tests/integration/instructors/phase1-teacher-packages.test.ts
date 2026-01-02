@@ -4,6 +4,8 @@ import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
@@ -44,21 +46,32 @@ describe('Instructor Phase 1: Publish/Unpublish', () => {
 
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor1@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'staff',
+      status: 'active',
     });
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'global-admin',
+      status: 'active',
     });
   });
 
@@ -66,6 +79,7 @@ describe('Instructor Phase 1: Publish/Unpublish', () => {
     await ScormPackage.deleteMany({});
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
     await mongoose.connection.close();
   });
 

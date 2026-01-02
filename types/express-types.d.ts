@@ -1,11 +1,11 @@
 // Express type augmentation for custom properties
-import { IAdmin, IStaff, ILearner } from './models';
+import { AuthenticatedUser } from './auth-types';
 
 declare global {
   namespace Express {
     interface Request {
       // User authentication data
-      userAuth?: IAdmin | IStaff | ILearner;
+      userAuth?: AuthenticatedUser;
 
       // Department scoping info
       departmentScope?: {

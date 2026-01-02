@@ -72,10 +72,6 @@ const staffSchema = new Schema<IStaff>(
       type: String,
       required: true,
     },
-    password: {
-      type: String,
-      required: true,
-    },
     dateEmployed: {
       type: Date,
       default: Date.now,
@@ -104,10 +100,6 @@ const staffSchema = new Schema<IStaff>(
       type: Boolean,
       default: false,
     },
-    role: {
-      type: String,
-      default: 'staff',
-    },
     addresses: {
       type: [addressSchema],
       default: undefined,
@@ -115,10 +107,6 @@ const staffSchema = new Schema<IStaff>(
     honor: {
       type: honorSchema,
       default: undefined,
-    },
-    roles: {
-      type: [String],
-      default: [],
     },
     course: {
       type: Schema.Types.ObjectId,

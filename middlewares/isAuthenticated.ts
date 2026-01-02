@@ -4,6 +4,7 @@ import verifyToken from '../utils/verifyToken';
 import Admin from '../model/Staff/Admin';
 import Staff from '../model/Staff/Staff';
 import Learner from '../model/Academic/Learner';
+import User from '../model/Auth/User';
 import { AuthenticationError, NotFoundError } from '../utils/errors';
 
 type UserAuth = {
@@ -11,6 +12,7 @@ type UserAuth = {
   name: string;
   email: string;
   role: string;
+  subroles?: string[];
 };
 
 /**
@@ -96,31 +98,35 @@ const isAuthenticated = () => {
       // Verify token (async, checks blacklist)
       const verifiedToken = await verifyToken(tokenValue);
 
-      let user: UserAuth | null = null;
-
-      // Try to find user in all user types
-      user = (await Admin.findById(verifiedToken.id)
-        .select('name email role department')
-        .lean()) as UserAuth | null;
-
-      if (!user) {
-        user = (await Staff.findById(verifiedToken.id)
-          .select('name email role department')
-          .lean()) as UserAuth | null;
-      }
-
-      if (!user) {
-        user = (await Learner.findById(verifiedToken.id)
-          .select('name email role department')
-          .lean()) as UserAuth | null;
-      }
+      const user = await User.findById(verifiedToken.id).lean();
 
       if (!user) {
         return next(new NotFoundError(`User with ID ${verifiedToken.id} not found`));
       }
 
+      let profile: { name?: string; email?: string; department?: any } | null = null;
+
+      if (user.role === 'global-admin') {
+        profile = await Admin.findById(user._id).select('name email department').lean();
+      } else if (user.role === 'staff') {
+        profile = await Staff.findById(user._id).select('name email department').lean();
+      } else {
+        profile = await Learner.findById(user._id).select('name email department').lean();
+      }
+
+      if (!profile) {
+        return next(new NotFoundError(`Profile for user ${user._id} not found`));
+      }
+
       // Save user and token info to request object
-      req.userAuth = user as any;
+      req.userAuth = {
+        _id: user._id,
+        name: profile.name || '',
+        email: user.email,
+        role: user.role,
+        subroles: user.subroles || undefined,
+        department: profile.department,
+      } as any;
       req.token = tokenValue;
       next();
     } catch (error) {

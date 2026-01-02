@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
+import User from '../../../model/Auth/User';
 import { hashPassword } from '../../../utils/helpers';
 
 describe('Admin instructor status actions', () => {
@@ -17,29 +18,43 @@ describe('Admin instructor status actions', () => {
 
     await Admin.deleteMany({ _id: adminId });
     await Staff.deleteMany({ _id: instructorId });
+    await User.deleteMany({ _id: { $in: [adminId, instructorId] } });
 
+    const adminPassword = await hashPassword('Password123!');
     await Admin.create({
       _id: adminId,
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-      password: await hashPassword('Password123!'),
+    });
+    await User.create({
+      _id: adminId,
+      email: 'admin@example.com',
+      passwordHash: adminPassword,
       role: 'global-admin',
+      status: 'active',
     });
 
+    const staffPassword = await hashPassword('Password123!');
     await Staff.create({
       _id: instructorId,
       name: { first: 'Staff', last: 'User' },
       email: 'instructor@example.com',
-      password: await hashPassword('Password123!'),
-      role: 'staff',
       isSuspended: false,
       isWithdrawn: false,
+    });
+    await User.create({
+      _id: instructorId,
+      email: 'instructor@example.com',
+      passwordHash: staffPassword,
+      role: 'staff',
+      status: 'active',
     });
   });
 
   afterAll(async () => {
     await Admin.deleteMany({ _id: adminId });
     await Staff.deleteMany({ _id: instructorId });
+    await User.deleteMany({ _id: { $in: [adminId, instructorId] } });
     await mongoose.connection.close();
   });
 

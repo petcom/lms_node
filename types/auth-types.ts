@@ -1,6 +1,6 @@
 // Authentication and JWT type definitions
 import { Types } from 'mongoose';
-import { UserRole } from './models';
+import { UserRole } from './models-types';
 
 // Re-export UserRole for convenience
 export { UserRole };
@@ -32,6 +32,7 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   role: UserRole;
+  subroles?: string[];
   department?: Types.ObjectId;
   [key: string]: any;
 }

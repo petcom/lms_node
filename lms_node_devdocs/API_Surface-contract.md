@@ -40,10 +40,10 @@ Base URL: `/api/v1`
 - POST `/staff/login`
 - GET `/staff/profile`
 - PUT `/staff/:staffId/update`
-- POST `/staff/admin/register` (global-admin only)
-- GET `/staff/admin` (global-admin only)
-- GET `/staff/:staffId/admin` (global-admin only)
-- PUT `/staff/:staffId/update/admin` (global-admin only)
+- POST `/staff/admins/staff/register` (global-admin only)
+- GET `/staff/admins/staff` (global-admin only)
+- GET `/staff/admins/staff/:staffId` (global-admin only)
+- PUT `/staff/admins/staff/:staffId/update` (global-admin only)
 - POST `/staff/packages/:id/publish`
 - POST `/staff/packages/:id/unpublish`
 - GET `/staff/packages`
@@ -73,9 +73,9 @@ Base URL: `/api/v1`
 - POST `/learners/login`
 - GET `/learners/profile`
 - PUT `/learners/update`
-- GET `/learners/admin`
-- GET `/learners/:learnerID/admin`
-- PUT `/learners/:learnerID/update/admin`
+- GET `/learners/admins`
+- GET `/learners/:learnerID/admins`
+- PUT `/learners/:learnerID/update/admins`
 - POST `/learners/exams/:examID/write`
 
 ## Academic Catalog

@@ -16,6 +16,8 @@ import app from '../../../app/app';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import ScormAttempt from '../../../model/Scorm/ScormAttempt';
 import Staff from '../../../model/Staff/Staff';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const makePackageData = (pkgId: string, title: string, uploaderId: string) => ({
   packageId: pkgId,
@@ -58,12 +60,19 @@ describe('SCORM Phase 2: Package Management API', () => {
     }
     // Seed a staff user so uploadedBy populate returns data
     await Staff.deleteMany({ email: 'instructor@example.com' });
+    await User.deleteMany({ _id: instructorId });
+    const passwordHash = await hashPassword('Password123!');
     const instructor = await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Test', last: 'Staff' },
       email: 'instructor@example.com',
-      password: 'password123',
+    });
+    await User.create({
+      _id: instructor._id,
+      email: 'instructor@example.com',
+      passwordHash,
       role: 'staff',
+      status: 'active',
     });
   });
 
@@ -72,6 +81,7 @@ describe('SCORM Phase 2: Package Management API', () => {
     await ScormPackage.deleteMany({});
     await ScormAttempt.deleteMany({});
     await Staff.deleteMany({});
+    await User.deleteMany({});
     await mongoose.connection.close();
   });
 

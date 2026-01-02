@@ -8,11 +8,13 @@ import ContentAttempt from '../../../model/Academic/ContentAttempt';
 import ScormPackage from '../../../model/Scorm/ScormPackage';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
+import User from '../../../model/Auth/User';
 import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import CourseContent from '../../../model/Academic/CourseContent';
 import CourseEnrollment from '../../../model/Academic/CourseEnrollment';
+import { hashPassword } from '../../../utils/helpers';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
@@ -53,21 +55,32 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
 
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor1@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'staff',
+      status: 'active',
     });
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'global-admin',
+      status: 'active',
     });
   });
 
@@ -76,6 +89,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
     await ClassEnrollment.deleteMany({});
     await CourseEnrollment.deleteMany({});
     await Learner.deleteMany({});
+    await User.deleteMany({ role: 'learner' });
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
     await Course.deleteMany({});
@@ -84,6 +98,7 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
     await ScormPackage.deleteMany({});
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
     await mongoose.connection.close();
   });
 
@@ -144,15 +159,27 @@ describe('Instructor Phase 3: Classes & Dashboard', () => {
     const learner1 = await Learner.create({
       name: { first: 'Learner', last: 'One' },
       email: 's1@example.com',
-      password: 'pw',
-      role: 'learner',
     });
     const learner2 = await Learner.create({
       name: { first: 'Learner', last: 'Two' },
       email: 's2@example.com',
-      password: 'pw',
-      role: 'learner',
     });
+    await User.create([
+      {
+        _id: learner1._id,
+        email: 's1@example.com',
+        passwordHash: await hashPassword('Learner123!'),
+        role: 'learner',
+        status: 'active',
+      },
+      {
+        _id: learner2._id,
+        email: 's2@example.com',
+        passwordHash: await hashPassword('Learner123!'),
+        role: 'learner',
+        status: 'active',
+      },
+    ]);
 
     await ClassEnrollment.create([
       {

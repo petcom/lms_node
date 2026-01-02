@@ -10,6 +10,8 @@ import Learner from '../../../model/Academic/Learner';
 import ProgramEnrollment from '../../../model/Academic/ProgramEnrollment';
 import ClassEnrollment from '../../../model/Academic/ClassEnrollment';
 import CourseEnrollment from '../../../model/Academic/CourseEnrollment';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const adminToken = 'test-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
@@ -43,6 +45,7 @@ describe('Enrollment APIs', () => {
       ClassModel.deleteMany({}),
       Course.deleteMany({}),
       Learner.deleteMany({}),
+      User.deleteMany({}),
       ProgramEnrollment.deleteMany({}),
       ClassEnrollment.deleteMany({}),
       CourseEnrollment.deleteMany({}),
@@ -96,11 +99,14 @@ describe('Enrollment APIs', () => {
     const learner = await Learner.create({
       name: { first: 'Learner', last: 'One' },
       email: 'learner1@example.com',
-      password: 'password123',
-      role: 'learner',
       globalStatus: 'active',
-      isSuspended: false,
-      isWithdrawn: false,
+    });
+    await User.create({
+      _id: learner._id,
+      email: 'learner1@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      role: 'learner',
+      status: 'active',
     });
     learnerId = learner._id;
   });

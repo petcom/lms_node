@@ -40,6 +40,11 @@ PUT `/staff/admins/unsuspend/learner/:id`
 PUT `/staff/admins/withdraw/learner/:id`
 PUT `/staff/admins/unwithdraw/learner/:id`
 
+Body (required):
+```
+{ "programId": "PROGRAM_ID", "reason": "optional" }
+```
+
 ## Staff
 ### Login
 POST `/staff/login`
@@ -51,14 +56,14 @@ GET `/staff/profile`
 PUT `/staff/:staffId/update`
 
 ### Admin Register Staff
-POST `/staff/admin/register`
+POST `/staff/admins/staff/register`
 
 ### Admin Directory
-GET `/staff/admin`
-GET `/staff/:staffId/admin`
+GET `/staff/admins/staff`
+GET `/staff/admins/staff/:staffId`
 
 ### Admin Update Staff
-PUT `/staff/:staffId/update/admin`
+PUT `/staff/admins/staff/:staffId/update`
 
 ## Learners
 ### Admin Register Learner
@@ -74,8 +79,8 @@ GET `/learners/profile`
 PUT `/learners/update`
 
 ### Admin Directory
-GET `/learners/admin`
-GET `/learners/:learnerID/admin`
+GET `/learners/admins`
+GET `/learners/:learnerID/admins`
 
 ### Admin Update Learner
-PUT `/learners/:learnerID/update/admin`
+PUT `/learners/:learnerID/update/admins`

@@ -86,7 +86,7 @@ staffRouter.get(
 
 /**
  * @swagger
- * /api/v1/staff/admin/register:
+ * /api/v1/staff/admins/staff/register:
  *   post:
  *     summary: Admin registers a new staff member
  *     tags: [Staff]
@@ -120,7 +120,7 @@ staffRouter.get(
  *         $ref: '#/components/responses/ForbiddenError'
  */
 staffRouter.post(
-  '/admin/register',
+  '/admins/staff/register',
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),
@@ -175,7 +175,7 @@ staffRouter.post(
 staffRouter.post('/login', loginStaff);
 
 staffRouter.get(
-  '/admin',
+  '/admins/staff',
   isAuthenticated(),
   roleRestriction('global-admin'),
   advancedResults(Staff, {
@@ -204,7 +204,7 @@ staffRouter.get(
 staffRouter.get('/profile', isAuthenticated(), roleRestriction('staff'), getStaffProfile);
 
 staffRouter.get(
-  '/:staffID/admin',
+  '/admins/staff/:staffID',
   isAuthenticated(),
   roleRestriction('global-admin'),
   getStaffByAdmin
@@ -217,7 +217,7 @@ staffRouter.put(
   staffUpdateProfile
 );
 staffRouter.put(
-  '/:staffID/update/admin',
+  '/admins/staff/:staffID/update',
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),

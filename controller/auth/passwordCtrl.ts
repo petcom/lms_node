@@ -2,10 +2,8 @@ import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
-import Admin from '../../model/Staff/Admin';
-import Staff from '../../model/Staff/Staff';
-import Learner from '../../model/Academic/Learner';
-import { IAdmin, IStaff, ILearner } from '../../types/models-types';
+import User from '../../model/Auth/User';
+import { IUser } from '../../types/models-types';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import {
   validatePasswordConfirmation,
@@ -86,16 +84,7 @@ export const changePassword = AsyncHandler(
       return;
     }
 
-    // Find user (check all collections)
-    let user: IAdmin | IStaff | ILearner | null = await Admin.findById(userId);
-
-    if (!user) {
-      user = await Staff.findById(userId);
-    }
-
-    if (!user) {
-      user = await Learner.findById(userId);
-    }
+    const user: IUser | null = await User.findById(userId);
 
     if (!user) {
       res.status(404).json({
@@ -106,7 +95,7 @@ export const changePassword = AsyncHandler(
     }
 
     // Verify old password
-    const isOldPasswordCorrect = await isPassMatched(oldPassword, user.password);
+    const isOldPasswordCorrect = await isPassMatched(oldPassword, user.passwordHash);
     if (!isOldPasswordCorrect) {
       res.status(401).json({
         status: 'failed',
@@ -116,7 +105,7 @@ export const changePassword = AsyncHandler(
     }
 
     // Check if new password is same as old password
-    const isSamePassword = await isPassMatched(newPassword, user.password);
+    const isSamePassword = await isPassMatched(newPassword, user.passwordHash);
     if (isSamePassword) {
       res.status(400).json({
         status: 'failed',
@@ -130,7 +119,8 @@ export const changePassword = AsyncHandler(
       const hashedPassword = await hashPassword(newPassword);
 
       // Update password
-      user.password = hashedPassword;
+      user.passwordHash = hashedPassword;
+      user.passwordUpdatedAt = new Date();
       await user.save();
 
       // Blacklist all existing tokens (force re-login)
@@ -174,26 +164,7 @@ export const forgotPassword = AsyncHandler(
       return;
     }
 
-    // Find user based on type
-    let user: IAdmin | IStaff | ILearner | null = null;
-
-    switch (userType) {
-      case 'global-admin':
-        user = await Admin.findOne({ email });
-        break;
-      case 'staff':
-        user = await Staff.findOne({ email });
-        break;
-      case 'learner':
-        user = await Learner.findOne({ email });
-        break;
-      default:
-        res.status(400).json({
-          status: 'failed',
-          message: 'Invalid user type. Must be: admin, staff, or learner',
-        });
-        return;
-    }
+    const user = await User.findOne({ email, role: userType });
 
     if (!user) {
       // Security: Don't reveal if email exists
@@ -290,22 +261,9 @@ export const resetPassword = AsyncHandler(
       return;
     }
 
-    // Find user
-    let user: IAdmin | IStaff | ILearner | null = null;
+    const user = await User.findById(tokenData.userId);
 
-    switch (tokenData.userType) {
-      case 'global-admin':
-        user = await Admin.findById(tokenData.userId);
-        break;
-      case 'staff':
-        user = await Staff.findById(tokenData.userId);
-        break;
-      case 'learner':
-        user = await Learner.findById(tokenData.userId);
-        break;
-    }
-
-    if (!user) {
+    if (!user || user.role !== tokenData.userType) {
       passwordResetTokens.delete(resetTokenHash);
       res.status(404).json({
         status: 'failed',
@@ -319,7 +277,8 @@ export const resetPassword = AsyncHandler(
       const hashedPassword = await hashPassword(newPassword);
 
       // Update password
-      user.password = hashedPassword;
+      user.passwordHash = hashedPassword;
+      user.passwordUpdatedAt = new Date();
       await user.save();
 
       // Delete used token

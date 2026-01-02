@@ -91,7 +91,7 @@ Response:
 ```
 
 PUT `/<staffId>/update`
-PUT `/<staffId>/update/admin`
+PUT `/admins/staff/<staffId>/update`
 
 ## Staff Dashboard + Packages
 All routes below require `role=staff` (or `global-admin` where noted).

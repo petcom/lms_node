@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Staff from '../../model/Staff/Staff';
 import StaffRole from '../../model/Staff/StaffRole';
+import User from '../../model/Auth/User';
 import Department from '../../model/Academic/Department';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Exam from '../../model/Academic/Exam';
@@ -225,8 +226,18 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
 
   const [admins, staffMembers] = await Promise.all([
     Admin.find(adminFilter).select('name email department').lean(),
-    Staff.find(staffFilter).select('name email department roles').lean(),
+    Staff.find(staffFilter).select('name email department').lean(),
   ]);
+  const adminIds = admins.map((admin) => admin._id);
+  const staffIds = staffMembers.map((staff) => staff._id);
+  const [adminUsers, staffUsers] = await Promise.all([
+    User.find({ _id: { $in: adminIds }, role: 'global-admin' }).select('_id role').lean(),
+    User.find({ _id: { $in: staffIds }, role: 'staff' }).select('_id subroles').lean(),
+  ]);
+  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), user.role]));
+  const staffUserMap = new Map(
+    staffUsers.map((user) => [user._id.toString(), user.subroles || []])
+  );
 
   const adminItems: StaffUser[] = admins.map((admin) => {
     const deptId = admin.department ? admin.department.toString() : null;
@@ -235,7 +246,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
       id: admin._id.toString(),
       name: getDisplayName(admin.name),
       email: admin.email,
-      role: 'global-admin',
+      role: adminUserMap.get(admin._id.toString()) || 'global-admin',
       department: deptSummary,
     };
   });
@@ -248,7 +259,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
       name: getDisplayName(staff.name),
       email: staff.email,
       role: 'staff',
-      roles: Array.isArray(staff.roles) ? staff.roles : [],
+      roles: staffUserMap.get(staff._id.toString()) || [],
       department: deptSummary,
     };
   });
@@ -419,6 +430,10 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
   if (!staff) {
     throw new NotFoundError('Staff member not found');
   }
+  const staffUser = await User.findById(staffId).lean();
+  if (!staffUser || staffUser.role !== 'staff') {
+    throw new NotFoundError('Staff user account not found');
+  }
 
   const scope = req.departmentScope?.accessibleDepartmentIds;
   const staffDept = staff.department ? staff.department.toString() : null;
@@ -440,13 +455,19 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
     }
   }
 
-  staff.roles = uniqueRoles;
-  await staff.save();
+  await User.findByIdAndUpdate(
+    staffId,
+    { $set: { subroles: uniqueRoles } },
+    { new: true }
+  );
 
   res.status(200).json({
     status: 'success',
     message: 'Staff roles updated successfully',
-    data: staff,
+    data: {
+      ...staff.toObject(),
+      roles: uniqueRoles,
+    },
   });
 });
 

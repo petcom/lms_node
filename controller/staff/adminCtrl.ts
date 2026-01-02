@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Admin from '../../model/Staff/Admin';
+import User from '../../model/Auth/User';
 import generateToken from '../../utils/generateToken';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import mongoose from 'mongoose';
@@ -9,6 +10,36 @@ import Staff from '../../model/Staff/Staff';
 import Learner from '../../model/Academic/Learner';
 import logAudit from '../../utils/auditLogger';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
+
+const upsertProgramStatus = (
+  learner: any,
+  programId: mongoose.Types.ObjectId,
+  status: 'active' | 'suspended' | 'withdrawn',
+  reason?: string
+) => {
+  const now = new Date();
+  const statuses = Array.isArray(learner.programEnrolmentStatuses)
+    ? learner.programEnrolmentStatuses
+    : [];
+  const existing = statuses.find(
+    (entry: any) => entry.programId?.toString() === programId.toString()
+  );
+
+  if (existing) {
+    existing.status = status;
+    existing.statusReason = reason;
+    existing.statusUpdatedAt = now;
+  } else {
+    statuses.push({
+      programId,
+      status,
+      statusReason: reason,
+      statusUpdatedAt: now,
+    });
+  }
+
+  learner.programEnrolmentStatuses = statuses;
+};
 
 // Request body interfaces
 interface RegisterAdminBody {
@@ -40,24 +71,31 @@ export const registerAdminCtrl = expressAsyncHandler(
     const normalizedName = normalizePersonName(name);
 
     // Check if admin already exists in the database
-    const adminFound = await Admin.findOne({ email });
+    const userFound = await User.findOne({ email });
 
-    if (adminFound) {
+    if (userFound) {
       res.status(401).json({ msg: 'Email is already registered' });
       return;
     }
 
-    // register user
-    const user = await Admin.create({
+    const hashedPassword = await hashPassword(password);
+    const user = await User.create({
+      email,
+      passwordHash: hashedPassword,
+      role: 'global-admin',
+      status: 'active',
+    });
+
+    const admin = await Admin.create({
+      _id: user._id,
       name: normalizedName ?? name,
       email,
-      password: await hashPassword(password),
     });
 
     const sanitizedUser = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
       role: user.role,
     };
 
@@ -77,7 +115,7 @@ export const registerAdminCtrl = expressAsyncHandler(
 export const loginAdminCtrl = expressAsyncHandler(
   async (req: Request<{}, {}, LoginAdminBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
-    const user = await Admin.findOne({ email });
+    const user = await User.findOne({ email, role: 'global-admin' });
 
     if (!user) {
       res.status(401).json({
@@ -88,7 +126,7 @@ export const loginAdminCtrl = expressAsyncHandler(
     }
 
     // verify password
-    const isMatched = await isPassMatched(password, user.password);
+    const isMatched = await isPassMatched(password, user.passwordHash);
 
     if (!isMatched) {
       res.status(401).json({
@@ -96,15 +134,15 @@ export const loginAdminCtrl = expressAsyncHandler(
         message: 'Invalid login credentials. Please try again.',
       });
     } else {
-      const role = user.role || 'global-admin';
-      const accessToken = generateToken(user._id.toString(), role);
+      const accessToken = generateToken(user._id.toString(), user.role);
+      await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
         status: 'success',
         data: {
           token: accessToken,
           accessToken,
-          role,
+          role: user.role,
         },
         message: 'Admin logged in successfully. Welcome back!',
       });
@@ -132,7 +170,7 @@ export const getAdminProfileCtrl = expressAsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const adminId = req.userAuth?._id;
     const admin = adminId
-      ? await Admin.findById(adminId).select('-password -createdAt -updatedAt').lean()
+      ? await Admin.findById(adminId).select('-createdAt -updatedAt').lean()
       : null;
 
     const profile = admin || req.userAuth;
@@ -164,18 +202,19 @@ export const updateAdminCtrl = expressAsyncHandler(
     const normalizedName = normalizePersonName(name);
     const updateFields: {
       email?: string;
-      password?: string;
       name?: PersonNameInput;
       department?: mongoose.Types.ObjectId;
     } = {};
+    const userUpdates: { email?: string; passwordHash?: string } = {};
 
     // if email is taken
     if (email) {
-      const emailExists = await Admin.findOne({ email });
-      if (emailExists) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists && emailExists._id.toString() !== req.userAuth?._id?.toString()) {
         throw new Error('This email already exists');
       }
       updateFields.email = email;
+      userUpdates.email = email;
     }
 
     // department scope validation
@@ -192,11 +231,11 @@ export const updateAdminCtrl = expressAsyncHandler(
 
     // check if user is updating password
     if (password) {
-      updateFields.password = await hashPassword(password);
+      userUpdates.passwordHash = await hashPassword(password);
       if (typeof name !== 'undefined') {
         updateFields.name = normalizedName ?? name;
       }
-      // update user
+      // update profile
       const admin = await Admin.findByIdAndUpdate(
         req.userAuth?._id,
         updateFields,
@@ -205,6 +244,9 @@ export const updateAdminCtrl = expressAsyncHandler(
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: admin,
@@ -223,6 +265,9 @@ export const updateAdminCtrl = expressAsyncHandler(
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: admin,
@@ -426,12 +471,19 @@ export const adminUnwithdrawInstructorCtrl = expressAsyncHandler(
  * @access      Private
  */
 export const adminSuspendLearnerCtrl = expressAsyncHandler(
-  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+  async (
+    req: Request<{ id: string }, {}, { reason?: string; programId?: string }>,
+    res: Response
+  ): Promise<void> => {
     const learnerId = req.params.id;
     const reason = req.body?.reason;
+    const programId = req.body?.programId;
 
     if (!mongoose.isValidObjectId(learnerId)) {
       throw new ValidationError('Invalid learner id');
+    }
+    if (!programId || !mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
     }
 
     const learner = await Learner.findById(learnerId);
@@ -439,8 +491,8 @@ export const adminSuspendLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
-    learner.isSuspended = true;
+    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
+    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'suspended', reason);
     await learner.save();
 
     await logAudit({
@@ -450,7 +502,7 @@ export const adminSuspendLearnerCtrl = expressAsyncHandler(
       entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: true, isWithdrawn: learner.isWithdrawn },
+      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
     });
 
     res.status(200).json({
@@ -467,12 +519,19 @@ export const adminSuspendLearnerCtrl = expressAsyncHandler(
  * @access      Private
  */
 export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
-  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+  async (
+    req: Request<{ id: string }, {}, { reason?: string; programId?: string }>,
+    res: Response
+  ): Promise<void> => {
     const learnerId = req.params.id;
     const reason = req.body?.reason;
+    const programId = req.body?.programId;
 
     if (!mongoose.isValidObjectId(learnerId)) {
       throw new ValidationError('Invalid learner id');
+    }
+    if (!programId || !mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
     }
 
     const learner = await Learner.findById(learnerId);
@@ -480,8 +539,8 @@ export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
-    learner.isSuspended = false;
+    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
+    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'active', reason);
     await learner.save();
 
     await logAudit({
@@ -491,7 +550,7 @@ export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
       entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: false, isWithdrawn: learner.isWithdrawn },
+      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
     });
 
     res.status(200).json({
@@ -508,12 +567,19 @@ export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
  * @access      Private
  */
 export const adminWithdrawLearnerCtrl = expressAsyncHandler(
-  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+  async (
+    req: Request<{ id: string }, {}, { reason?: string; programId?: string }>,
+    res: Response
+  ): Promise<void> => {
     const learnerId = req.params.id;
     const reason = req.body?.reason;
+    const programId = req.body?.programId;
 
     if (!mongoose.isValidObjectId(learnerId)) {
       throw new ValidationError('Invalid learner id');
+    }
+    if (!programId || !mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
     }
 
     const learner = await Learner.findById(learnerId);
@@ -521,8 +587,8 @@ export const adminWithdrawLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
-    learner.isWithdrawn = true;
+    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
+    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'withdrawn', reason);
     await learner.save();
 
     await logAudit({
@@ -532,7 +598,7 @@ export const adminWithdrawLearnerCtrl = expressAsyncHandler(
       entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: learner.isSuspended, isWithdrawn: true },
+      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
     });
 
     res.status(200).json({
@@ -549,12 +615,19 @@ export const adminWithdrawLearnerCtrl = expressAsyncHandler(
  * @access      Private
  */
 export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
-  async (req: Request<{ id: string }, {}, { reason?: string }>, res: Response): Promise<void> => {
+  async (
+    req: Request<{ id: string }, {}, { reason?: string; programId?: string }>,
+    res: Response
+  ): Promise<void> => {
     const learnerId = req.params.id;
     const reason = req.body?.reason;
+    const programId = req.body?.programId;
 
     if (!mongoose.isValidObjectId(learnerId)) {
       throw new ValidationError('Invalid learner id');
+    }
+    if (!programId || !mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
     }
 
     const learner = await Learner.findById(learnerId);
@@ -562,8 +635,8 @@ export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { isSuspended: learner.isSuspended, isWithdrawn: learner.isWithdrawn };
-    learner.isWithdrawn = false;
+    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
+    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'active', reason);
     await learner.save();
 
     await logAudit({
@@ -573,7 +646,7 @@ export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
       entityId: learner._id,
       reason,
       before,
-      after: { isSuspended: learner.isSuspended, isWithdrawn: false },
+      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
     });
 
     res.status(200).json({

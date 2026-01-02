@@ -72,10 +72,6 @@ const learnerSchema = new Schema<ILearner>(
       type: String,
       required: true,
     },
-    password: {
-      type: String,
-      required: true,
-    },
     learnerId: {
       type: String,
       required: true,
@@ -88,10 +84,6 @@ const learnerSchema = new Schema<ILearner>(
           initials
         );
       },
-    },
-    role: {
-      type: String,
-      default: 'learner',
     },
     addresses: {
       type: [addressSchema],
@@ -106,14 +98,26 @@ const learnerSchema = new Schema<ILearner>(
       enum: ['active', 'inactive'],
       default: 'active',
     },
-    isWithdrawn: {
-      type: Boolean,
-      default: false,
-    },
-    isSuspended: {
-      type: Boolean,
-      default: false,
-    },
+    programEnrolmentStatuses: [
+      {
+        programId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Program',
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ['active', 'withdrawn', 'suspended'],
+          required: true,
+        },
+        statusReason: {
+          type: String,
+        },
+        statusUpdatedAt: {
+          type: Date,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -124,7 +128,6 @@ const learnerSchema = new Schema<ILearner>(
 learnerSchema.index({ email: 1 }, { unique: true });
 learnerSchema.index({ learnerId: 1 }, { unique: true });
 learnerSchema.index({ globalStatus: 1 });
-learnerSchema.index({ isSuspended: 1 });
 learnerSchema.index({ createdAt: -1 });
 
 // Model

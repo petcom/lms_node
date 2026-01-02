@@ -9,6 +9,8 @@ import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import Staff from '../../../model/Staff/Staff';
 import Exam from '../../../model/Academic/Exam';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const adminToken = 'test-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
@@ -42,6 +44,7 @@ describe('Program levels, courses, and course content', () => {
       ProgramLevel.deleteMany({}),
       Course.deleteMany({}),
       Staff.deleteMany({}),
+      User.deleteMany({}),
       Exam.deleteMany({}),
     ]);
 
@@ -91,20 +94,12 @@ describe('Program levels, courses, and course content', () => {
       createdBy: masterAdminId,
     });
 
-    const programLevel = await ProgramLevel.create({
-      program: programId,
-      name: 'Level 1',
-      description: 'Level 1',
-      order: 1,
-      createdBy: masterAdminId,
-      department: masterDepartmentId,
-    });
-
+    const programLevelObjectId = new mongoose.Types.ObjectId(programLevelId);
     const course = await Course.create({
       title: 'Alpha Course',
       description: 'Alpha course',
       program: programId,
-      programLevel: programLevel._id,
+      programLevel: programLevelObjectId,
       department: masterDepartmentId,
       createdBy: masterAdminId,
     });
@@ -112,10 +107,13 @@ describe('Program levels, courses, and course content', () => {
     const instructor = await Staff.create({
       name: { first: 'Staff', last: 'User' },
       email: 'staff@example.com',
-      password: 'password123',
+    });
+    await User.create({
+      _id: instructor._id,
+      email: 'staff@example.com',
+      passwordHash: await hashPassword('Password123!'),
       role: 'staff',
-      isSuspended: false,
-      isWithdrawn: false,
+      status: 'active',
     });
 
     const exam = await Exam.create({
@@ -131,7 +129,7 @@ describe('Program levels, courses, and course content', () => {
       examTime: '10:00',
       examType: 'quiz',
       examStatus: 'pending',
-      programLevel: programLevel._id,
+      programLevel: programLevelObjectId,
       createdBy: instructor._id,
       academicYear: academicYear._id,
     });

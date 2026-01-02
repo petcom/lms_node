@@ -3,6 +3,23 @@ import { Document, Types, Model } from 'mongoose';
 
 // User role types
 export type UserRole = 'global-admin' | 'staff' | 'learner';
+export type UserStatus = 'active' | 'inactive' | 'archived' | 'deleted';
+
+export interface IUser extends Document {
+  _id: Types.ObjectId;
+  email: string;
+  username?: string;
+  passwordHash: string;
+  role: UserRole;
+  subroles?: string[];
+  status: UserStatus;
+  emailVerified?: boolean;
+  emailVerifiedAt?: Date | null;
+  lastLoginAt?: Date | null;
+  passwordUpdatedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface IPersonName {
   first: string;
@@ -41,8 +58,6 @@ export interface IPerson extends Document {
 
 // Admin Interface
 export interface IAdmin extends IPerson {
-  password: string;
-  role: 'global-admin';
   department?: Types.ObjectId;
   academicYears?: Types.ObjectId[];
   academicTerms?: Types.ObjectId[];
@@ -56,13 +71,10 @@ export interface IAdmin extends IPerson {
 
 // Staff Interface
 export interface IStaff extends IPerson {
-  password: string;
   dateEmployed?: Date;
   instructorId?: string;
   isWithdrawn: boolean;
   isSuspended: boolean;
-  role: 'staff';
-  roles?: string[];
   course?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
   program?: Types.ObjectId;
@@ -159,12 +171,14 @@ export interface IMasterTemplate extends Document {
 // Deprecated fields removed in migration: isGraduated, isPromoted*, currentClassLevel,
 // classLevels, academicYear, yearGraduated, examResults, scormProgress.
 export interface ILearner extends IPerson {
-  password: string;
   learnerId?: string;
-  role: 'learner';
   globalStatus: 'active' | 'inactive';
-  isSuspended: boolean;
-  isWithdrawn: boolean;
+  programEnrolmentStatuses?: Array<{
+    programId: Types.ObjectId;
+    status: 'active' | 'withdrawn' | 'suspended';
+    statusReason?: string;
+    statusUpdatedAt?: Date;
+  }>;
   createdBy?: Types.ObjectId;
 }
 

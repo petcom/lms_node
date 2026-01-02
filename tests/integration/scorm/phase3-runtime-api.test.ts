@@ -16,6 +16,8 @@ import Course from '../../../model/Content/Course';
 import CourseContent from '../../../model/Academic/CourseContent';
 import ContentAttempt from '../../../model/Academic/ContentAttempt';
 import Admin from '../../../model/Staff/Admin';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const instructorId = new mongoose.Types.ObjectId('0000000000000000000000b1');
 const adminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
@@ -64,6 +66,7 @@ const makePackageData = (
 
 const seedAcademicContext = async () => {
   await Admin.deleteMany({ _id: adminId });
+  await User.deleteMany({ _id: { $in: [adminId, learnerId] } });
   await Department.deleteMany({ _id: departmentId });
   await Program.deleteMany({});
   await ProgramLevel.deleteMany({});
@@ -76,13 +79,19 @@ const seedAcademicContext = async () => {
     level: 'top',
   });
 
+  const passwordHash = await hashPassword('Password123!');
   await Admin.create({
     _id: adminId,
     name: { first: 'Runtime', last: 'Admin' },
     email: 'runtime.admin@example.com',
-    password: 'password123',
-    role: 'global-admin',
     department: departmentId,
+  });
+  await User.create({
+    _id: adminId,
+    email: 'runtime.admin@example.com',
+    passwordHash,
+    role: 'global-admin',
+    status: 'active',
   });
 
   const program = await Program.create({
@@ -134,8 +143,13 @@ const seedAttempt = async () => {
     _id: learnerId,
     name: { first: 'Runtime', last: 'Learner' },
     email: 'runtime.learner@example.com',
-    password: 'password123',
+  });
+  await User.create({
+    _id: learnerId,
+    email: 'runtime.learner@example.com',
+    passwordHash: await hashPassword('Password123!'),
     role: 'learner',
+    status: 'active',
   });
 
   const attempt = await ScormAttempt.create({
@@ -173,6 +187,7 @@ describe('SCORM Phase 3: Runtime API', () => {
     await Department.deleteMany({ _id: departmentId });
     await Admin.deleteMany({ _id: adminId });
     await Learner.deleteMany({ _id: learnerId });
+    await User.deleteMany({ _id: { $in: [adminId, learnerId] } });
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
@@ -189,6 +204,7 @@ describe('SCORM Phase 3: Runtime API', () => {
     await Department.deleteMany({ _id: departmentId });
     await Admin.deleteMany({ _id: adminId });
     await Learner.deleteMany({ _id: learnerId });
+    await User.deleteMany({ _id: { $in: [adminId, learnerId] } });
   });
 
   it('runs initialize → set → commit → get → terminate for a learner attempt', async () => {

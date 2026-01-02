@@ -7,6 +7,8 @@ import AdmZip from 'adm-zip';
 import { StorageFactory } from '../../../utils/scorm/storage/StorageFactory';
 import Staff from '../../../model/Staff/Staff';
 import Admin from '../../../model/Staff/Admin';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const instructorId = '0000000000000000000000b1';
 const adminId = '0000000000000000000000a1';
@@ -55,25 +57,39 @@ describe('SCORM Package Upload API', () => {
 
     await Staff.deleteMany({ _id: instructorId });
     await Admin.deleteMany({ _id: adminId });
+    await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
+    const staffPassword = await hashPassword('Password123!');
+    const adminPassword = await hashPassword('Password123!');
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'Upload' },
       email: 'instructor-upload@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor-upload@example.com',
+      passwordHash: staffPassword,
       role: 'staff',
+      status: 'active',
     });
 
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'Upload' },
       email: 'admin-upload@example.com',
-      password: 'password',
+    });
+    await User.create({
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin-upload@example.com',
+      passwordHash: adminPassword,
       role: 'global-admin',
+      status: 'active',
     });
   });
 
   afterAll(async () => {
+    await User.deleteMany({});
     await mongoose.connection.close();
     await fs.remove(path.join(__dirname, '../../tmp-scorm-upload'));
   });

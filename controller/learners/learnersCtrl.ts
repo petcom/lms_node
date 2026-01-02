@@ -6,6 +6,7 @@ import generateToken from '../../utils/generateToken';
 import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
 import Admin from '../../model/Staff/Admin';
+import User from '../../model/Auth/User';
 import { ILearner } from '../../types/models-types';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
@@ -29,8 +30,6 @@ interface UpdateProfileBody {
 interface AdminUpdateLearnerBody {
   name?: PersonNameInput;
   email?: string;
-  isSuspended?: boolean;
-  isWithdrawn?: boolean;
 }
 
 interface WriteExamBody {
@@ -58,17 +57,23 @@ export const adminRegisterLearner = AsyncHandler(
       throw new Error('Admin not found');
     }
     // check if the learner already exists
-    const learner = await Learner.findOne({ email: email }).lean();
-    if (learner) {
+    const learnerUser = await User.findOne({ email });
+    if (learnerUser) {
       throw new Error('Learner already exists');
     }
     //hash password
     const hashedPassword = await hashPassword(password);
+    const user = await User.create({
+      email,
+      passwordHash: hashedPassword,
+      role: 'learner',
+      status: 'active',
+    });
     // Learner created
     const learnerRegistered = await Learner.create({
+      _id: user._id,
       name: normalizedName ?? name,
       email,
-      password: hashedPassword,
     });
     // push instructor into admin
     adminFound.learners?.push(learnerRegistered?._id);
@@ -91,27 +96,29 @@ export const loginLearner = AsyncHandler(
   async (req: Request<{}, {}, LoginBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
-    //find the instructor user obj
-    const learner = await Learner.findOne({ email }).lean();
+    const learnerUser = await User.findOne({ email, role: 'learner' });
+    const learner = learnerUser ? await Learner.findById(learnerUser._id).lean() : null;
     if (!learner) {
       res.json({ message: 'Invalid login credentials' });
       return;
     }
     // verify the password
-    const isMatched = await isPassMatched(password, learner?.password);
+    const isMatched = learnerUser
+      ? await isPassMatched(password, learnerUser.passwordHash)
+      : false;
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
       return;
     } else {
-      const role = learner.role || 'learner';
-      const accessToken = generateToken(String(learner?._id), role);
+      const accessToken = generateToken(String(learner?._id), learnerUser?.role || 'learner');
+      await User.updateOne({ _id: learner?._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
         status: 'success',
         message: 'Learner logged in successfully',
         data: {
           accessToken,
-          role,
+          role: learnerUser?.role || 'learner',
         },
       });
     }
@@ -126,7 +133,7 @@ export const loginLearner = AsyncHandler(
 export const getLearnerProfile = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const learner = await Learner.findById(req.userAuth?._id)
-      .select('-password -createdAt -updatedAt')
+      .select('-createdAt -updatedAt')
       .populate('examResults');
 
     if (!learner) {
@@ -136,9 +143,8 @@ export const getLearnerProfile = AsyncHandler(
     const learnerProfile = {
       name: learner?.name,
       email: learner?.email,
-      isSuspended: learner?.isSuspended,
-      isWithdrawn: learner?.isWithdrawn,
       learnerId: learner?.learnerId,
+      programEnrolmentStatuses: learner?.programEnrolmentStatuses || [],
     };
     // get learner exam results
     const learnerExamResults = learner?.examResults;
@@ -160,7 +166,7 @@ export const getLearnerProfile = AsyncHandler(
 
 /**
  * @description Get All Learners
- * @route       GET /api/v1/learners/admin
+ * @route       GET /api/v1/learners/admins
  * @access      Private admin only
  */
 export const getAllLearnersByAdmin = AsyncHandler(
@@ -171,7 +177,7 @@ export const getAllLearnersByAdmin = AsyncHandler(
 
 /**
  * @description Get Single a Learner
- * @route       POST /api/v1/learners/:learnerID/admin
+ * @route       POST /api/v1/learners/:learnerID/admins
  * @access      Private admin only
  */
 export const getLearnerByAdmin = AsyncHandler(
@@ -216,26 +222,33 @@ export const getLearnerByAdmin = AsyncHandler(
 export const learnerUpdateProfile = AsyncHandler(
   async (req: Request<{}, {}, UpdateProfileBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
+    const userUpdates: { email?: string; passwordHash?: string } = {};
     // if email is taken
-    const emailExists = await Learner.findOne({ email });
-    if (emailExists) {
-      throw new Error('This email already exists');
+    if (email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists && emailExists._id.toString() !== req.userAuth?._id?.toString()) {
+        throw new Error('This email already exists');
+      }
+      userUpdates.email = email;
     }
 
     // check if user is updating password
     if (password) {
+      userUpdates.passwordHash = await hashPassword(password);
       // update user
       const learner = await Learner.findByIdAndUpdate(
         req.userAuth?._id,
         {
           email,
-          password: await hashPassword(password),
         },
         {
           new: true,
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: learner,
@@ -253,6 +266,9 @@ export const learnerUpdateProfile = AsyncHandler(
           runValidators: true,
         }
       );
+      if (Object.keys(userUpdates).length > 0) {
+        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+      }
       res.status(200).json({
         success: 'success',
         data: learner,
@@ -264,7 +280,7 @@ export const learnerUpdateProfile = AsyncHandler(
 
 /**
  * @description Admin Update Learner eg: Assign Classes, name, etc.
- * @route       UPDATE /api/v1/learners/:learnerID/update/admin
+ * @route       UPDATE /api/v1/learners/:learnerID/update/admins
  * @access      Private Admin Only
  *
  * Notes:  $set operator replaces the value of a field with the specified value - mongoose handles saving those field. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/set/
@@ -275,23 +291,26 @@ export const adminUpdateLearner = AsyncHandler(
     req: Request<{ learnerID: string }, {}, AdminUpdateLearnerBody>,
     res: Response
   ): Promise<void> => {
-    const { name, email, isSuspended, isWithdrawn } = req.body;
+    const { name, email } = req.body;
     const normalizedName = normalizePersonName(name);
+    const userUpdates: { email?: string } = {};
 
     // find the learner by id
     const learnerFound = await Learner.findById(req.params.learnerID);
     if (!learnerFound) {
       throw new Error('Learner not found');
     }
+    if (email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists && emailExists._id.toString() !== req.params.learnerID) {
+        throw new Error('This email already exists');
+      }
+    }
     const updateFields: {
       name?: PersonNameInput;
       email?: string;
-      isSuspended?: boolean;
-      isWithdrawn?: boolean;
     } = {
       email,
-      isSuspended,
-      isWithdrawn,
     };
     if (typeof name !== 'undefined') {
       updateFields.name = normalizedName ?? name;
@@ -306,6 +325,10 @@ export const adminUpdateLearner = AsyncHandler(
         new: true,
       }
     );
+    if (email) {
+      userUpdates.email = email;
+      await User.findByIdAndUpdate(req.params.learnerID, userUpdates);
+    }
 
     // send response
     res.status(200).json({
@@ -352,9 +375,15 @@ export const writeExam = AsyncHandler(
       throw new Error('You have already taken this exam. Wait for your results.');
     }
 
-    // Check if learner is suspended
-    if (learnerFound.isWithdrawn || learnerFound.isSuspended) {
-      throw new Error('You are withdrawn/suspended and cannot take this exam.');
+    // Check learner status for this program (if specified)
+    const examProgramId = examFound?.program?.toString();
+    if (examProgramId) {
+      const enrollmentStatus = learnerFound.programEnrolmentStatuses?.find(
+        (entry) => entry.programId.toString() === examProgramId
+      );
+      if (enrollmentStatus && enrollmentStatus.status !== 'active') {
+        throw new Error('You are withdrawn/suspended for this program and cannot take this exam.');
+      }
     }
 
     // build report object - this will tell the learner how many answers they got right/wrong

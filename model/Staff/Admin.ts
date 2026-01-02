@@ -53,17 +53,9 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       required: true,
     },
-    password: {
-      type: String,
-      required: true,
-    },
     department: {
       type: Schema.Types.ObjectId,
       ref: 'Department',
-    },
-    role: {
-      type: String,
-      default: 'global-admin',
     },
     addresses: {
       type: [addressSchema],
@@ -130,7 +122,6 @@ const adminSchema = new Schema<IAdmin>(
 // Indexes for query performance
 adminSchema.index({ email: 1 }, { unique: true });
 adminSchema.index({ createdAt: -1 });
-adminSchema.index({ role: 1 });
 
 // Model
 const Admin = mongoose.model<IAdmin>('Admin', adminSchema);

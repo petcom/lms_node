@@ -12,6 +12,8 @@ import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import Exam from '../../../model/Academic/Exam';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const masterToken = 'test-global-admin-token';
 const topAdminToken = 'test-top-global-admin-token';
@@ -44,6 +46,7 @@ describe('Department Resources API', () => {
       Admin.deleteMany({}),
       Staff.deleteMany({}),
       StaffRole.deleteMany({}),
+      User.deleteMany({}),
       ScormPackage.deleteMany({}),
       AcademicYear.deleteMany({}),
       AcademicTerm.deleteMany({}),
@@ -86,50 +89,83 @@ describe('Department Resources API', () => {
       },
     ]);
 
+    const hashedPassword = await hashPassword('Password@123');
     await Admin.create([
       {
         _id: masterAdminId,
         name: { first: 'Master', last: 'Admin' },
         email: 'master@example.com',
-        password: 'Password@123',
         department: masterDepartmentId,
       },
       {
         _id: topAdminId,
         name: { first: 'Top', last: 'Admin' },
         email: 'top@example.com',
-        password: 'Password@123',
         department: topDepartmentId,
       },
       {
         _id: subAdminId,
         name: { first: 'Sub', last: 'Admin' },
         email: 'sub@example.com',
-        password: 'Password@123',
         department: subDepartmentId,
       },
     ]);
 
-    await Staff.create([
+    await User.create([
       {
+        _id: masterAdminId,
+        email: 'master@example.com',
+        passwordHash: hashedPassword,
+        role: 'global-admin',
+        status: 'active',
+      },
+      {
+        _id: topAdminId,
+        email: 'top@example.com',
+        passwordHash: hashedPassword,
+        role: 'global-admin',
+        status: 'active',
+      },
+      {
+        _id: subAdminId,
+        email: 'sub@example.com',
+        passwordHash: hashedPassword,
+        role: 'global-admin',
+        status: 'active',
+      },
+    ]);
+
+    const staffEntries = [
+      {
+        _id: new mongoose.Types.ObjectId('0000000000000000000000b1'),
         name: { first: 'Alpha', last: 'Instructor' },
         email: 'alpha.instructor@example.com',
-        password: 'Password@123',
         department: topDepartmentId,
       },
       {
+        _id: new mongoose.Types.ObjectId('0000000000000000000000b2'),
         name: { first: 'Sub', last: 'Instructor' },
         email: 'sub.instructor@example.com',
-        password: 'Password@123',
         department: subDepartmentId,
       },
       {
+        _id: new mongoose.Types.ObjectId('0000000000000000000000b3'),
         name: { first: 'Beta', last: 'Instructor' },
         email: 'beta.instructor@example.com',
-        password: 'Password@123',
         department: otherDepartmentId,
       },
-    ]);
+    ];
+    await Staff.create(staffEntries);
+    await User.create(
+      staffEntries.map((staff) => ({
+        _id: staff._id,
+        email: staff.email,
+        passwordHash: hashedPassword,
+        role: 'staff',
+        status: 'active',
+        subroles: [],
+      }))
+    );
 
     await ScormPackage.create([
       {
@@ -435,15 +471,15 @@ describe('Department Resources API', () => {
       .post('/api/v1/department-resources/courses')
       .set('Authorization', `Bearer ${topAdminToken}`)
       .send({
-        title: 'Alpha Course',
-        description: 'Course for Alpha',
+        title: 'Alpha Course 2',
+        description: 'Course for Alpha 2',
         program: program._id.toString(),
         departmentId: topDepartmentId.toString(),
       });
 
     expect(createRes.status).toBe(201);
 
-    const course = await Course.findOne({ title: 'Alpha Course' }).lean();
+    const course = await Course.findOne({ title: 'Alpha Course 2' }).lean();
     if (!course) {
       throw new Error('Alpha Course not found for update');
     }

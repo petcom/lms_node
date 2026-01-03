@@ -15,9 +15,51 @@ export const departmentScope = () => {
       const requesterDeptId = (req.userAuth as any)?.department
         ? new mongoose.Types.ObjectId((req.userAuth as any).department as any)
         : null;
+      const membershipIds = Array.isArray((req.userAuth as any)?.departmentMemberships)
+        ? (req.userAuth as any).departmentMemberships
+            .map((membership: { departmentId?: any }) => membership.departmentId)
+            .filter((id: any) => mongoose.isValidObjectId(id))
+            .map((id: any) => new mongoose.Types.ObjectId(id))
+        : [];
 
       const master = await Department.findOne({ level: 'master' }).lean();
       const masterId = master?._id?.toString() || MASTER_DEPARTMENT_ID;
+
+      if ((req.userAuth as any)?.role === 'staff' && membershipIds.length > 0) {
+        const departments = await Department.find({ _id: { $in: membershipIds } }).lean();
+        const topLevelIds: mongoose.Types.ObjectId[] = [];
+        const accessible = new Set<string>();
+        let userDepartmentId: string | undefined;
+
+        for (const department of departments) {
+          if (!userDepartmentId) {
+            userDepartmentId = department._id.toString();
+          }
+          if (department.level === 'master') {
+            req.departmentScope = { userDepartmentId, accessibleDepartmentIds: 'all' };
+            return next();
+          }
+          if (department.level === 'top') {
+            topLevelIds.push(department._id);
+            accessible.add(department._id.toString());
+          } else {
+            accessible.add(department._id.toString());
+          }
+        }
+
+        if (topLevelIds.length > 0) {
+          const children = await Department.find({ parent: { $in: topLevelIds } })
+            .select('_id')
+            .lean();
+          children.forEach((child) => accessible.add(child._id.toString()));
+        }
+
+        req.departmentScope = {
+          userDepartmentId,
+          accessibleDepartmentIds: Array.from(accessible),
+        };
+        return next();
+      }
 
       // If no department set, fall back to master (default-open model)
       const departmentIdToUse =

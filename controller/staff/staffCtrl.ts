@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Staff from '../../model/Staff/Staff';
 import Admin from '../../model/Staff/Admin';
+import StaffRole from '../../model/Staff/StaffRole';
 import User from '../../model/Auth/User';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
@@ -16,6 +17,7 @@ interface RegisterStaffBody {
   email: string;
   password: string;
   department?: string;
+  departmentMemberships?: { departmentId: string; roles: string[] }[];
 }
 
 interface LoginStaffBody {
@@ -36,7 +38,51 @@ interface AdminUpdateStaffBody {
   academicYear?: Types.ObjectId;
   course?: Types.ObjectId;
   department?: string;
+  departmentMemberships?: { departmentId: string; roles: string[] }[];
 }
+
+const normalizeDepartmentMemberships = async (
+  departmentMemberships: { departmentId: string; roles: string[] }[] | undefined,
+  scope: string[] | 'all' | undefined
+) => {
+  if (!Array.isArray(departmentMemberships) || departmentMemberships.length === 0) {
+    return undefined;
+  }
+
+  const normalizedMap = new Map<string, string[]>();
+  departmentMemberships.forEach((membership) => {
+    const departmentId = membership?.departmentId?.toString();
+    if (!departmentId || !mongoose.isValidObjectId(departmentId)) {
+      throw new ValidationError('Invalid department id in departmentMemberships');
+    }
+    if (scope && scope !== 'all' && !scope.includes(departmentId)) {
+      throw new AuthorizationError('Access denied for this department');
+    }
+    const roles = Array.isArray(membership.roles)
+      ? membership.roles.map((role) => role.trim()).filter(Boolean)
+      : [];
+    const existing = normalizedMap.get(departmentId) || [];
+    normalizedMap.set(departmentId, Array.from(new Set([...existing, ...roles])));
+  });
+
+  const allRoles = Array.from(normalizedMap.values()).flat();
+  const uniqueRoles = Array.from(new Set(allRoles));
+  if (uniqueRoles.length > 0) {
+    const roleDocs = await StaffRole.find({ name: { $in: uniqueRoles } })
+      .select('name')
+      .lean();
+    const validRoles = new Set(roleDocs.map((role) => role.name));
+    const missing = uniqueRoles.filter((role) => !validRoles.has(role));
+    if (missing.length > 0) {
+      throw new ValidationError(`Unknown staff roles: ${missing.join(', ')}`);
+    }
+  }
+
+  return Array.from(normalizedMap.entries()).map(([departmentId, roles]) => ({
+    departmentId: new mongoose.Types.ObjectId(departmentId),
+    roles,
+  }));
+};
 
 /**
  * @description Admin Register Staff
@@ -45,7 +91,7 @@ interface AdminUpdateStaffBody {
  */
 export const adminRegisterStaff = expressAsyncHandler(
   async (req: Request<{}, {}, RegisterStaffBody>, res: Response): Promise<void> => {
-    const { name, email, password, department } = req.body;
+    const { name, email, password, department, departmentMemberships } = req.body;
     const normalizedName = normalizePersonName(name);
 
     // find the admin
@@ -71,7 +117,14 @@ export const adminRegisterStaff = expressAsyncHandler(
 
     // determine department
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const chosenDept = department || (req.userAuth as any)?.department?.toString();
+    const normalizedMemberships = await normalizeDepartmentMemberships(
+      departmentMemberships,
+      scope
+    );
+    const chosenDept =
+      department ||
+      (normalizedMemberships?.[0]?.departmentId?.toString() as string | undefined) ||
+      (req.userAuth as any)?.department?.toString();
     if (department) {
       if (!mongoose.isValidObjectId(department)) {
         throw new ValidationError('Invalid department id');
@@ -87,7 +140,15 @@ export const adminRegisterStaff = expressAsyncHandler(
       name: normalizedName ?? name,
       email,
       department: chosenDept ? new mongoose.Types.ObjectId(chosenDept) : undefined,
+      departmentMemberships: normalizedMemberships,
     });
+
+    if (normalizedMemberships && normalizedMemberships.length > 0) {
+      const roleUnion = Array.from(
+        new Set(normalizedMemberships.flatMap((membership) => membership.roles))
+      );
+      await User.findByIdAndUpdate(user._id, { $set: { subroles: roleUnion } });
+    }
 
     // push staff into admin
     adminFound.instructors?.push(staffCreated._id);
@@ -223,6 +284,12 @@ export const staffUpdateProfile = expressAsyncHandler(
       email?: string;
       name?: PersonNameInput;
       department?: mongoose.Types.ObjectId;
+      departmentMemberships?: {
+        departmentId: mongoose.Types.ObjectId;
+        roles: string[];
+        createdAt?: Date;
+        updatedAt?: Date;
+      }[];
     } = {};
     const userUpdates: { email?: string; passwordHash?: string } = {};
 
@@ -246,6 +313,27 @@ export const staffUpdateProfile = expressAsyncHandler(
         throw new AuthorizationError('Access denied for this department');
       }
       updateFields.department = new mongoose.Types.ObjectId(department);
+      const staffRecord = await Staff.findById(req.userAuth?._id)
+        .select('departmentMemberships')
+        .lean();
+      const currentMemberships = Array.isArray(staffRecord?.departmentMemberships)
+        ? staffRecord?.departmentMemberships
+        : [];
+      const hasMembership = currentMemberships.some(
+        (membership: any) => membership.departmentId?.toString() === department
+      );
+      if (!hasMembership) {
+        const now = new Date();
+        updateFields.departmentMemberships = [
+          ...currentMemberships,
+          {
+            departmentId: new mongoose.Types.ObjectId(department),
+            roles: (req.userAuth as any)?.subroles || [],
+            createdAt: now,
+            updatedAt: now,
+          },
+        ];
+      }
     }
 
     // check if user is updating password
@@ -306,7 +394,8 @@ export const adminUpdateStaff = expressAsyncHandler(
     req: Request<{ staffID: string }, {}, AdminUpdateStaffBody>,
     res: Response
   ): Promise<void> => {
-    const { program, programLevel, academicYear, course, department } = req.body;
+    const { program, programLevel, academicYear, course, department, departmentMemberships } =
+      req.body;
 
     // find staff
     const staffFound = await Staff.findById(req.params.staffID);
@@ -329,7 +418,39 @@ export const adminUpdateStaff = expressAsyncHandler(
         throw new AuthorizationError('Access denied for this department');
       }
       staffFound.department = new mongoose.Types.ObjectId(department);
+      const existingMemberships = Array.isArray(staffFound.departmentMemberships)
+        ? staffFound.departmentMemberships
+        : [];
+      const hasMembership = existingMemberships.some(
+        (membership) => membership.departmentId?.toString() === department
+      );
+      if (!hasMembership) {
+        existingMemberships.push({
+          departmentId: new mongoose.Types.ObjectId(department),
+          roles: (req.userAuth as any)?.subroles || [],
+        });
+        staffFound.departmentMemberships = existingMemberships as any;
+      }
       await staffFound.save();
+    }
+
+    if (departmentMemberships) {
+      const scope = req.departmentScope?.accessibleDepartmentIds;
+      const normalizedMemberships = await normalizeDepartmentMemberships(
+        departmentMemberships,
+        scope
+      );
+      if (normalizedMemberships) {
+        staffFound.departmentMemberships = normalizedMemberships as any;
+        if (!staffFound.department && normalizedMemberships.length > 0) {
+          staffFound.department = normalizedMemberships[0].departmentId;
+        }
+        await staffFound.save();
+        const roleUnion = Array.from(
+          new Set(normalizedMemberships.flatMap((membership) => membership.roles))
+        );
+        await User.findByIdAndUpdate(staffFound._id, { $set: { subroles: roleUnion } });
+      }
     }
 
     // assign a program

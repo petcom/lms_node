@@ -141,18 +141,37 @@ describe('Department Resources API', () => {
         name: { first: 'Alpha', last: 'Instructor' },
         email: 'alpha.instructor@example.com',
         department: topDepartmentId,
+        departmentMemberships: [
+          { departmentId: topDepartmentId, roles: ['instructor'] },
+        ],
       },
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b2'),
         name: { first: 'Sub', last: 'Instructor' },
         email: 'sub.instructor@example.com',
         department: subDepartmentId,
+        departmentMemberships: [
+          { departmentId: subDepartmentId, roles: ['instructor'] },
+        ],
       },
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b3'),
         name: { first: 'Beta', last: 'Instructor' },
         email: 'beta.instructor@example.com',
         department: otherDepartmentId,
+        departmentMemberships: [
+          { departmentId: otherDepartmentId, roles: ['instructor'] },
+        ],
+      },
+      {
+        _id: new mongoose.Types.ObjectId('0000000000000000000000b4'),
+        name: { first: 'Multi', last: 'Instructor' },
+        email: 'multi.instructor@example.com',
+        department: topDepartmentId,
+        departmentMemberships: [
+          { departmentId: topDepartmentId, roles: ['instructor'] },
+          { departmentId: otherDepartmentId, roles: ['content-admin'] },
+        ],
       },
     ];
     await Staff.create(staffEntries);
@@ -298,6 +317,20 @@ describe('Department Resources API', () => {
     expect(roles.every((role: string) => role === 'staff')).toBe(true);
   });
 
+  it('includes department memberships for global admin staff listings', async () => {
+    const res = await request(app)
+      .get('/api/v1/department-resources/staffusers')
+      .set('Authorization', `Bearer ${masterToken}`);
+
+    expect(res.status).toBe(200);
+    const multi = res.body.items.find((item: any) => item.name === 'Instructor, Multi');
+    expect(multi).toBeDefined();
+    expect(Array.isArray(multi.departmentMemberships)).toBe(true);
+    expect(multi.departmentMemberships).toHaveLength(2);
+    const deptNames = multi.departmentMemberships.map((entry: any) => entry.department?.name);
+    expect(deptNames).toEqual(expect.arrayContaining(['Top Alpha', 'Top Beta']));
+  });
+
   it('lists department content scoped to the department hierarchy', async () => {
     const res = await request(app)
       .get('/api/v1/department-resources/content?type=scorm')
@@ -357,7 +390,7 @@ describe('Department Resources API', () => {
     const res = await request(app)
       .patch(`/api/v1/department-resources/staffusers/${staff._id.toString()}/role`)
       .set('Authorization', `Bearer ${topAdminToken}`)
-      .send({ roles: ['instructor', 'content-admin'] });
+      .send({ roles: ['instructor', 'content-admin'], departmentId: topDepartmentId.toString() });
 
     expect(res.status).toBe(200);
     expect(res.body.data.roles).toEqual(expect.arrayContaining(['instructor', 'content-admin']));

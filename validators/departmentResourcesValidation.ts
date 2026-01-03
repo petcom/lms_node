@@ -7,7 +7,14 @@ import { objectId, pagination } from './common';
 
 export const staffUsersQuery = {
   query: Joi.object({
-    type: Joi.string().valid('instructor', 'dept-admin', 'staff'),
+    type: Joi.string().valid(
+      'staff',
+      'global-admin',
+      'instructor',
+      'department-admin',
+      'content-admin',
+      'billing-admin'
+    ),
     departmentId: objectId,
     page: pagination.page,
     limit: pagination.limit,
@@ -30,6 +37,7 @@ export const staffRolesUpdate = {
   }),
   body: Joi.object({
     roles: Joi.array().items(Joi.string().trim()).required(),
+    departmentId: objectId,
   }),
 };
 

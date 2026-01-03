@@ -42,6 +42,17 @@ const honorSchema = new Schema(
   { _id: false }
 );
 
+const membershipSchema = new Schema(
+  {
+    departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
+    roles: {
+      type: [String],
+      default: [],
+    },
+  },
+  { _id: false, timestamps: true }
+);
+
 const getNameInitials = (name: any) => {
   if (!name) return '';
   if (typeof name === 'string') {
@@ -100,6 +111,10 @@ const staffSchema = new Schema<IStaff>(
       type: Boolean,
       default: false,
     },
+    departmentMemberships: {
+      type: [membershipSchema],
+      default: undefined,
+    },
     addresses: {
       type: [addressSchema],
       default: undefined,
@@ -157,6 +172,7 @@ staffSchema.index({ programLevel: 1 });
 staffSchema.index({ applicationStatus: 1 });
 staffSchema.index({ isSuspended: 1 });
 staffSchema.index({ isWithdrawn: 1 });
+staffSchema.index({ 'departmentMemberships.departmentId': 1 });
 staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
 staffSchema.index({ course: 1, programLevel: 1 });

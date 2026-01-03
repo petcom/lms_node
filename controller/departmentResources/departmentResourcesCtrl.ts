@@ -31,6 +31,10 @@ type StaffUser = {
   role: 'global-admin' | 'staff';
   roles?: string[];
   department: DepartmentSummary | null;
+  departmentMemberships?: {
+    department: { id: string; name: string } | null;
+    roles: string[];
+  }[];
 };
 
 type ContentItem = {
@@ -82,6 +86,45 @@ const getDisplayName = (name: any): string => {
   const middleInitial = name.middle ? ` ${String(name.middle).trim()[0]?.toUpperCase()}.` : '';
   if (!first && !last) return '';
   return `${last}, ${first}${middleInitial}`.trim();
+};
+
+const resolveStaffMemberships = (
+  staff: any,
+  fallbackRoles: string[]
+): { departmentId: string; roles: string[] }[] => {
+  if (Array.isArray(staff?.departmentMemberships) && staff.departmentMemberships.length > 0) {
+    return staff.departmentMemberships
+      .map((membership: any) => ({
+        departmentId: membership.departmentId?.toString(),
+        roles: Array.isArray(membership.roles) ? membership.roles : [],
+      }))
+      .filter((membership: any) => membership.departmentId);
+  }
+  const deptId = staff?.department?.toString();
+  if (!deptId) {
+    return [];
+  }
+  return [{ departmentId: deptId, roles: fallbackRoles }];
+};
+
+const filterMembershipsByScope = (
+  memberships: { departmentId: string; roles: string[] }[],
+  departmentIds: string[] | null
+) => {
+  if (departmentIds === null) {
+    return memberships;
+  }
+  const allowed = new Set(departmentIds);
+  return memberships.filter((membership) => allowed.has(membership.departmentId));
+};
+
+const getUnionRoles = (memberships: { departmentId: string; roles: string[] }[]) =>
+  Array.from(new Set(memberships.flatMap((membership) => membership.roles)));
+
+const staffInScope = (staff: any, scope: string[] | 'all' | undefined) => {
+  if (!scope || scope === 'all') return true;
+  const memberships = resolveStaffMemberships(staff, []);
+  return memberships.some((membership) => scope.includes(membership.departmentId));
 };
 
 const resolveDepartmentScope = async (
@@ -215,18 +258,25 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
 
   const departmentMap = await buildDepartmentMap(departments);
 
+  const departmentObjectIds =
+    departmentIds === null
+      ? null
+      : departmentIds.map((id) => new mongoose.Types.ObjectId(id));
   const adminFilter =
-    departmentIds === null
-      ? {}
-      : { department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) } };
+    departmentObjectIds === null ? {} : { department: { $in: departmentObjectIds } };
   const staffFilter =
-    departmentIds === null
+    departmentObjectIds === null
       ? {}
-      : { department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) } };
+      : {
+          $or: [
+            { department: { $in: departmentObjectIds } },
+            { 'departmentMemberships.departmentId': { $in: departmentObjectIds } },
+          ],
+        };
 
   const [admins, staffMembers] = await Promise.all([
     Admin.find(adminFilter).select('name email department').lean(),
-    Staff.find(staffFilter).select('name email department').lean(),
+    Staff.find(staffFilter).select('name email department departmentMemberships').lean(),
   ]);
   const adminIds = admins.map((admin) => admin._id);
   const staffIds = staffMembers.map((staff) => staff._id);
@@ -252,15 +302,28 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
   });
 
   const staffItems: StaffUser[] = staffMembers.map((staff) => {
-    const deptId = staff.department ? staff.department.toString() : null;
+    const fallbackRoles = staffUserMap.get(staff._id.toString()) || [];
+    const memberships = resolveStaffMemberships(staff, fallbackRoles);
+    const scopedMemberships = filterMembershipsByScope(memberships, departmentIds);
+    const roles = getUnionRoles(scopedMemberships.length > 0 ? scopedMemberships : memberships);
+    const deptId = staff.department
+      ? staff.department.toString()
+      : scopedMemberships[0]?.departmentId || memberships[0]?.departmentId;
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
+    const membershipSummaries = (departmentIds === null ? memberships : scopedMemberships).map(
+      (membership) => ({
+        department: departmentMap.get(membership.departmentId) || null,
+        roles: membership.roles,
+      })
+    );
     return {
       id: staff._id.toString(),
       name: getDisplayName(staff.name),
       email: staff.email,
       role: 'staff',
-      roles: staffUserMap.get(staff._id.toString()) || [],
+      roles,
       department: deptSummary,
+      departmentMemberships: membershipSummaries,
     };
   });
 
@@ -420,7 +483,7 @@ export const listDepartmentHierarchy = AsyncHandler(
 
 export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response): Promise<void> => {
   const staffId = req.params.id;
-  const { roles } = req.body as { roles: string[] };
+  const { roles, departmentId } = req.body as { roles: string[]; departmentId?: string };
 
   if (!mongoose.isValidObjectId(staffId)) {
     throw new ValidationError('Invalid staff id');
@@ -436,8 +499,14 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
   }
 
   const scope = req.departmentScope?.accessibleDepartmentIds;
-  const staffDept = staff.department ? staff.department.toString() : null;
-  ensureDepartmentScope(scope, staffDept, 'Access denied for this staff member');
+  const targetDepartmentId =
+    departmentId ||
+    staff.department?.toString() ||
+    staff.departmentMemberships?.[0]?.departmentId?.toString();
+  if (!targetDepartmentId) {
+    throw new ValidationError('departmentId is required for staff role updates');
+  }
+  ensureDepartmentScope(scope, targetDepartmentId, 'Access denied for this staff member');
 
   const requestedRoles = Array.isArray(roles)
     ? roles.map((role) => role.trim()).filter(Boolean)
@@ -455,11 +524,26 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
     }
   }
 
-  await User.findByIdAndUpdate(
-    staffId,
-    { $set: { subroles: uniqueRoles } },
-    { new: true }
+  const memberships = resolveStaffMemberships(staff, []);
+  const existingIndex = memberships.findIndex(
+    (membership) => membership.departmentId === targetDepartmentId
   );
+  if (existingIndex >= 0) {
+    memberships[existingIndex].roles = uniqueRoles;
+  } else {
+    memberships.push({ departmentId: targetDepartmentId, roles: uniqueRoles });
+  }
+  staff.departmentMemberships = memberships.map((membership) => ({
+    departmentId: new mongoose.Types.ObjectId(membership.departmentId),
+    roles: membership.roles,
+  })) as any;
+  if (!staff.department) {
+    staff.department = new mongoose.Types.ObjectId(targetDepartmentId);
+  }
+  await staff.save();
+
+  const roleUnion = getUnionRoles(memberships);
+  await User.findByIdAndUpdate(staffId, { $set: { subroles: roleUnion } }, { new: true });
 
   res.status(200).json({
     status: 'success',
@@ -492,20 +576,43 @@ export const updateStaffDepartment = AsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const staffDept = staff.department ? staff.department.toString() : null;
-    ensureDepartmentScope(scope, staffDept, 'Access denied for this staff member');
+    if (!staffInScope(staff, scope)) {
+      throw new AuthorizationError('Access denied for this staff member');
+    }
 
     if (departmentId === null) {
       if (scope && scope !== 'all') {
         throw new AuthorizationError('Access denied for this department change');
       }
+      const currentDept = staff.department?.toString();
+      if (currentDept) {
+        const memberships = resolveStaffMemberships(staff, []).filter(
+          (membership) => membership.departmentId !== currentDept
+        );
+        staff.departmentMemberships = memberships.map((membership) => ({
+          departmentId: new mongoose.Types.ObjectId(membership.departmentId),
+          roles: membership.roles,
+        })) as any;
+      }
       staff.department = undefined;
     } else if (departmentId) {
       ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
       staff.department = new mongoose.Types.ObjectId(departmentId);
+      const memberships = resolveStaffMemberships(staff, []);
+      if (!memberships.some((membership) => membership.departmentId === departmentId)) {
+        memberships.push({ departmentId, roles: [] });
+      }
+      staff.departmentMemberships = memberships.map((membership) => ({
+        departmentId: new mongoose.Types.ObjectId(membership.departmentId),
+        roles: membership.roles,
+      })) as any;
     }
 
     await staff.save();
+
+    const membershipsForUnion = resolveStaffMemberships(staff, []);
+    const roleUnion = getUnionRoles(membershipsForUnion);
+    await User.findByIdAndUpdate(staffId, { $set: { subroles: roleUnion } }, { new: true });
 
     res.status(200).json({
       status: 'success',

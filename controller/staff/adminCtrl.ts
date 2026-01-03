@@ -11,6 +11,20 @@ import Learner from '../../model/Academic/Learner';
 import logAudit from '../../utils/auditLogger';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
+const staffInScope = (staff: any, scope: string[] | 'all' | undefined) => {
+  if (!scope || scope === 'all') return true;
+  const membershipIds = Array.isArray(staff?.departmentMemberships)
+    ? staff.departmentMemberships
+        .map((membership: { departmentId?: any }) => membership.departmentId?.toString())
+        .filter(Boolean)
+    : [];
+  if (membershipIds.length > 0) {
+    return membershipIds.some((id: string) => scope.includes(id));
+  }
+  const staffDept = staff?.department?.toString();
+  return staffDept ? scope.includes(staffDept) : false;
+};
+
 const upsertProgramStatus = (
   learner: any,
   programId: mongoose.Types.ObjectId,
@@ -297,8 +311,7 @@ export const adminSuspendInstructorCtrl = expressAsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const instructorDept = (instructor as any).department?.toString();
-    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
+    if (!staffInScope(instructor, scope)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
@@ -344,8 +357,7 @@ export const adminUnsuspendinstructorCtrl = expressAsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const instructorDept = (instructor as any).department?.toString();
-    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
+    if (!staffInScope(instructor, scope)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
@@ -391,8 +403,7 @@ export const adminWithdrawInstructorCtrl = expressAsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const instructorDept = (instructor as any).department?.toString();
-    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
+    if (!staffInScope(instructor, scope)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 
@@ -438,8 +449,7 @@ export const adminUnwithdrawInstructorCtrl = expressAsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const instructorDept = (instructor as any).department?.toString();
-    if (scope && scope !== 'all' && instructorDept && !scope.includes(instructorDept)) {
+    if (!staffInScope(instructor, scope)) {
       throw new AuthorizationError('Access denied for this staff member');
     }
 

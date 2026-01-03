@@ -75,6 +75,7 @@ export interface IStaff extends IPerson {
   instructorId?: string;
   isWithdrawn: boolean;
   isSuspended: boolean;
+  departmentMemberships?: IDepartmentMembership[];
   course?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
   program?: Types.ObjectId;
@@ -83,6 +84,13 @@ export interface IStaff extends IPerson {
   examsCreated?: Types.ObjectId[];
   department?: Types.ObjectId;
   createdBy?: Types.ObjectId;
+}
+
+export interface IDepartmentMembership {
+  departmentId: Types.ObjectId;
+  roles: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Staff Role Interface

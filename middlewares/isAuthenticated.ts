@@ -13,6 +13,7 @@ type UserAuth = {
   email: string;
   role: string;
   subroles?: string[];
+  departmentMemberships?: { departmentId: any; roles?: string[] }[];
 };
 
 /**
@@ -109,7 +110,9 @@ const isAuthenticated = () => {
       if (user.role === 'global-admin') {
         profile = await Admin.findById(user._id).select('name email department').lean();
       } else if (user.role === 'staff') {
-        profile = await Staff.findById(user._id).select('name email department').lean();
+        profile = await Staff.findById(user._id)
+          .select('name email department departmentMemberships')
+          .lean();
       } else {
         profile = await Learner.findById(user._id).select('name email department').lean();
       }
@@ -125,6 +128,10 @@ const isAuthenticated = () => {
         email: user.email,
         role: user.role,
         subroles: user.subroles || undefined,
+        departmentMemberships:
+          user.role === 'staff'
+            ? (profile as any).departmentMemberships || undefined
+            : undefined,
         department: profile.department,
       } as any;
       req.token = tokenValue;

@@ -9,8 +9,8 @@ describe('Permissions matrix endpoint', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.permissions.admin).toBeDefined();
-    expect(Array.isArray(res.body.data.permissions.admin)).toBe(true);
-    expect(res.body.data.roles.ADMIN).toBe('global-admin');
+    expect(res.body.data.permissions['global-admin']).toBeDefined();
+    expect(Array.isArray(res.body.data.permissions['global-admin'])).toBe(true);
+    expect(res.body.data.roles.GLOBAL_ADMIN).toBe('global-admin');
   });
 });

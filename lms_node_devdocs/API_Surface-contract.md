@@ -21,6 +21,8 @@ Base URL: `/api/v1`
   `lms_node_devdocs/Department_Resources_UI-contract.md`.
 - Templates are defined in `lms_node_devdocs/Master_Templates_UI-contract.md`.
 - Metrics + permissions are defined in `lms_node_devdocs/Platform_Admin-contract.md`.
+- Lists are defined in `lms_node_devdocs/Lists-contract.md`.
+- Staff analytics are defined in `lms_node_devdocs/Staff_Analytics-contract.md`.
 
 ## Authentication + Password
 ### Auth
@@ -52,6 +54,11 @@ Base URL: `/api/v1`
 - GET `/staff/dashboard`
 - GET `/staff/attempts`
 - GET `/staff/assignments`
+
+### Staff Analytics
+- GET `/staff/analytics/programs`
+- GET `/staff/analytics/programs/:programId/levels`
+- GET `/staff/analytics/programs/:programId/levels/:levelId`
 
 ### Global Admin (Auth + Profile)
 - POST `/staff/admins/register`
@@ -130,6 +137,9 @@ Base URL: `/api/v1`
 ## Settings
 - GET `/settings`
 - PUT `/settings`
+
+## Lists
+- GET `/lists/staff-roles`
 
 ## Permissions + Metrics
 - GET `/permissions/matrix`

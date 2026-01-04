@@ -25,6 +25,7 @@ import classEnrollmentRouter from '../routes/academics/classEnrollment';
 import courseEnrollmentRouter from '../routes/academics/courseEnrollment';
 import yearGroupRouter from '../routes/academics/yearGroup';
 import staffRouter from '../routes/staff/staffRouter';
+import staffAnalyticsRouter from '../routes/staff/analyticsRouter';
 import examRouter from '../routes/academics/examRoutes';
 import learnerRouter from '../routes/learners/learnerRouter';
 import questionsRouter from '../routes/academics/questionRoutes';
@@ -43,6 +44,7 @@ import departmentResourcesRouter from '../routes/departmentResources/departmentR
 import contentRouter from '../routes/content/contentRouter';
 import templatesRouter from '../routes/templates/templatesRouter';
 import settingsRouter from '../routes/settingsRouter';
+import listsRouter from '../routes/listsRouter';
 import { healthCheck, readyCheck } from '../controller/healthCtrl';
 
 const app: Application = express(); // create application instance of express
@@ -165,6 +167,7 @@ app.use('/api/v1/class-enrollments', classEnrollmentRouter); // Class enrollment
 app.use('/api/v1/course-enrollments', courseEnrollmentRouter); // Course enrollment routes
 app.use('/api/v1/year-groups', yearGroupRouter); // Year Group routes
 app.use('/api/v1/staff', staffRouter); // Staff routes
+app.use('/api/v1/staff/analytics', staffAnalyticsRouter); // Staff analytics
 app.use('/api/v1/exams', examRouter); // Exams routes
 app.use('/api/v1/learners', learnerRouter); // Learner routes
 app.use('/api/v1/questions', questionsRouter); // Question routes
@@ -183,6 +186,7 @@ app.use('/api/v1/permissions', permissionsRouter); // Permissions matrix
 app.use('/api/v1/content', contentRouter); // Unified content API
 app.use('/api/v1/templates', templatesRouter); // Master templates
 app.use('/api/v1/settings', settingsRouter); // Global settings
+app.use('/api/v1/lists', listsRouter); // Shared lookup lists
 
 // Legacy front-end path fallback to avoid 404s when SCORM player redirects
 app.get('/learner/dashboard', (_req, res) => res.redirect('/'));

@@ -21,8 +21,6 @@ const staffRoleSchema = new Schema<IStaffRole>(
   { timestamps: true }
 );
 
-staffRoleSchema.index({ name: 1 }, { unique: true });
-
 const StaffRole = mongoose.model<IStaffRole>('StaffRole', staffRoleSchema);
 
 export default StaffRole;

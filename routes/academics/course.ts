@@ -91,6 +91,13 @@ courseRouter
     validate(updateCourseValidation),
     updateCourse
   )
+  .patch(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(updateCourseValidation),
+    updateCourse
+  )
   .delete(
     isAuthenticated(),
     departmentScope(),
@@ -117,22 +124,40 @@ courseRouter.patch(
   unarchiveCourse
 );
 
-courseRouter.patch(
-  '/:id/publish',
-  isAuthenticated(),
-  departmentScope(),
-  roleRestriction('global-admin'),
-  validate(idParam),
-  publishCourse
-);
+// Publish endpoint with both PATCH (existing) and POST (alias for contract compliance)
+courseRouter
+  .route('/:id/publish')
+  .patch(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(idParam),
+    publishCourse
+  )
+  .post(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(idParam),
+    publishCourse
+  );
 
-courseRouter.patch(
-  '/:id/unpublish',
-  isAuthenticated(),
-  departmentScope(),
-  roleRestriction('global-admin'),
-  validate(idParam),
-  unpublishCourse
-);
+// Unpublish endpoint with both PATCH (existing) and POST (alias for contract compliance)
+courseRouter
+  .route('/:id/unpublish')
+  .patch(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(idParam),
+    unpublishCourse
+  )
+  .post(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(idParam),
+    unpublishCourse
+  );
 
 export default courseRouter;

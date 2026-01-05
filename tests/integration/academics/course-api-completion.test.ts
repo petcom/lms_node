@@ -288,4 +288,105 @@ describe('Course API Completion Plan - Phase 1', () => {
       expect(res.body.message).toMatch(/primary.*instructor/i);
     });
   });
+
+  describe('Phase 2: HTTP Method Aliases', () => {
+    beforeEach(async () => {
+      const course = await Course.create({
+        title: 'Alias Test Course',
+        description: 'Test course for HTTP method aliases',
+        program: programId,
+        programLevel: programLevelId,
+        department: masterDepartmentId,
+        createdBy: masterAdminId,
+        primaryInstructors: [instructorId],
+      });
+      courseId = course._id;
+
+      await ProgramLevel.findByIdAndUpdate(programLevelId, {
+        $addToSet: { courses: courseId },
+      });
+    });
+
+    describe('2.1 PATCH alias for course update', () => {
+      it('should update course using PATCH method', async () => {
+        const res = await request(app)
+          .patch(`/api/v1/courses/${courseId.toString()}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ title: 'Updated via PATCH' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.title).toBe('Updated via PATCH');
+      });
+
+      it('should update course using PUT method (existing)', async () => {
+        const res = await request(app)
+          .put(`/api/v1/courses/${courseId.toString()}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ title: 'Updated via PUT' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.title).toBe('Updated via PUT');
+      });
+    });
+
+    describe('2.2 POST aliases for publish/unpublish', () => {
+      beforeEach(async () => {
+        // Set course to rendered status
+        await Course.findByIdAndUpdate(courseId, { status: 'rendered' });
+        await RenderedCourse.create({
+          courseId: courseId,
+          contentVersion: new Date(),
+          html: '<div>Content</div>',
+        });
+      });
+
+      it('should publish course using POST method', async () => {
+        const res = await request(app)
+          .post(`/api/v1/courses/${courseId.toString()}/publish`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe('published');
+      });
+
+      it('should publish course using PATCH method (existing)', async () => {
+        const res = await request(app)
+          .patch(`/api/v1/courses/${courseId.toString()}/publish`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe('published');
+      });
+
+      it('should unpublish course using POST method', async () => {
+        // First publish
+        await Course.findByIdAndUpdate(courseId, {
+          status: 'published',
+          publishedAt: new Date(),
+        });
+
+        const res = await request(app)
+          .post(`/api/v1/courses/${courseId.toString()}/unpublish`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe('rendered');
+      });
+
+      it('should unpublish course using PATCH method (existing)', async () => {
+        // First publish
+        await Course.findByIdAndUpdate(courseId, {
+          status: 'published',
+          publishedAt: new Date(),
+        });
+
+        const res = await request(app)
+          .patch(`/api/v1/courses/${courseId.toString()}/unpublish`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe('rendered');
+      });
+    });
+  });
 });

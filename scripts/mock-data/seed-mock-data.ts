@@ -29,7 +29,7 @@ import ContentAttempt from '../../model/Academic/ContentAttempt';
 // Import mock data
 import { departments } from './departments';
 import { staff, users } from './staff';
-import { learners } from './learners';
+import { learners, learnerUsers } from './learners';
 import { programs } from './programs';
 import { programLevels } from './program-levels';
 import { courses } from './courses';
@@ -58,7 +58,11 @@ async function seedMockData() {
 
     console.log('📦 Seeding users (for staff)...');
     await User.insertMany(users);
-    console.log(`   ✅ Inserted ${users.length} users\n`);
+    console.log(`   ✅ Inserted ${users.length} staff users\n`);
+
+    console.log('📦 Seeding users (for learners)...');
+    await User.insertMany(learnerUsers);
+    console.log(`   ✅ Inserted ${learnerUsers.length} learner users\n`);
 
     console.log('📦 Seeding staff...');
     await Staff.insertMany(staff);

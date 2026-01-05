@@ -13,6 +13,46 @@ export const LEARNER_IDS = {
   ERNEST: mockId(PREFIXES.LEARNER, 5),
 };
 
+// User (Auth) records for learners - allows login
+// Password for all: "MockLearner123!" (bcrypt hash)
+export const learnerUsers = [
+  {
+    _id: LEARNER_IDS.JOHNNY,
+    email: 'mock.johnny@learner.com',
+    passwordHash: '$2b$10$mockhashedpasswordjohnny00000000000000000',
+    role: 'learner',
+    status: 'active',
+  },
+  {
+    _id: LEARNER_IDS.EMILY,
+    email: 'mock.emily@learner.com',
+    passwordHash: '$2b$10$mockhashedpasswordemily000000000000000000',
+    role: 'learner',
+    status: 'active',
+  },
+  {
+    _id: LEARNER_IDS.OSCAR,
+    email: 'mock.oscar@learner.com',
+    passwordHash: '$2b$10$mockhashedpasswordoscar000000000000000000',
+    role: 'learner',
+    status: 'active',
+  },
+  {
+    _id: LEARNER_IDS.VIRGINIA,
+    email: 'mock.virginia@learner.com',
+    passwordHash: '$2b$10$mockhashedpasswordvirginia0000000000000',
+    role: 'learner',
+    status: 'active',
+  },
+  {
+    _id: LEARNER_IDS.ERNEST,
+    email: 'mock.ernest@learner.com',
+    passwordHash: '$2b$10$mockhashedpasswordernest00000000000000000',
+    role: 'learner',
+    status: 'active',
+  },
+];
+
 export const learners = [
   {
     _id: LEARNER_IDS.JOHNNY,

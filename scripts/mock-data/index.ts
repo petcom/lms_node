@@ -40,7 +40,7 @@ export const isMockId = (id: mongoose.Types.ObjectId | string): boolean => {
 // Export all data
 export { departments } from './departments';
 export { users, staff } from './staff';
-export { learners } from './learners';
+export { learners, learnerUsers } from './learners';
 export { programs } from './programs';
 export { programLevels } from './program-levels';
 export { courses } from './courses';

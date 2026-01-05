@@ -20,6 +20,7 @@
     "dev:ts": "ts-node-dev --respawn --transpile-only server.ts",
     "dev:local": "ts-node-dev --respawn --transpile-only -r dotenv-safe/config server.ts dotenv_config_path=.env.local",
     "migrate:scorm:uploadedBy": "ts-node scripts/backfill-scorm-uploadedBy.ts",
+    "migrate:course:catalog": "ts-node scripts/migrate-course-catalog.ts",
     "test": "NODE_ENV=test jest --runInBand",
     "test:watch": "NODE_ENV=test jest --watch --runInBand",
     "test:coverage": "NODE_ENV=test jest --coverage --runInBand",

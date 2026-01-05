@@ -38,7 +38,9 @@
     "pm2:stop": "pm2 stop lms-api",
     "pm2:restart": "pm2 restart lms-api",
     "pm2:logs": "pm2 logs lms-api",
-    "pm2:monit": "pm2 monit"
+    "pm2:monit": "pm2 monit",
+    "seed:mongomock": "ts-node scripts/mock-data/seed-mock-data.ts",
+    "seed:mongopurge": "ts-node scripts/mock-data/purge-mock-data.ts"
   },
   "keywords": [
     "lms",

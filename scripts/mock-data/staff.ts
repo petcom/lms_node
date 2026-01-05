@@ -14,11 +14,14 @@ export const STAFF_IDS = {
 };
 
 // Users (Auth records) - same IDs as staff
+// Password for all: "MockStaff123!"
+const STAFF_PASSWORD_HASH = '$2a$10$R6JMyC.MknaZhkMPh/F7UuUv/CIfZouN47QdwIKCIuOaggwyURLg.';
+
 export const users = [
   {
     _id: STAFF_IDS.WILLIAM,
     email: 'mock.william@example.com',
-    passwordHash: '$2b$10$mockhashedpasswordwilliam000000000000000000',
+    passwordHash: STAFF_PASSWORD_HASH,
     role: 'staff',
     status: 'active',
     subroles: ['instructor', 'department-admin'],
@@ -26,7 +29,7 @@ export const users = [
   {
     _id: STAFF_IDS.JANE,
     email: 'mock.jane@example.com',
-    passwordHash: '$2b$10$mockhashedpasswordjane0000000000000000000000',
+    passwordHash: STAFF_PASSWORD_HASH,
     role: 'staff',
     status: 'active',
     subroles: ['instructor'],
@@ -34,7 +37,7 @@ export const users = [
   {
     _id: STAFF_IDS.CHARLES,
     email: 'mock.charles@example.com',
-    passwordHash: '$2b$10$mockhashedpasswordcharles00000000000000000',
+    passwordHash: STAFF_PASSWORD_HASH,
     role: 'staff',
     status: 'active',
     subroles: ['instructor'],
@@ -42,7 +45,7 @@ export const users = [
   {
     _id: STAFF_IDS.FLORENCE,
     email: 'mock.florence@example.com',
-    passwordHash: '$2b$10$mockhashedpasswordflorence000000000000000',
+    passwordHash: STAFF_PASSWORD_HASH,
     role: 'staff',
     status: 'active',
     subroles: ['content-admin', 'billing-admin'],

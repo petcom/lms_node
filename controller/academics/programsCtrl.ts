@@ -86,9 +86,10 @@ export const getPrograms = AsyncHandler(async (_req: Request, res: Response): Pr
     });
 
     results.data = items.map((program: any) => {
+      const programObject = program?.toObject ? program.toObject() : program;
       const courseSet = coursesByProgram.get(program._id.toString());
       return {
-        ...program,
+        ...programObject,
         courses: courseSet ? Array.from(courseSet) : [],
       };
     });

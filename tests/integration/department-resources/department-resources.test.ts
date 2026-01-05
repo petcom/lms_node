@@ -429,7 +429,7 @@ describe('Department Resources API', () => {
         type: 'custom',
         title: 'Alpha Practice',
         description: 'Practice exam',
-        customType: 'practice',
+        customType: 'exercise',
         course: course._id.toString(),
         program: program._id.toString(),
         programLevel: programLevel._id.toString(),
@@ -444,7 +444,7 @@ describe('Department Resources API', () => {
       });
 
     expect(createRes.status).toBe(201);
-    expect(createRes.body.data.customType).toBe('practice');
+    expect(createRes.body.data.customType).toBe('exercise');
 
     const contentId = createRes.body.data.id;
     const updateRes = await request(app)

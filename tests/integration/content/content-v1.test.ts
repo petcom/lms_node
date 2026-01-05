@@ -128,7 +128,7 @@ describe('Content v1 API', () => {
   it('renders a course and caches output', async () => {
     const custom = await CustomContent.create({
       title: 'Intro Section',
-      customType: 'other',
+      customType: 'custom',
       html: '<h1>Intro</h1>',
       css: 'h1 { color: red; }',
       department: masterDepartmentId,
@@ -226,7 +226,7 @@ describe('Content v1 API', () => {
   it('returns unified reporting summary', async () => {
     const custom = await CustomContent.create({
       title: 'Practice Section',
-      customType: 'practice',
+      customType: 'exercise',
       payload: { steps: 2 },
       department: masterDepartmentId,
       createdBy: masterAdminId,

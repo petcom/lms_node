@@ -3,12 +3,10 @@ import mongoose from 'mongoose';
 import app from '../../../app/app';
 import Department from '../../../model/Academic/Department';
 import Program from '../../../model/Academic/Program';
-import AcademicYear from '../../../model/Academic/AcademicYear';
-import AcademicTerm from '../../../model/Academic/AcademicTerm';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import Staff from '../../../model/Staff/Staff';
-import Exam from '../../../model/Academic/Exam';
+import CustomContent from '../../../model/Content/CustomContent';
 import User from '../../../model/Auth/User';
 import { hashPassword } from '../../../utils/helpers';
 
@@ -22,7 +20,7 @@ describe('Program levels, courses, and course content', () => {
   let programId: mongoose.Types.ObjectId;
   let programLevelId: string;
   let courseId: string;
-  let examId: string;
+  let customContentId: string;
 
   beforeAll(async () => {
     if (mongoose.connection.readyState !== 1) {
@@ -39,13 +37,11 @@ describe('Program levels, courses, and course content', () => {
     await Promise.all([
       Department.deleteMany({}),
       Program.deleteMany({}),
-      AcademicYear.deleteMany({}),
-      AcademicTerm.deleteMany({}),
       ProgramLevel.deleteMany({}),
       Course.deleteMany({}),
       Staff.deleteMany({}),
       User.deleteMany({}),
-      Exam.deleteMany({}),
+      CustomContent.deleteMany({}),
     ]);
 
     await Department.create({
@@ -80,20 +76,6 @@ describe('Program levels, courses, and course content', () => {
     }
     programLevelId = programLevelRes.body.data._id;
 
-    const academicYear = await AcademicYear.create({
-      name: '2024-2025',
-      fromYear: new Date('2024-01-01'),
-      toYear: new Date('2025-01-01'),
-      createdBy: masterAdminId,
-    });
-
-    const academicTerm = await AcademicTerm.create({
-      name: '1st Term',
-      description: 'First term',
-      duration: '3 months',
-      createdBy: masterAdminId,
-    });
-
     const programLevelObjectId = new mongoose.Types.ObjectId(programLevelId);
     const course = await Course.create({
       title: 'Alpha Course',
@@ -116,24 +98,13 @@ describe('Program levels, courses, and course content', () => {
       status: 'active',
     });
 
-    const exam = await Exam.create({
-      name: 'Alpha Quiz',
-      description: 'Quiz for Alpha',
-      course: course._id,
-      program: programId,
-      passMark: 30,
-      totalMark: 100,
-      academicTerm: academicTerm._id,
-      duration: '30 minutes',
-      examDate: new Date(),
-      examTime: '10:00',
-      examType: 'quiz',
-      examStatus: 'pending',
-      programLevel: programLevelObjectId,
+    const customContent = await CustomContent.create({
+      title: 'Alpha Quiz',
+      customType: 'quiz',
+      department: masterDepartmentId,
       createdBy: instructor._id,
-      academicYear: academicYear._id,
     });
-    examId = exam._id.toString();
+    customContentId = customContent._id.toString();
   });
 
   it('creates and lists program levels', async () => {
@@ -166,7 +137,7 @@ describe('Program levels, courses, and course content', () => {
       .send({
         course: courseId,
         contentType: 'custom',
-        customContentId: examId,
+        customContentId: customContentId,
         order: 1,
       });
 
@@ -178,5 +149,63 @@ describe('Program levels, courses, and course content', () => {
 
     expect(listRes.status).toBe(200);
     expect(listRes.body.data.length).toBeGreaterThan(0);
+  });
+
+  it('updates program level courses and syncs course programLevel', async () => {
+    const courseRes = await request(app)
+      .post('/api/v1/courses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        title: 'Course 2',
+        description: 'Course description',
+        program: programId.toString(),
+        department: masterDepartmentId.toString(),
+      });
+
+    expect(courseRes.status).toBe(201);
+    const newCourseId = courseRes.body.data._id;
+
+    const updateRes = await request(app)
+      .put(`/api/v1/program-levels/${programLevelId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        courses: [newCourseId],
+      });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.courses).toContain(newCourseId);
+
+    const updatedCourse = await Course.findById(newCourseId).lean();
+    expect(updatedCourse?.programLevel?.toString()).toBe(programLevelId);
+  });
+
+  it('publishes and unpublishes a course', async () => {
+    const courseRes = await request(app)
+      .post('/api/v1/courses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        title: 'Course 3',
+        description: 'Course description',
+        program: programId.toString(),
+        programLevel: programLevelId,
+        department: masterDepartmentId.toString(),
+      });
+
+    expect(courseRes.status).toBe(201);
+    const targetCourseId = courseRes.body.data._id;
+
+    const publishRes = await request(app)
+      .patch(`/api/v1/courses/${targetCourseId}/publish`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(publishRes.status).toBe(200);
+    expect(publishRes.body.data.status).toBe('published');
+
+    const unpublishRes = await request(app)
+      .patch(`/api/v1/courses/${targetCourseId}/unpublish`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(unpublishRes.status).toBe(200);
+    expect(unpublishRes.body.data.status).toBe('rendered');
   });
 });

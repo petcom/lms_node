@@ -54,12 +54,24 @@ const globalSetup = async (): Promise<void> => {
 
   if (process.env.MONGO_TEST_URI && process.env.SKIP_DB_SETUP !== 'true') {
     await mongoose.connect(process.env.MONGO_TEST_URI);
-    const staffCollection = mongoose.connection.collection('staffs');
-    const indexes = await staffCollection.indexes();
-    const legacyIndex = indexes.find((index) => index.name === 'teacherId_1');
-    if (legacyIndex) {
-      await staffCollection.dropIndex('teacherId_1');
+
+    const dbName = mongoose.connection.db.databaseName || '';
+    const shouldReset = /test/i.test(dbName);
+
+    if (shouldReset) {
+      await mongoose.connection.dropDatabase();
+    } else {
+      console.warn(
+        `Skipping test DB reset because database name "${dbName}" does not look like a test database.`
+      );
+      const staffCollection = mongoose.connection.collection('staffs');
+      const indexes = await staffCollection.indexes();
+      const legacyIndex = indexes.find((index) => index.name === 'teacherId_1');
+      if (legacyIndex) {
+        await staffCollection.dropIndex('teacherId_1');
+      }
     }
+
     await mongoose.disconnect();
   }
 };

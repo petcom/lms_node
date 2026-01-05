@@ -184,6 +184,12 @@ describe('Program levels, courses, and course content', () => {
   });
 
   it('publishes and unpublishes a course', async () => {
+    // Create an instructor first
+    const instructor = await Staff.create({
+      name: { first: 'Publish', last: 'Instructor' },
+      email: 'publish.instructor@example.com',
+    });
+
     const courseRes = await request(app)
       .post('/api/v1/courses')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -193,6 +199,7 @@ describe('Program levels, courses, and course content', () => {
         program: programId.toString(),
         programLevel: programLevelId,
         department: masterDepartmentId.toString(),
+        primaryInstructors: [instructor._id.toString()],
       });
 
     expect(courseRes.status).toBe(201);

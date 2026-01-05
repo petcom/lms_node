@@ -548,21 +548,8 @@ export interface ICourseSegment {
   contentId: Types.ObjectId;
 }
 
-export interface ICourse extends Document {
-  _id: Types.ObjectId;
-  title: string;
-  shortDescription?: string;
-  longDescription?: string;
-  status?: 'draft' | 'rendered' | 'published';
-  publishedAt?: Date;
-  publishedBy?: Types.ObjectId;
-  primaryInstructors?: Types.ObjectId[];
-  secondaryInstructors?: Types.ObjectId[];
-  department?: Types.ObjectId;
-  segments: ICourseSegment[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Note: ICourse interface is defined earlier in this file (line ~298)
+// This duplicate has been removed to avoid TypeScript conflicts
 
 export interface IRenderedCourse extends Document {
   _id: Types.ObjectId;

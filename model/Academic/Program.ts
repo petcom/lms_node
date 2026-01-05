@@ -68,14 +68,6 @@ const programSchema = new Schema<IProgram>(
         default: [],
       },
     ],
-    // Courses that are in the program
-    courses: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Course',
-        default: [],
-      },
-    ],
     archived: {
       type: Boolean,
       default: false,

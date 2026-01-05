@@ -513,3 +513,50 @@ export const adminUpdateStaff = expressAsyncHandler(
     });
   }
 );
+
+/**
+ * @description Get staff members by department for instructor selector
+ * @route       GET /api/v1/staff/by-department/:departmentId
+ * @access      Private (staff, global-admin)
+ */
+export const getStaffByDepartment = expressAsyncHandler(
+  async (req: Request<{ departmentId: string }>, res: Response): Promise<void> => {
+    const { departmentId } = req.params;
+
+    if (!mongoose.isValidObjectId(departmentId)) {
+      throw new ValidationError('Invalid department ID');
+    }
+
+    // Check if department exists
+    const Department = mongoose.model('Department');
+    const department = await Department.findById(departmentId).lean();
+    if (!department) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Department not found',
+      });
+      return;
+    }
+
+    // Find all staff in this department
+    const staffList = await Staff.find({ department: new mongoose.Types.ObjectId(departmentId) })
+      .select('name email')
+      .lean();
+
+    // Transform to expected format for instructor selector
+    const formattedStaff = staffList.map((staff: any) => ({
+      _id: staff._id,
+      displayName: staff.name?.first && staff.name?.last
+        ? `${staff.name.first} ${staff.name.last}`
+        : staff.email,
+      firstName: staff.name?.first || '',
+      lastName: staff.name?.last || '',
+      email: staff.email,
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      data: formattedStaff,
+    });
+  }
+);

@@ -4,8 +4,11 @@ import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
+import Course from '../../model/Content/Course';
 import { IProgram, IAdmin } from '../../types/models-types';
-import { AuthorizationError } from '../../utils/errors';
+import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import { getProgramCourseCatalog, courseCatalogCacheConfig } from '../../utils/courseCatalogCache';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 
 const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
 
@@ -106,6 +109,9 @@ export const getPrograms = AsyncHandler(async (_req: Request, res: Response): Pr
 export const getSingleProgram = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     const singleProgram = (await Program.findById(req.params.id)) as IProgram | null;
+    if (!singleProgram) {
+      throw new NotFoundError('Program not found');
+    }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
     if (scope && scope !== 'all') {
@@ -115,13 +121,9 @@ export const getSingleProgram = AsyncHandler(
       }
     }
 
-    const levels = await ProgramLevel.find({ program: singleProgram._id })
-      .select('courses')
-      .lean();
+    const { entries } = await getProgramCourseCatalog(singleProgram._id.toString());
     const courseSet = new Set<string>();
-    levels.forEach((level) => {
-      (level.courses || []).forEach((courseId: any) => courseSet.add(courseId.toString()));
-    });
+    entries.forEach((entry) => courseSet.add(entry.courseId));
 
     const payload = {
       ...singleProgram?.toObject?.(),
@@ -132,6 +134,122 @@ export const getSingleProgram = AsyncHandler(
       status: 'success',
       message: 'Single Program fetched successfully',
       data: payload,
+    });
+  }
+);
+
+export const getProgramCourses = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const program = await Program.findById(req.params.id).lean();
+    if (!program) {
+      throw new NotFoundError('Program not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    if (scope && scope !== 'all') {
+      const dept = program.department?.toString();
+      if (!dept || !scope.includes(dept)) {
+        throw new AuthorizationError('Access denied for this program');
+      }
+    }
+
+    const { entries, fromCache } = await getProgramCourseCatalog(program._id.toString());
+    const courseIds = entries.map((entry) => entry.courseId);
+
+    const page = normalizePage(req.query.page);
+    const { limit } = await resolvePagination(undefined, req.query.limit);
+    const skip = (page - 1) * limit;
+
+    if (courseIds.length === 0) {
+      res.status(200).json({
+        status: 'success',
+        message: 'Program courses fetched successfully',
+        total: 0,
+        results: 0,
+        pagination: {},
+        cache: { ...courseCatalogCacheConfig, fromCache },
+        data: [],
+      });
+      return;
+    }
+
+    const filter: Record<string, any> = {
+      _id: { $in: courseIds },
+    };
+
+    if (typeof req.query.status === 'string') {
+      const status = req.query.status;
+      if (!['draft', 'rendered', 'published'].includes(status)) {
+        throw new ValidationError('Invalid status filter');
+      }
+      filter.status = status;
+    }
+
+    if (typeof req.query.instructor === 'string') {
+      const instructorId = req.query.instructor;
+      if (!mongoose.isValidObjectId(instructorId)) {
+        throw new ValidationError('Invalid instructor id');
+      }
+      filter.$or = [
+        { primaryInstructors: new mongoose.Types.ObjectId(instructorId) },
+        { secondaryInstructors: new mongoose.Types.ObjectId(instructorId) },
+      ];
+    }
+
+    const total = await Course.countDocuments(filter);
+    const startIndex = skip;
+    const endIndex = page * limit;
+    const pagination: { next?: { page: number; limit: number }; prev?: { page: number; limit: number } } =
+      {};
+
+    if (endIndex < total) {
+      pagination.next = { page: page + 1, limit };
+    }
+    if (startIndex > 0) {
+      pagination.prev = { page: page - 1, limit };
+    }
+
+    const courses = await Course.find(filter)
+      .select(
+        'title shortDescription longDescription status primaryInstructors secondaryInstructors'
+      )
+      .populate('primaryInstructors', 'name')
+      .populate('secondaryInstructors', 'name')
+      .sort({ title: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const levelByCourse = new Map<string, string | null>();
+    entries.forEach((entry) => {
+      levelByCourse.set(entry.courseId, entry.programLevelId || null);
+    });
+
+    const data = courses.map((course: any) => ({
+      id: course._id.toString(),
+      title: course.title,
+      shortDescription: course.shortDescription,
+      longDescription: course.longDescription,
+      status: course.status,
+      programLevelId: levelByCourse.get(course._id.toString()) || null,
+      primaryInstructors: (course.primaryInstructors || []).map((staff: any) => ({
+        id: staff._id?.toString(),
+        name: staff.name,
+      })),
+      secondaryInstructors: (course.secondaryInstructors || []).map((staff: any) => ({
+        id: staff._id?.toString(),
+        name: staff.name,
+      })),
+    }));
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Program courses fetched successfully',
+      total,
+      results: data.length,
+      pagination,
+      cache: { ...courseCatalogCacheConfig, fromCache },
+      data,
     });
   }
 );

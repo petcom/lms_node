@@ -56,6 +56,27 @@ Implement the course catalog model and APIs described in:
 - [x] Add API integration tests for ProgramLevel courses, Course status, and Lists.
 - [x] Verify backward compatibility for existing course and content APIs.
 
+## Phase 5: Nice-to-Have Enhancements
+1) **Course catalog cache**
+   - Add an in-memory/Redis cache layer for derived Program → Courses.
+   - Define cache keys, TTL, and invalidation triggers (course/level/program updates).
+   - Add metrics/logging for cache hits/misses.
+2) **Program courses endpoint**
+   - Add `GET /api/v1/programs/:id/courses` returning derived catalog entries.
+   - Include course status, instructor names, and brief descriptions for UI use.
+   - Add pagination and optional filters (status, instructor).
+3) **Status transition guardrails**
+   - Enforce allowed status transitions (e.g., `draft → rendered → published`).
+   - Block publish if no rendered output exists (or define explicit override).
+   - Add tests covering transition errors and success paths.
+4) **Data integrity tooling**
+   - Add a repair/report endpoint or script for ProgramLevel ↔ Course mismatches.
+   - Emit counts of mismatches, missing references, and auto-fixes applied.
+   - Add safeguards for read-only mode (report only).
+5) **Migration reporting**
+   - Enhance migration output with summary counts and warnings.
+   - Add a dry-run mode for migrations where possible.
+
 ## In-Memory Course Catalog (Queryable)
 **Current**
 - Derived on read from `ProgramLevel.courses[]` when listing/reading Programs.

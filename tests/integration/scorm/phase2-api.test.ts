@@ -59,6 +59,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       await mongoose.connect(uri);
     }
     // Seed a staff user so uploadedBy populate returns data
+    await Staff.deleteMany({ _id: instructorId });
     await Staff.deleteMany({ email: 'instructor@example.com' });
     await User.deleteMany({ _id: instructorId });
     const passwordHash = await hashPassword('Password123!');

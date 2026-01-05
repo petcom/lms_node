@@ -8,6 +8,7 @@ import {
   getStaffProfile,
   staffUpdateProfile,
   adminUpdateStaff,
+  getStaffByDepartment,
 } from '../../controller/staff/staffCtrl';
 import {
   publishInstructorPackage,
@@ -82,6 +83,56 @@ staffRouter.get(
   isAuthenticated(),
   roleRestriction('staff', 'global-admin'),
   listInstructorAssignments
+);
+
+/**
+ * @swagger
+ * /api/v1/staff/by-department/{departmentId}:
+ *   get:
+ *     summary: Get staff members by department for instructor selection
+ *     tags: [Staff]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: departmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The department ID
+ *     responses:
+ *       200:
+ *         description: Staff list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       displayName:
+ *                         type: string
+ *                       firstName:
+ *                         type: string
+ *                       lastName:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *       404:
+ *         description: Department not found
+ */
+staffRouter.get(
+  '/by-department/:departmentId',
+  isAuthenticated(),
+  roleRestriction('staff', 'global-admin'),
+  getStaffByDepartment
 );
 
 /**

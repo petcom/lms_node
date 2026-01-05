@@ -2,10 +2,13 @@ import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Course from '../../model/Content/Course';
+import CourseContent from '../../model/Academic/CourseContent';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
 import { ICourse } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import RenderedCourse from '../../model/Content/RenderedCourse';
+import { invalidateProgramCatalog } from '../../utils/courseCatalogCache';
 
 interface CreateCourseBody {
   title: string;
@@ -88,6 +91,8 @@ export const createCourse = AsyncHandler(
       });
     }
 
+    await invalidateProgramCatalog(program.toString());
+
     res.status(201).json({
       status: 'success',
       message: 'Course created',
@@ -102,7 +107,7 @@ export const getCourses = AsyncHandler(async (_req: Request, res: Response): Pro
 
 export const getCourse = AsyncHandler(
   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-    const course = (await Course.findById(req.params.id)) as ICourse | null;
+    const course = (await Course.findById(req.params.id).lean()) as ICourse | null;
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -111,10 +116,18 @@ export const getCourse = AsyncHandler(
     const departmentId = (course as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
+    // Fetch segments (CourseContent) for this course, ordered by order field
+    const segments = await CourseContent.find({ course: course._id })
+      .sort({ order: 1 })
+      .lean();
+
     res.status(200).json({
       status: 'success',
       message: 'Course fetched successfully',
-      data: course,
+      data: {
+        ...course,
+        segments,
+      },
     });
   }
 );
@@ -185,6 +198,28 @@ export const updateCourse = AsyncHandler(
     }
 
     if (status) {
+      const currentStatus = course.status || 'draft';
+      const allowedTransitions: Record<string, string[]> = {
+        draft: ['rendered'],
+        rendered: ['published'],
+        published: ['rendered'],
+      };
+
+      if (!allowedTransitions[currentStatus]?.includes(status)) {
+        throw new ValidationError(
+          `Invalid status transition from ${currentStatus} to ${status}`
+        );
+      }
+
+      if (status === 'published') {
+        const rendered = await RenderedCourse.findOne({ courseId: course._id })
+          .select('_id')
+          .lean();
+        if (!rendered) {
+          throw new ValidationError('Course must be rendered before publishing');
+        }
+      }
+
       updates.status = status;
       if (status === 'published') {
         updates.publishedAt = new Date();
@@ -226,6 +261,8 @@ export const updateCourse = AsyncHandler(
       }
     }
 
+    await invalidateProgramCatalog(course.program?.toString());
+
     res.status(200).json({
       status: 'success',
       message: 'Course updated successfully',
@@ -252,6 +289,8 @@ export const deleteCourse = AsyncHandler(
         $pull: { courses: course._id },
       });
     }
+
+    await invalidateProgramCatalog(course.program?.toString());
 
     res.status(200).json({
       status: 'success',
@@ -321,12 +360,29 @@ export const publishCourse = AsyncHandler(
     const departmentId = (course as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
+    if (course.status === 'draft') {
+      throw new ValidationError('Course must be rendered before publishing');
+    }
+
+    // Check for rendered course using courseId field
+    const rendered = await RenderedCourse.findOne({ courseId: course._id }).select('_id').lean();
+    if (!rendered) {
+      throw new ValidationError('Course must be rendered before publishing');
+    }
+
+    // Validate at least one primary instructor exists
+    if (!course.primaryInstructors || course.primaryInstructors.length === 0) {
+      throw new ValidationError('Course must have at least one primary instructor before publishing');
+    }
+
     if (course.status !== 'published') {
       course.status = 'published';
       course.publishedAt = new Date();
       course.publishedBy = req.userAuth?._id;
       await course.save();
     }
+
+    await invalidateProgramCatalog(course.program?.toString());
 
     res.status(200).json({
       status: 'success',
@@ -353,6 +409,8 @@ export const unpublishCourse = AsyncHandler(
       course.publishedBy = undefined;
       await course.save();
     }
+
+    await invalidateProgramCatalog(course.program?.toString());
 
     res.status(200).json({
       status: 'success',

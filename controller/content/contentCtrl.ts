@@ -12,6 +12,7 @@ import Department from '../../model/Academic/Department';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import CourseEnrollment from '../../model/Academic/CourseEnrollment';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import { invalidateProgramCatalog } from '../../utils/courseCatalogCache';
 import { IDepartment } from '../../types/models-types';
 
 type DepartmentSummary = {
@@ -325,6 +326,11 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
     secondaryInstructors?: string[];
   };
 
+  const existingCourse = await Course.findById(req.params.id);
+  if (!existingCourse) {
+    throw new NotFoundError('Course not found');
+  }
+
   const updates: any = {};
   if (title) updates.title = title;
   if (description !== undefined) updates.description = description;
@@ -333,6 +339,28 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
     updates.longDescription = longDescription ?? description;
   }
   if (status) {
+    const currentStatus = existingCourse.status || 'draft';
+    const allowedTransitions: Record<string, string[]> = {
+      draft: ['rendered'],
+      rendered: ['published'],
+      published: ['rendered'],
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(status)) {
+      throw new ValidationError(
+        `Invalid status transition from ${currentStatus} to ${status}`
+      );
+    }
+
+    if (status === 'published') {
+      const rendered = await RenderedCourse.findOne({ course: existingCourse._id })
+        .select('_id')
+        .lean();
+      if (!rendered) {
+        throw new ValidationError('Course must be rendered before publishing');
+      }
+    }
+
     updates.status = status;
     if (status === 'published') {
       updates.publishedAt = new Date();
@@ -366,6 +394,8 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   const course = await Course.findByIdAndUpdate(req.params.id, updates, {
     new: true,
   });
+
+  await invalidateProgramCatalog(existingCourse.program?.toString());
 
   res.status(200).json({
     status: 'success',
@@ -437,6 +467,8 @@ export const renderCourse = asyncHandler(async (req: Request, res: Response) => 
     { new: true, upsert: true }
   );
 
+  await invalidateProgramCatalog(course.program?.toString());
+
   res.status(200).json({
     status: 'success',
     message: 'Course rendered successfully',
@@ -496,6 +528,8 @@ export const forceRenderCourse = asyncHandler(async (req: Request, res: Response
     { contentVersion: courseVersion, html },
     { new: true, upsert: true }
   );
+
+  await invalidateProgramCatalog(course.program?.toString());
 
   res.status(200).json({
     status: 'success',

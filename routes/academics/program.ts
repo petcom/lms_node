@@ -8,6 +8,7 @@ import {
   deleteProgram,
   archiveProgram,
   unarchiveProgram,
+  getProgramCourses,
 } from '../../controller/academics/programsCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import Program from '../../model/Academic/Program';
@@ -55,6 +56,14 @@ programRouter
   .get(isAuthenticated(), departmentScope(), isInstructorOrAdmin, getSingleProgram)
   .put(isAuthenticated(), roleRestriction('global-admin'), updateProgram)
   .delete(isAuthenticated(), roleRestriction('global-admin'), deleteProgram);
+
+programRouter.get(
+  '/:id/courses',
+  isAuthenticated(),
+  departmentScope(),
+  isInstructorOrAdmin,
+  getProgramCourses
+);
 
 programRouter.patch(
   '/:id/archive',

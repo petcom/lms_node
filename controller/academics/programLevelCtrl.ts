@@ -6,6 +6,7 @@ import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
 import Course from '../../model/Content/Course';
 import { IAdmin, IProgramLevel } from '../../types/models-types';
+import { invalidateProgramCatalog } from '../../utils/courseCatalogCache';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
@@ -99,6 +100,8 @@ export const createProgramLevel = AsyncHandler(
         { $set: { programLevel: programLevelCreated._id } }
       );
     }
+
+    await invalidateProgramCatalog(program.toString());
 
     const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
     if (admin) {
@@ -209,6 +212,8 @@ export const updateProgramLevel = AsyncHandler(
       }
     }
 
+    await invalidateProgramCatalog(existing.program.toString());
+
     res.status(200).json({
       status: 'success',
       message: 'Program level updated successfully',
@@ -236,6 +241,8 @@ export const deleteProgramLevel = AsyncHandler(
     }
 
     await ProgramLevel.findByIdAndDelete(req.params.id);
+
+    await invalidateProgramCatalog(existing.program.toString());
 
     res.status(200).json({
       status: 'success',

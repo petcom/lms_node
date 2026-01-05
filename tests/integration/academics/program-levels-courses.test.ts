@@ -5,6 +5,7 @@ import Department from '../../../model/Academic/Department';
 import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
+import CourseContent from '../../../model/Academic/CourseContent';
 import Staff from '../../../model/Staff/Staff';
 import CustomContent from '../../../model/Content/CustomContent';
 import User from '../../../model/Auth/User';
@@ -197,6 +198,20 @@ describe('Program levels, courses, and course content', () => {
     expect(courseRes.status).toBe(201);
     const targetCourseId = courseRes.body.data._id;
 
+    await CourseContent.create({
+      course: targetCourseId,
+      contentType: 'custom',
+      customContentId,
+      order: 1,
+      createdBy: masterAdminId,
+    });
+
+    const renderRes = await request(app)
+      .get(`/api/v1/content/courses/${targetCourseId}/render`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(renderRes.status).toBe(200);
+
     const publishRes = await request(app)
       .patch(`/api/v1/courses/${targetCourseId}/publish`)
       .set('Authorization', `Bearer ${adminToken}`);
@@ -210,5 +225,28 @@ describe('Program levels, courses, and course content', () => {
 
     expect(unpublishRes.status).toBe(200);
     expect(unpublishRes.body.data.status).toBe('rendered');
+  });
+
+  it('blocks invalid status transitions', async () => {
+    const courseRes = await request(app)
+      .post('/api/v1/courses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        title: 'Course 4',
+        description: 'Course description',
+        program: programId.toString(),
+        programLevel: programLevelId,
+        department: masterDepartmentId.toString(),
+      });
+
+    expect(courseRes.status).toBe(201);
+    const targetCourseId = courseRes.body.data._id;
+
+    const updateRes = await request(app)
+      .put(`/api/v1/courses/${targetCourseId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'published' });
+
+    expect(updateRes.status).toBe(400);
   });
 });

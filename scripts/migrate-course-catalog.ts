@@ -12,6 +12,8 @@ import ScormPackage from '../model/Scorm/ScormPackage';
 
 dotenv.config();
 
+const dryRun = process.argv.includes('--dry-run');
+
 const resolveMongoUrl = (): string => {
   const url = process.env.MONGO_URL;
   if (!url) {
@@ -27,7 +29,7 @@ const normalizeCustomType = (value: string | undefined): string | undefined => {
   return value;
 };
 
-const backfillProgramLevelCourses = async (): Promise<void> => {
+const backfillProgramLevelCourses = async (): Promise<number> => {
   const courses = await Course.find({ programLevel: { $exists: true, $ne: null } })
     .select('_id programLevel')
     .lean();
@@ -40,13 +42,18 @@ const backfillProgramLevelCourses = async (): Promise<void> => {
     coursesByLevel.set(levelId, list);
   });
 
+  let updates = 0;
   for (const [levelId, courseIds] of coursesByLevel.entries()) {
     const uniqueIds = Array.from(new Set(courseIds)).map((id) => new mongoose.Types.ObjectId(id));
-    await ProgramLevel.findByIdAndUpdate(levelId, { courses: uniqueIds });
+    if (!dryRun) {
+      await ProgramLevel.findByIdAndUpdate(levelId, { courses: uniqueIds });
+    }
+    updates += 1;
   }
+  return updates;
 };
 
-const backfillProgramCourses = async (): Promise<void> => {
+const backfillProgramCourses = async (): Promise<number> => {
   const levels = await ProgramLevel.find({}).select('program courses').lean();
   const coursesByProgram = new Map<string, Set<string>>();
   levels.forEach((level) => {
@@ -57,21 +64,30 @@ const backfillProgramCourses = async (): Promise<void> => {
     coursesByProgram.set(programId, set);
   });
 
+  let updates = 0;
   for (const [programId, courseSet] of coursesByProgram.entries()) {
     const courseIds = Array.from(courseSet).map((id) => new mongoose.Types.ObjectId(id));
-    await Program.findByIdAndUpdate(programId, { courses: courseIds });
+    if (!dryRun) {
+      await Program.findByIdAndUpdate(programId, { courses: courseIds });
+    }
+    updates += 1;
   }
+  return updates;
 };
 
-const migrateCustomContentTypes = async (): Promise<void> => {
+const migrateCustomContentTypes = async (): Promise<number> => {
   const customContents = await CustomContent.find({}).select('_id customType').lean();
-  const updates = customContents.map(async (content) => {
+  let updates = 0;
+  const tasks = customContents.map(async (content) => {
     const nextType = normalizeCustomType(content.customType);
     if (nextType && nextType !== content.customType) {
-      await CustomContent.updateOne({ _id: content._id }, { $set: { customType: nextType } });
+      if (!dryRun) {
+        await CustomContent.updateOne({ _id: content._id }, { $set: { customType: nextType } });
+      }
+      updates += 1;
     }
   });
-  await Promise.all(updates);
+  await Promise.all(tasks);
 
   const progressUpdates = await LearnerProgress.find({ customType: { $in: ['practice', 'other'] } })
     .select('_id customType')
@@ -80,6 +96,8 @@ const migrateCustomContentTypes = async (): Promise<void> => {
     progressUpdates.map((progress) => {
       const nextType = normalizeCustomType(progress.customType);
       if (!nextType) return Promise.resolve();
+      updates += 1;
+      if (dryRun) return Promise.resolve();
       return LearnerProgress.updateOne({ _id: progress._id }, { $set: { customType: nextType } });
     })
   );
@@ -91,9 +109,13 @@ const migrateCustomContentTypes = async (): Promise<void> => {
     attemptUpdates.map((attempt) => {
       const nextType = normalizeCustomType(attempt.customType);
       if (!nextType) return Promise.resolve();
+      updates += 1;
+      if (dryRun) return Promise.resolve();
       return ContentAttempt.updateOne({ _id: attempt._id }, { $set: { customType: nextType } });
     })
   );
+
+  return updates;
 };
 
 const resolvePublishedStatus = async (
@@ -117,8 +139,9 @@ const resolvePublishedStatus = async (
   return publishedCount > 0 ? 'published' : 'rendered';
 };
 
-const backfillCourseStatus = async (): Promise<void> => {
+const backfillCourseStatus = async (): Promise<number> => {
   const courses = await Course.find({}).select('_id status').lean();
+  let updateCount = 0;
   for (const course of courses) {
     if (course.status) continue;
     const status = await resolvePublishedStatus(course._id);
@@ -126,20 +149,35 @@ const backfillCourseStatus = async (): Promise<void> => {
     if (status === 'published') {
       updates.publishedAt = new Date();
     }
-    await Course.updateOne({ _id: course._id }, { $set: updates });
+    if (!dryRun) {
+      await Course.updateOne({ _id: course._id }, { $set: updates });
+    }
+    updateCount += 1;
   }
+  return updateCount;
 };
 
 const run = async (): Promise<void> => {
   const mongoUrl = resolveMongoUrl();
   await mongoose.connect(mongoUrl);
 
-  await backfillProgramLevelCourses();
-  await backfillProgramCourses();
-  await migrateCustomContentTypes();
-  await backfillCourseStatus();
+  const report = {
+    programLevelUpdates: await backfillProgramLevelCourses(),
+    programUpdates: await backfillProgramCourses(),
+    customTypeUpdates: await migrateCustomContentTypes(),
+    courseStatusUpdates: await backfillCourseStatus(),
+  };
 
   await mongoose.disconnect();
+
+  console.log('Migration summary');
+  console.log(`ProgramLevel updates: ${report.programLevelUpdates}`);
+  console.log(`Program updates: ${report.programUpdates}`);
+  console.log(`CustomType updates: ${report.customTypeUpdates}`);
+  console.log(`Course status updates: ${report.courseStatusUpdates}`);
+  if (dryRun) {
+    console.log('Dry-run mode: no updates applied.');
+  }
 };
 
 run()

@@ -10,7 +10,7 @@ const customContentSchema = new Schema<ICustomContent>(
     customType: {
       type: String,
       required: true,
-      enum: ['exam', 'quiz', 'practice', 'other'],
+      enum: ['exam', 'quiz', 'exercise', 'scorm', 'custom'],
       index: true,
     },
     payload: {

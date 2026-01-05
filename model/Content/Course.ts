@@ -11,6 +11,12 @@ const courseSchema = new Schema<ICourse>(
       type: String,
       required: true,
     },
+    shortDescription: {
+      type: String,
+    },
+    longDescription: {
+      type: String,
+    },
     description: {
       type: String,
     },
@@ -35,6 +41,31 @@ const courseSchema = new Schema<ICourse>(
       default: false,
       index: true,
     },
+    status: {
+      type: String,
+      enum: ['draft', 'rendered', 'published'],
+      default: 'draft',
+      index: true,
+    },
+    publishedAt: {
+      type: Date,
+    },
+    publishedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Staff',
+    },
+    primaryInstructors: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Staff',
+      },
+    ],
+    secondaryInstructors: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Staff',
+      },
+    ],
     archivedAt: {
       type: Date,
     },

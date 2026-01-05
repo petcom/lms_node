@@ -13,6 +13,12 @@ const programLevelSchema = new Schema<IProgramLevel>(
       required: true,
       index: true,
     },
+    courses: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
+      },
+    ],
     name: {
       type: String,
       required: true,

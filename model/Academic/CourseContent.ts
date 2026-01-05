@@ -13,6 +13,12 @@ const courseContentSchema = new Schema<ICourseContent>(
       required: true,
       index: true,
     },
+    shortDescription: {
+      type: String,
+    },
+    longDescription: {
+      type: String,
+    },
     contentType: {
       type: String,
       enum: ['scorm', 'custom'],
@@ -25,7 +31,7 @@ const courseContentSchema = new Schema<ICourseContent>(
     },
     customContentId: {
       type: Schema.Types.ObjectId,
-      ref: 'Exam',
+      ref: 'CustomContent',
     },
     order: {
       type: Number,

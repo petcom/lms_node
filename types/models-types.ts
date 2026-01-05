@@ -244,6 +244,7 @@ export interface IProgramLevel extends Document {
   description?: string;
   order: number;
   department?: Types.ObjectId;
+  courses?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
   createdBy: Types.ObjectId;
@@ -297,12 +298,19 @@ export interface IClassEnrollment extends Document {
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   title: string;
+  shortDescription?: string;
+  longDescription?: string;
   description?: string;
   program: Types.ObjectId;
   programLevel?: Types.ObjectId;
   department?: Types.ObjectId;
   isArchived: boolean;
   archivedAt?: Date;
+  status?: 'draft' | 'rendered' | 'published';
+  publishedAt?: Date;
+  publishedBy?: Types.ObjectId;
+  primaryInstructors?: Types.ObjectId[];
+  secondaryInstructors?: Types.ObjectId[];
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -312,6 +320,8 @@ export interface ICourse extends Document {
 export interface ICourseContent extends Document {
   _id: Types.ObjectId;
   course: Types.ObjectId;
+  shortDescription?: string;
+  longDescription?: string;
   contentType: 'scorm' | 'custom';
   scormPackageId?: Types.ObjectId;
   customContentId?: Types.ObjectId;
@@ -350,7 +360,7 @@ export interface IContentAttempt extends Document {
   passed?: boolean;
   timeSpentSec?: number;
   payload?: any;
-  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   scormAttemptId?: Types.ObjectId;
   startedAt: Date;
   completedAt?: Date;
@@ -522,7 +532,7 @@ export interface IRefreshTokenModel extends Model<IRefreshToken> {
 export interface ICustomContent extends Document {
   _id: Types.ObjectId;
   title: string;
-  customType: 'exam' | 'quiz' | 'practice' | 'other';
+  customType: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   payload?: any;
   html?: string;
   css?: string;
@@ -541,6 +551,13 @@ export interface ICourseSegment {
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   title: string;
+  shortDescription?: string;
+  longDescription?: string;
+  status?: 'draft' | 'rendered' | 'published';
+  publishedAt?: Date;
+  publishedBy?: Types.ObjectId;
+  primaryInstructors?: Types.ObjectId[];
+  secondaryInstructors?: Types.ObjectId[];
   department?: Types.ObjectId;
   segments: ICourseSegment[];
   createdAt: Date;
@@ -563,7 +580,7 @@ export interface ILearnerProgress extends Document {
   contentId: Types.ObjectId;
   segmentId: string;
   contentType: 'scorm' | 'custom';
-  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   status: 'not_started' | 'in_progress' | 'completed' | 'failed';
   progressPercent: number;
   score: number;
@@ -584,7 +601,7 @@ export interface IContentAttempt extends Document {
   contentId: Types.ObjectId;
   segmentId: string;
   contentType: 'scorm' | 'custom';
-  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   attemptNumber: number;
   startedAt: Date;
   submittedAt?: Date;

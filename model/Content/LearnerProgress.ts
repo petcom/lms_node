@@ -31,7 +31,7 @@ const learnerProgressSchema = new Schema<ILearnerProgress>(
     },
     customType: {
       type: String,
-      enum: ['exam', 'quiz', 'practice', 'other'],
+      enum: ['exam', 'quiz', 'exercise', 'scorm', 'custom'],
     },
     status: {
       type: String,

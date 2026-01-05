@@ -60,6 +60,14 @@ const programSchema = new Schema<IProgram>(
         default: [],
       },
     ],
+    // Derived from ProgramLevel.courses (read-only)
+    courses: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
+        default: [],
+      },
+    ],
     // Courses that are in the program
     courses: [
       {

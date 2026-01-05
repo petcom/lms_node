@@ -56,7 +56,7 @@ const contentAttemptSchema = new Schema<IContentAttempt>(
     },
     customType: {
       type: String,
-      enum: ['exam', 'quiz', 'practice', 'other'],
+      enum: ['exam', 'quiz', 'exercise', 'scorm', 'custom'],
     },
     startedAt: {
       type: Date,

@@ -389,4 +389,66 @@ describe('Course API Completion Plan - Phase 1', () => {
       });
     });
   });
+
+  describe('Phase 3: Validation Updates', () => {
+    describe('3.1 Increased description field limits', () => {
+      it('should accept shortDescription up to 500 characters', async () => {
+        const longShortDesc = 'A'.repeat(500);
+        const res = await request(app)
+          .post('/api/v1/courses')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            title: 'Course with long short desc',
+            shortDescription: longShortDesc,
+            program: programId.toString(),
+          });
+
+        expect(res.status).toBe(201);
+        expect(res.body.data.shortDescription).toBe(longShortDesc);
+      });
+
+      it('should reject shortDescription over 500 characters', async () => {
+        const tooLongShortDesc = 'A'.repeat(501);
+        const res = await request(app)
+          .post('/api/v1/courses')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            title: 'Course with too long short desc',
+            shortDescription: tooLongShortDesc,
+            program: programId.toString(),
+          });
+
+        expect(res.status).toBe(400);
+      });
+
+      it('should accept longDescription up to 5000 characters', async () => {
+        const longDesc = 'B'.repeat(5000);
+        const res = await request(app)
+          .post('/api/v1/courses')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            title: 'Course with long desc',
+            longDescription: longDesc,
+            program: programId.toString(),
+          });
+
+        expect(res.status).toBe(201);
+        expect(res.body.data.longDescription).toBe(longDesc);
+      });
+
+      it('should reject longDescription over 5000 characters', async () => {
+        const tooLongDesc = 'B'.repeat(5001);
+        const res = await request(app)
+          .post('/api/v1/courses')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            title: 'Course with too long desc',
+            longDescription: tooLongDesc,
+            program: programId.toString(),
+          });
+
+        expect(res.status).toBe(400);
+      });
+    });
+  });
 });

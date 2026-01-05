@@ -55,7 +55,7 @@ GET `/content`
 
 Query:
 - `type=scorm|custom` (optional)
-- `customType=exam|quiz|practice|other` (optional)
+- `customType=exam|quiz|exercise|scorm|custom` (optional)
 - `departmentId=<ObjectId>` (optional; `global-admin` only)
 - `page`, `limit` (optional)
 
@@ -68,7 +68,7 @@ Response:
     {
       "id": "content-id",
       "type": "scorm" | "custom",
-      "customType": "exam" | "quiz" | "practice" | "other",
+      "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
       "title": "Content Title",
       "department": {
         "id": "dept-id",
@@ -96,7 +96,7 @@ Body (custom exam only):
   "type": "custom",
   "title": "Content Title",
   "description": "Content description",
-  "customType": "exam" | "quiz" | "practice" | "other",
+  "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
   "course": "<ObjectId>",
   "program": "<ObjectId>",
   "programLevel": "<ObjectId>",
@@ -122,7 +122,7 @@ Response:
   "data": {
     "id": "content-id",
     "type": "custom",
-    "customType": "exam" | "quiz" | "practice" | "other",
+    "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
     "title": "Content Title",
     "department": {
       "id": "dept-id",
@@ -154,7 +154,7 @@ Body:
   "programLevel": "<ObjectId>",
   "academicTerm": "<ObjectId>",
   "academicYear": "<ObjectId>",
-  "customType": "exam" | "quiz" | "practice" | "other",
+  "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
   "passMark": 30,
   "totalMark": 100,
   "duration": "30 minutes",

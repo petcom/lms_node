@@ -4,7 +4,7 @@ import { objectId, pagination } from './common';
 export const contentListQuery = {
   query: Joi.object({
     type: Joi.string().valid('scorm', 'custom'),
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
     departmentId: objectId,
     page: pagination.page,
     limit: pagination.limit,
@@ -19,7 +19,7 @@ export const contentIdParam = {
 
 export const customContentCreate = {
   body: Joi.object({
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other').required(),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom').required(),
     title: Joi.string().min(2).max(200).required(),
     payload: Joi.any(),
     html: Joi.string(),
@@ -33,7 +33,7 @@ export const customContentUpdate = {
     id: objectId.required(),
   }),
   body: Joi.object({
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
     title: Joi.string().min(2).max(200),
     payload: Joi.any(),
     html: Joi.string(),
@@ -50,7 +50,12 @@ export const courseUpdate = {
     title: Joi.string().min(2).max(200),
     departmentId: objectId.allow(null),
     description: Joi.string().max(1000),
+    shortDescription: Joi.string().max(280),
+    longDescription: Joi.string().max(2000),
     programLevel: objectId.allow(null),
+    status: Joi.string().valid('draft', 'rendered', 'published'),
+    primaryInstructors: Joi.array().items(objectId),
+    secondaryInstructors: Joi.array().items(objectId),
   }).min(1),
 };
 
@@ -81,7 +86,7 @@ export const reportsQuery = {
     courseId: objectId,
     learnerId: objectId,
     contentType: Joi.string().valid('scorm', 'custom'),
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
   }),
 };
 
@@ -93,6 +98,6 @@ export const learnerProgressParams = {
     programId: objectId,
     courseId: objectId,
     contentType: Joi.string().valid('scorm', 'custom'),
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
   }),
 };

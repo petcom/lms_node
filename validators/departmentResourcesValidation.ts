@@ -24,7 +24,7 @@ export const staffUsersQuery = {
 export const contentQuery = {
   query: Joi.object({
     type: Joi.string().valid('scorm', 'custom'),
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
     departmentId: objectId,
     page: pagination.page,
     limit: pagination.limit,
@@ -65,7 +65,7 @@ export const contentCreate = {
     }),
     customType: Joi.when('type', {
       is: 'custom',
-      then: Joi.string().valid('exam', 'quiz', 'practice', 'other').required(),
+      then: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom').required(),
       otherwise: Joi.forbidden(),
     }),
     course: Joi.when('type', {
@@ -140,7 +140,7 @@ export const contentUpdate = {
     programLevel: objectId,
     academicTerm: objectId,
     academicYear: objectId,
-    customType: Joi.string().valid('exam', 'quiz', 'practice', 'other'),
+    customType: Joi.string().valid('exam', 'quiz', 'exercise', 'scorm', 'custom'),
     passMark: Joi.number().min(0),
     totalMark: Joi.number().min(1),
     duration: Joi.string().trim(),

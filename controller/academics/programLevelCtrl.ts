@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
+import Course from '../../model/Content/Course';
 import { IAdmin, IProgramLevel } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
@@ -15,6 +16,7 @@ interface CreateProgramLevelBody {
   description?: string;
   order: number;
   department?: string;
+  courses?: string[];
 }
 
 interface UpdateProgramLevelBody {
@@ -22,6 +24,7 @@ interface UpdateProgramLevelBody {
   description?: string;
   order?: number;
   department?: string | null;
+  courses?: string[];
 }
 
 const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: string | null) => {
@@ -31,12 +34,32 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
   }
 };
 
+const normalizeCourses = async (courses: string[] | undefined, programId: string) => {
+  if (!courses) return undefined;
+  const uniqueIds = Array.from(new Set(courses));
+  const invalidId = uniqueIds.find((id) => !mongoose.isValidObjectId(id));
+  if (invalidId) {
+    throw new ValidationError('Invalid course id');
+  }
+  const courseDocs = await Course.find({ _id: { $in: uniqueIds } })
+    .select('program')
+    .lean();
+  if (courseDocs.length !== uniqueIds.length) {
+    throw new ValidationError('One or more courses not found');
+  }
+  const invalidProgram = courseDocs.find((course) => course.program?.toString() !== programId);
+  if (invalidProgram) {
+    throw new ValidationError('Course does not belong to this program');
+  }
+  return uniqueIds.map((id) => new mongoose.Types.ObjectId(id));
+};
+
 export const createProgramLevel = AsyncHandler(
   async (
     req: Request<Record<string, never>, any, CreateProgramLevelBody>,
     res: Response
   ): Promise<void> => {
-    const { program, name, description, order, department } = req.body;
+    const { program, name, description, order, department, courses } = req.body;
 
     const programDoc = await Program.findById(program).lean();
     if (!programDoc) {
@@ -55,6 +78,8 @@ export const createProgramLevel = AsyncHandler(
     const resolvedDepartment =
       department || programDepartment || (req.userAuth as any)?.department?.toString();
 
+    const normalizedCourses = await normalizeCourses(courses, program);
+
     const programLevelCreated = (await ProgramLevel.create({
       program,
       name,
@@ -65,7 +90,15 @@ export const createProgramLevel = AsyncHandler(
           ? new mongoose.Types.ObjectId(resolvedDepartment || programDepartment)
           : new mongoose.Types.ObjectId(MASTER_DEPARTMENT_ID),
       createdBy: req.userAuth?._id,
+      courses: normalizedCourses,
     })) as IProgramLevel;
+
+    if (normalizedCourses && normalizedCourses.length > 0) {
+      await Course.updateMany(
+        { _id: { $in: normalizedCourses } },
+        { $set: { programLevel: programLevelCreated._id } }
+      );
+    }
 
     const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
     if (admin) {
@@ -119,7 +152,7 @@ export const updateProgramLevel = AsyncHandler(
     const departmentId = (existing as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
-    const { name, description, order, department } = req.body;
+    const { name, description, order, department, courses } = req.body;
 
     if (order !== undefined) {
       const duplicate = await ProgramLevel.findOne({
@@ -137,6 +170,8 @@ export const updateProgramLevel = AsyncHandler(
       assertScopeAccess(scope, nextDept || undefined);
     }
 
+    const normalizedCourses = await normalizeCourses(courses, existing.program.toString());
+
     const updated = (await ProgramLevel.findByIdAndUpdate(
       req.params.id,
       {
@@ -149,9 +184,30 @@ export const updateProgramLevel = AsyncHandler(
             : department
               ? new mongoose.Types.ObjectId(department)
               : existing.department,
+        courses: normalizedCourses ?? existing.courses,
       },
       { new: true }
     )) as IProgramLevel | null;
+
+    if (normalizedCourses) {
+      const previousCourseIds = (existing.courses || []).map((id) => id.toString());
+      const nextCourseIds = normalizedCourses.map((id) => id.toString());
+      const removedIds = previousCourseIds.filter((id) => !nextCourseIds.includes(id));
+
+      if (removedIds.length > 0) {
+        await Course.updateMany(
+          { _id: { $in: removedIds } },
+          { $set: { programLevel: null } }
+        );
+      }
+
+      if (normalizedCourses.length > 0) {
+        await Course.updateMany(
+          { _id: { $in: normalizedCourses } },
+          { $set: { programLevel: existing._id } }
+        );
+      }
+    }
 
     res.status(200).json({
       status: 'success',
@@ -171,6 +227,13 @@ export const deleteProgramLevel = AsyncHandler(
     const scope = req.departmentScope?.accessibleDepartmentIds;
     const departmentId = (existing as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
+
+    if (existing.courses && existing.courses.length > 0) {
+      await Course.updateMany(
+        { _id: { $in: existing.courses } },
+        { $set: { programLevel: null } }
+      );
+    }
 
     await ProgramLevel.findByIdAndDelete(req.params.id);
 

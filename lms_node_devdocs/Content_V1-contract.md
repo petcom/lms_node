@@ -12,7 +12,7 @@ GET `/`
 
 Query:
 - `type=scorm|custom` (optional)
-- `customType=exam|quiz|practice|other` (optional)
+- `customType=exam|quiz|exercise|scorm|custom` (optional)
 - `departmentId=<ObjectId>` (optional; `global-admin` only)
 - `page`, `limit` (optional)
 
@@ -25,7 +25,7 @@ Response:
     {
       "id": "content-id",
       "type": "scorm" | "custom",
-      "customType": "exam" | "quiz" | "practice" | "other",
+      "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
       "title": "Content Title",
       "department": {
         "id": "dept-id",
@@ -51,7 +51,7 @@ Response:
   "data": {
     "id": "content-id",
     "type": "scorm" | "custom",
-    "customType": "exam" | "quiz" | "practice" | "other",
+    "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
     "title": "Content Title",
     "department": { "...": "..." }
   }
@@ -64,7 +64,7 @@ POST `/custom`
 Body:
 ```
 {
-  "customType": "exam" | "quiz" | "practice" | "other",
+  "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
   "title": "Title",
   "payload": { ... },
   "departmentId": "<ObjectId>"
@@ -113,10 +113,26 @@ Response:
   "data": {
     "id": "course-id",
     "title": "Course Title",
+    "shortDescription": "Short summary",
+    "longDescription": "Long description",
+    "status": "draft" | "rendered" | "published",
+    "publishedAt": "ISO-8601" | null,
+    "primaryInstructors": ["staff-id"],
+    "secondaryInstructors": ["staff-id"],
     "updatedAt": "...",
     "segments": [
-      { "type": "custom", "contentId": "custom-content-id" },
-      { "type": "scorm", "contentId": "scorm-package-id" }
+      {
+        "type": "custom",
+        "contentId": "custom-content-id",
+        "shortDescription": "Segment summary",
+        "longDescription": "Segment details"
+      },
+      {
+        "type": "scorm",
+        "contentId": "scorm-package-id",
+        "shortDescription": "Segment summary",
+        "longDescription": "Segment details"
+      }
     ]
   }
 }
@@ -128,9 +144,13 @@ Body:
 ```
 {
   "title": "Course Title",
-  "description": "Optional course description",
+  "shortDescription": "Short summary",
+  "longDescription": "Long description",
   "programLevel": "<ObjectId>" | null,
-  "departmentId": "<ObjectId>" | null
+  "departmentId": "<ObjectId>" | null,
+  "status": "draft" | "rendered" | "published",
+  "primaryInstructors": ["staff-id"],
+  "secondaryInstructors": ["staff-id"]
 }
 ```
 
@@ -208,7 +228,7 @@ Query:
 - `courseId=<ObjectId>` (optional)
 - `learnerId=<ObjectId>` (optional)
 - `contentType=scorm|custom` (optional)
-- `customType=exam|quiz|practice|other` (optional)
+- `customType=exam|quiz|exercise|scorm|custom` (optional)
 
 Response:
 ```
@@ -219,7 +239,7 @@ Response:
     {
       "contentId": "content-id",
       "contentType": "scorm" | "custom",
-      "customType": "exam" | "quiz" | "practice" | "other" | null,
+      "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom" | null,
       "title": "Content Title",
       "status": "in_progress" | "completed" | "abandoned",
       "progressPercent": 0,
@@ -239,7 +259,7 @@ Query:
 - `programId=<ObjectId>` (optional)
 - `courseId=<ObjectId>` (optional)
 - `contentType=scorm|custom` (optional)
-- `customType=exam|quiz|practice|other` (optional)
+- `customType=exam|quiz|exercise|scorm|custom` (optional)
 
 Response:
 ```
@@ -275,7 +295,7 @@ Query:
 - `courseId=<ObjectId>` (optional)
 - `learnerId=<ObjectId>` (optional)
 - `contentType=scorm|custom` (optional)
-- `customType=exam|quiz|practice|other` (optional)
+- `customType=exam|quiz|exercise|scorm|custom` (optional)
 
 Response:
 - Uses `ReportingSummary` shape below.
@@ -329,7 +349,7 @@ NormalizedProgress
   "contentId": "content-id",
   "segmentId": "segment-id",
   "contentType": "scorm" | "custom",
-  "customType": "exam" | "quiz" | "practice" | "other",
+  "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
   "status": "not_started" | "in_progress" | "completed" | "failed",
   "progressPercent": 0,
   "score": 0,
@@ -351,7 +371,7 @@ NormalizedAttempt
   "contentId": "content-id",
   "segmentId": "segment-id",
   "contentType": "scorm" | "custom",
-  "customType": "exam" | "quiz" | "practice" | "other",
+  "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
   "attemptNumber": 1,
   "startedAt": "2025-01-01T00:00:00.000Z",
   "submittedAt": "2025-01-01T00:10:00.000Z",
@@ -371,7 +391,7 @@ ReportingSummary
     {
       "contentId": "content-id",
       "contentType": "scorm" | "custom",
-      "customType": "exam" | "quiz" | "practice" | "other",
+      "customType": "exam" | "quiz" | "exercise" | "scorm" | "custom",
       "title": "Content Title",
       "status": "not_started" | "in_progress" | "completed" | "failed",
       "progressPercent": 75,

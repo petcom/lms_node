@@ -121,7 +121,7 @@ const renderCourseHtml = async (
 export const listContent = asyncHandler(async (req: Request, res: Response) => {
   const { type, customType, departmentId } = req.query as {
     type?: 'scorm' | 'custom';
-    customType?: 'exam' | 'quiz' | 'practice' | 'other';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
     departmentId?: string;
   };
 
@@ -207,7 +207,7 @@ export const getContent = asyncHandler(async (req: Request, res: Response) => {
 
 export const createCustomContent = asyncHandler(async (req: Request, res: Response) => {
   const { customType, title, payload, html, css, departmentId } = req.body as {
-    customType: 'exam' | 'quiz' | 'practice' | 'other';
+    customType: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
     title: string;
     payload?: any;
     html?: string;
@@ -244,7 +244,7 @@ export const createCustomContent = asyncHandler(async (req: Request, res: Respon
 
 export const updateCustomContent = asyncHandler(async (req: Request, res: Response) => {
   const { customType, title, payload, html, css, departmentId } = req.body as {
-    customType?: 'exam' | 'quiz' | 'practice' | 'other';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
     title?: string;
     payload?: any;
     html?: string;
@@ -289,24 +289,65 @@ export const getCourse = asyncHandler(async (req: Request, res: Response) => {
     throw new NotFoundError('Course not found');
   }
 
+  const segments = await CourseContent.find({ course: course._id })
+    .sort({ order: 1 })
+    .select('contentType customContentId scormPackageId shortDescription longDescription')
+    .lean();
+
   res.status(200).json({
     status: 'success',
     message: 'Course fetched successfully',
-    data: course,
+    data: {
+      ...course,
+      segments: segments.map((segment: any) => ({
+        type: segment.contentType,
+        contentId:
+          segment.contentType === 'custom'
+            ? segment.customContentId?.toString()
+            : segment.scormPackageId?.toString(),
+        shortDescription: segment.shortDescription,
+        longDescription: segment.longDescription,
+      })),
+    },
   });
 });
 
 export const updateCourse = asyncHandler(async (req: Request, res: Response) => {
-  const { title, departmentId, description, programLevel } = req.body as {
+  const { title, departmentId, description, programLevel, shortDescription, longDescription, status, primaryInstructors, secondaryInstructors } = req.body as {
     title?: string;
     description?: string;
     departmentId?: string | null;
     programLevel?: string | null;
+    shortDescription?: string;
+    longDescription?: string;
+    status?: 'draft' | 'rendered' | 'published';
+    primaryInstructors?: string[];
+    secondaryInstructors?: string[];
   };
 
   const updates: any = {};
   if (title) updates.title = title;
   if (description !== undefined) updates.description = description;
+  if (shortDescription !== undefined) updates.shortDescription = shortDescription;
+  if (longDescription !== undefined || description !== undefined) {
+    updates.longDescription = longDescription ?? description;
+  }
+  if (status) {
+    updates.status = status;
+    if (status === 'published') {
+      updates.publishedAt = new Date();
+      updates.publishedBy = req.userAuth?._id;
+    } else {
+      updates.publishedAt = undefined;
+      updates.publishedBy = undefined;
+    }
+  }
+  if (primaryInstructors) {
+    updates.primaryInstructors = primaryInstructors.map((id) => new mongoose.Types.ObjectId(id));
+  }
+  if (secondaryInstructors) {
+    updates.secondaryInstructors = secondaryInstructors.map((id) => new mongoose.Types.ObjectId(id));
+  }
 
   if (departmentId !== undefined) {
     if (departmentId && !mongoose.isValidObjectId(departmentId)) {
@@ -334,9 +375,14 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const renderCourse = asyncHandler(async (req: Request, res: Response) => {
-  const course = await Course.findById(req.params.id).lean();
+  const course = await Course.findById(req.params.id);
   if (!course) {
     throw new NotFoundError('Course not found');
+  }
+
+  if (course.status !== 'published' && course.status !== 'rendered') {
+    course.status = 'rendered';
+    await course.save();
   }
 
   const existing = await RenderedCourse.findOne({ courseId: course._id }).lean();
@@ -403,9 +449,14 @@ export const renderCourse = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const forceRenderCourse = asyncHandler(async (req: Request, res: Response) => {
-  const course = await Course.findById(req.params.id).lean();
+  const course = await Course.findById(req.params.id);
   if (!course) {
     throw new NotFoundError('Course not found');
+  }
+
+  if (course.status !== 'published') {
+    course.status = 'rendered';
+    await course.save();
   }
 
   const courseContents = await CourseContent.find({ course: course._id })
@@ -638,7 +689,7 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
     courseId?: string;
     learnerId?: string;
     contentType?: 'scorm' | 'custom';
-    customType?: 'exam' | 'quiz' | 'practice' | 'other';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   };
 
   const filter: any = {};
@@ -731,7 +782,7 @@ export const getLearnerProgressReport = asyncHandler(async (req: Request, res: R
     programId?: string;
     courseId?: string;
     contentType?: 'scorm' | 'custom';
-    customType?: 'exam' | 'quiz' | 'practice' | 'other';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   };
 
   if (!mongoose.isValidObjectId(learnerId)) {

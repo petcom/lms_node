@@ -140,6 +140,7 @@ Base URL: `/api/v1`
 
 ## Lists
 - GET `/lists/staff-roles`
+- GET `/lists/course-statuses`
 
 ## Permissions + Metrics
 - GET `/permissions/matrix`

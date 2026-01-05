@@ -3,22 +3,32 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Course from '../../model/Content/Course';
 import Program from '../../model/Academic/Program';
+import ProgramLevel from '../../model/Academic/ProgramLevel';
 import { ICourse } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 interface CreateCourseBody {
   title: string;
   description?: string;
+  shortDescription?: string;
+  longDescription?: string;
   program: string;
   programLevel?: string;
   department?: string;
+  primaryInstructors?: string[];
+  secondaryInstructors?: string[];
 }
 
 interface UpdateCourseBody {
   title?: string;
   description?: string;
+  shortDescription?: string;
+  longDescription?: string;
   programLevel?: string | null;
   department?: string | null;
+  status?: 'draft' | 'rendered' | 'published';
+  primaryInstructors?: string[];
+  secondaryInstructors?: string[];
 }
 
 const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: string | null) => {
@@ -30,7 +40,17 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
 
 export const createCourse = AsyncHandler(
   async (req: Request<Record<string, never>, any, CreateCourseBody>, res: Response): Promise<void> => {
-    const { title, description, program, programLevel, department } = req.body;
+    const {
+      title,
+      description,
+      shortDescription,
+      longDescription,
+      program,
+      programLevel,
+      department,
+      primaryInstructors,
+      secondaryInstructors,
+    } = req.body;
 
     const programDoc = await Program.findById(program).lean();
     if (!programDoc) {
@@ -52,11 +72,21 @@ export const createCourse = AsyncHandler(
     const courseCreated = (await Course.create({
       title,
       description,
+      shortDescription,
+      longDescription: longDescription ?? description,
       program,
       programLevel: programLevel ? new mongoose.Types.ObjectId(programLevel) : undefined,
       department: resolvedDepartment ? new mongoose.Types.ObjectId(resolvedDepartment) : undefined,
+      primaryInstructors: primaryInstructors?.map((id) => new mongoose.Types.ObjectId(id)),
+      secondaryInstructors: secondaryInstructors?.map((id) => new mongoose.Types.ObjectId(id)),
       createdBy: req.userAuth?._id,
     })) as ICourse;
+
+    if (programLevel) {
+      await ProgramLevel.findByIdAndUpdate(programLevel, {
+        $addToSet: { courses: courseCreated._id },
+      });
+    }
 
     res.status(201).json({
       status: 'success',
@@ -100,7 +130,17 @@ export const updateCourse = AsyncHandler(
     const departmentId = (course as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
-    const { title, description, programLevel, department } = req.body;
+    const {
+      title,
+      description,
+      shortDescription,
+      longDescription,
+      programLevel,
+      department,
+      status,
+      primaryInstructors,
+      secondaryInstructors,
+    } = req.body;
 
     if (title) {
       const duplicate = await Course.findOne({
@@ -118,26 +158,73 @@ export const updateCourse = AsyncHandler(
       assertScopeAccess(scope, nextDept || undefined);
     }
 
+    const nextProgramLevel =
+      programLevel === null
+        ? null
+        : programLevel
+          ? new mongoose.Types.ObjectId(programLevel)
+          : course.programLevel;
+
+    const updates: Record<string, any> = {
+      title,
+      description,
+      programLevel: nextProgramLevel,
+      department:
+        department === null
+          ? null
+          : department
+            ? new mongoose.Types.ObjectId(department)
+            : course.department,
+    };
+
+    if (shortDescription !== undefined) {
+      updates.shortDescription = shortDescription;
+    }
+    if (longDescription !== undefined || description !== undefined) {
+      updates.longDescription = longDescription ?? description;
+    }
+
+    if (status) {
+      updates.status = status;
+      if (status === 'published') {
+        updates.publishedAt = new Date();
+        updates.publishedBy = req.userAuth?._id;
+      } else {
+        updates.publishedAt = undefined;
+        updates.publishedBy = undefined;
+      }
+    }
+
+    if (primaryInstructors) {
+      updates.primaryInstructors = primaryInstructors.map((id) => new mongoose.Types.ObjectId(id));
+    }
+    if (secondaryInstructors) {
+      updates.secondaryInstructors = secondaryInstructors.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      );
+    }
+
     const updated = (await Course.findByIdAndUpdate(
       req.params.id,
-      {
-        title,
-        description,
-        programLevel:
-          programLevel === null
-            ? null
-            : programLevel
-              ? new mongoose.Types.ObjectId(programLevel)
-              : course.programLevel,
-        department:
-          department === null
-            ? null
-            : department
-              ? new mongoose.Types.ObjectId(department)
-              : course.department,
-      },
+      updates,
       { new: true }
     )) as ICourse | null;
+
+    if (programLevel !== undefined) {
+      const previousLevelId = course.programLevel?.toString();
+      const nextLevelId = nextProgramLevel ? nextProgramLevel.toString() : undefined;
+
+      if (previousLevelId && previousLevelId !== nextLevelId) {
+        await ProgramLevel.findByIdAndUpdate(previousLevelId, {
+          $pull: { courses: course._id },
+        });
+      }
+      if (nextLevelId) {
+        await ProgramLevel.findByIdAndUpdate(nextLevelId, {
+          $addToSet: { courses: course._id },
+        });
+      }
+    }
 
     res.status(200).json({
       status: 'success',
@@ -159,6 +246,12 @@ export const deleteCourse = AsyncHandler(
     assertScopeAccess(scope, departmentId);
 
     await Course.findByIdAndDelete(req.params.id);
+
+    if (course.programLevel) {
+      await ProgramLevel.findByIdAndUpdate(course.programLevel, {
+        $pull: { courses: course._id },
+      });
+    }
 
     res.status(200).json({
       status: 'success',
@@ -212,6 +305,58 @@ export const unarchiveCourse = AsyncHandler(
     res.status(200).json({
       status: 'success',
       message: 'Course unarchived successfully',
+      data: course,
+    });
+  }
+);
+
+export const publishCourse = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const departmentId = (course as any)?.department?.toString();
+    assertScopeAccess(scope, departmentId);
+
+    if (course.status !== 'published') {
+      course.status = 'published';
+      course.publishedAt = new Date();
+      course.publishedBy = req.userAuth?._id;
+      await course.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course published successfully',
+      data: course,
+    });
+  }
+);
+
+export const unpublishCourse = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      throw new NotFoundError('Course not found');
+    }
+
+    const scope = req.departmentScope?.accessibleDepartmentIds;
+    const departmentId = (course as any)?.department?.toString();
+    assertScopeAccess(scope, departmentId);
+
+    if (course.status === 'published') {
+      course.status = 'rendered';
+      course.publishedAt = undefined;
+      course.publishedBy = undefined;
+      await course.save();
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course unpublished successfully',
       data: course,
     });
   }

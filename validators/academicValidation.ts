@@ -72,7 +72,6 @@ export const updateProgram = {
     description: Joi.string().max(1000).trim(),
     duration: Joi.string().trim(),
     code: Joi.string().trim().uppercase(),
-    courses: Joi.array().items(objectId),
   }).min(1),
 };
 
@@ -86,6 +85,7 @@ export const createProgramLevel = {
     description: Joi.string().max(500).trim(),
     order: Joi.number().integer().min(1).required(),
     department: objectId,
+    courses: Joi.array().items(objectId),
   }),
 };
 
@@ -98,6 +98,7 @@ export const updateProgramLevel = {
     description: Joi.string().max(500).trim(),
     order: Joi.number().integer().min(1),
     department: objectId.allow(null),
+    courses: Joi.array().items(objectId),
   }).min(1),
 };
 
@@ -108,9 +109,13 @@ export const createCourse = {
   body: Joi.object({
     title: Joi.string().min(2).max(200).trim().required(),
     description: Joi.string().max(1000).trim(),
+    shortDescription: Joi.string().max(280).trim(),
+    longDescription: Joi.string().max(2000).trim(),
     program: objectId.required(),
     programLevel: objectId,
     department: objectId,
+    primaryInstructors: Joi.array().items(objectId),
+    secondaryInstructors: Joi.array().items(objectId),
   }),
 };
 
@@ -121,8 +126,13 @@ export const updateCourse = {
   body: Joi.object({
     title: Joi.string().min(2).max(200).trim(),
     description: Joi.string().max(1000).trim(),
+    shortDescription: Joi.string().max(280).trim(),
+    longDescription: Joi.string().max(2000).trim(),
     programLevel: objectId.allow(null),
     department: objectId.allow(null),
+    status: Joi.string().valid('draft', 'rendered', 'published'),
+    primaryInstructors: Joi.array().items(objectId),
+    secondaryInstructors: Joi.array().items(objectId),
   }).min(1),
 };
 
@@ -137,6 +147,8 @@ export const createCourseContent = {
     customContentId: objectId,
     order: Joi.number().integer().min(1),
     isRequired: Joi.boolean(),
+    shortDescription: Joi.string().max(280).trim(),
+    longDescription: Joi.string().max(2000).trim(),
   }),
 };
 
@@ -150,6 +162,8 @@ export const updateCourseContent = {
     customContentId: objectId.allow(null),
     order: Joi.number().integer().min(1),
     isRequired: Joi.boolean(),
+    shortDescription: Joi.string().max(280).trim(),
+    longDescription: Joi.string().max(2000).trim(),
   }).min(1),
 };
 

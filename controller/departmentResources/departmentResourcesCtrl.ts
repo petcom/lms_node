@@ -40,7 +40,7 @@ type StaffUser = {
 type ContentItem = {
   id: string;
   type: 'scorm' | 'custom';
-  customType?: 'exam' | 'quiz' | 'practice' | 'other';
+  customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
   title: string;
   department: DepartmentSummary | null;
 };
@@ -223,8 +223,9 @@ const normalizeExamType = (
   const normalized = (examType || '').toLowerCase();
   if (normalized === 'exam') return 'exam';
   if (normalized === 'quiz') return 'quiz';
-  if (normalized === 'practice') return 'practice';
-  return 'other';
+  if (normalized === 'exercise' || normalized === 'practice') return 'exercise';
+  if (normalized === 'scorm') return 'scorm';
+  return 'custom';
 };
 
 const ensureDepartmentScope = (
@@ -367,7 +368,7 @@ export const listDepartmentContent = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { type, customType, departmentId } = req.query as {
       type?: 'scorm' | 'custom';
-      customType?: 'exam' | 'quiz' | 'practice' | 'other';
+      customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
       departmentId?: string;
     };
     const { departmentIds, departments } = await resolveDepartmentScope(req, departmentId);

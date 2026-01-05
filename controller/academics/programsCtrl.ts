@@ -3,6 +3,7 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
+import ProgramLevel from '../../model/Academic/ProgramLevel';
 import { IProgram, IAdmin } from '../../types/models-types';
 import { AuthorizationError } from '../../utils/errors';
 
@@ -67,7 +68,33 @@ export const createProgram = AsyncHandler(
  * @access Private
  */
 export const getPrograms = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
-  res.status(200).json(res.results);
+  const results = res.results as any;
+  const items = Array.isArray(results?.data) ? results.data : [];
+
+  if (items.length > 0) {
+    const programIds = items.map((program: any) => program._id);
+    const levels = await ProgramLevel.find({ program: { $in: programIds } })
+      .select('program courses')
+      .lean();
+    const coursesByProgram = new Map<string, Set<string>>();
+    levels.forEach((level) => {
+      const programId = level.program?.toString();
+      if (!programId) return;
+      const set = coursesByProgram.get(programId) || new Set<string>();
+      (level.courses || []).forEach((courseId: any) => set.add(courseId.toString()));
+      coursesByProgram.set(programId, set);
+    });
+
+    results.data = items.map((program: any) => {
+      const courseSet = coursesByProgram.get(program._id.toString());
+      return {
+        ...program,
+        courses: courseSet ? Array.from(courseSet) : [],
+      };
+    });
+  }
+
+  res.status(200).json(results);
 });
 
 /**
@@ -87,10 +114,23 @@ export const getSingleProgram = AsyncHandler(
       }
     }
 
+    const levels = await ProgramLevel.find({ program: singleProgram._id })
+      .select('courses')
+      .lean();
+    const courseSet = new Set<string>();
+    levels.forEach((level) => {
+      (level.courses || []).forEach((courseId: any) => courseSet.add(courseId.toString()));
+    });
+
+    const payload = {
+      ...singleProgram?.toObject?.(),
+      courses: Array.from(courseSet),
+    };
+
     res.status(201).json({
       status: 'success',
       message: 'Single Program fetched successfully',
-      data: singleProgram,
+      data: payload,
     });
   }
 );

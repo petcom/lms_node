@@ -18,7 +18,8 @@ Body:
   "name": "Level 1",
   "description": "First level",
   "order": 1,
-  "department": "<ObjectId>"
+  "department": "<ObjectId>",
+  "courses": ["<ObjectId>"]
 }
 ```
 
@@ -34,7 +35,8 @@ Response:
     "description": "First level",
     "order": 1,
     "department": "<ObjectId>",
-    "archived": false
+    "archived": false,
+    "courses": ["<ObjectId>"]
   }
 }
 ```
@@ -50,7 +52,12 @@ PUT `/program-levels/:id`
 
 Body (any):
 ```
-{ "name": "Level 1", "order": 1, "department": "<ObjectId>" | null }
+{
+  "name": "Level 1",
+  "order": 1,
+  "department": "<ObjectId>" | null,
+  "courses": ["<ObjectId>"]
+}
 ```
 
 ### Archive
@@ -65,10 +72,13 @@ Body:
 ```
 {
   "title": "Course 1",
-  "description": "Course description",
+  "shortDescription": "Short summary",
+  "longDescription": "Long description",
   "program": "<ObjectId>",
   "programLevel": "<ObjectId>",
-  "department": "<ObjectId>"
+  "department": "<ObjectId>",
+  "primaryInstructors": ["<ObjectId>"],
+  "secondaryInstructors": ["<ObjectId>"]
 }
 ```
 
@@ -83,12 +93,25 @@ PUT `/courses/:id`
 
 Body (any):
 ```
-{ "title": "Course 1", "programLevel": "<ObjectId>" | null, "department": "<ObjectId>" | null }
+{
+  "title": "Course 1",
+  "shortDescription": "Short summary",
+  "longDescription": "Long description",
+  "programLevel": "<ObjectId>" | null,
+  "department": "<ObjectId>" | null,
+  "status": "draft" | "rendered" | "published",
+  "primaryInstructors": ["<ObjectId>"],
+  "secondaryInstructors": ["<ObjectId>"]
+}
 ```
 
 ### Archive
 PATCH `/courses/:id/archive`
 PATCH `/courses/:id/unarchive`
+
+### Publish / Unpublish
+PATCH `/courses/:id/publish`
+PATCH `/courses/:id/unpublish`
 
 ## Course Content
 ### Create
@@ -102,7 +125,9 @@ Body:
   "scormPackageId": "<ObjectId>",
   "customContentId": "<ObjectId>",
   "order": 1,
-  "isRequired": true
+  "isRequired": true,
+  "shortDescription": "Segment summary",
+  "longDescription": "Segment details"
 }
 ```
 
@@ -121,7 +146,13 @@ PUT `/course-contents/:id`
 
 Body (any):
 ```
-{ "contentType": "scorm" | "custom", "order": 1, "isRequired": false }
+{
+  "contentType": "scorm" | "custom",
+  "order": 1,
+  "isRequired": false,
+  "shortDescription": "Segment summary",
+  "longDescription": "Segment details"
+}
 ```
 
 ### Delete

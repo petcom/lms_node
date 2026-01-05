@@ -13,6 +13,8 @@ interface CreateCourseContentBody {
   customContentId?: string;
   order?: number;
   isRequired?: boolean;
+  shortDescription?: string;
+  longDescription?: string;
 }
 
 interface UpdateCourseContentBody {
@@ -21,6 +23,8 @@ interface UpdateCourseContentBody {
   customContentId?: string | null;
   order?: number;
   isRequired?: boolean;
+  shortDescription?: string;
+  longDescription?: string;
 }
 
 const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: string | null) => {
@@ -48,7 +52,16 @@ export const createCourseContent = AsyncHandler(
     req: Request<Record<string, never>, any, CreateCourseContentBody>,
     res: Response
   ): Promise<void> => {
-    const { course, contentType, scormPackageId, customContentId, order, isRequired } = req.body;
+    const {
+      course,
+      contentType,
+      scormPackageId,
+      customContentId,
+      order,
+      isRequired,
+      shortDescription,
+      longDescription,
+    } = req.body;
 
     const courseDoc = await Course.findById(course).lean();
     if (!courseDoc) {
@@ -78,6 +91,8 @@ export const createCourseContent = AsyncHandler(
 
     const created = (await CourseContent.create({
       course,
+      shortDescription,
+      longDescription,
       contentType,
       scormPackageId: scormPackageId ? new mongoose.Types.ObjectId(scormPackageId) : undefined,
       customContentId: customContentId ? new mongoose.Types.ObjectId(customContentId) : undefined,
@@ -133,7 +148,15 @@ export const updateCourseContent = AsyncHandler(
     const departmentId = course?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
-    const { contentType, scormPackageId, customContentId, order, isRequired } = req.body;
+    const {
+      contentType,
+      scormPackageId,
+      customContentId,
+      order,
+      isRequired,
+      shortDescription,
+      longDescription,
+    } = req.body;
 
     if (contentType) {
       validateContentType({
@@ -147,6 +170,8 @@ export const updateCourseContent = AsyncHandler(
     const updated = (await CourseContent.findByIdAndUpdate(
       req.params.id,
       {
+        shortDescription: shortDescription ?? content.shortDescription,
+        longDescription: longDescription ?? content.longDescription,
         contentType: contentType || content.contentType,
         scormPackageId:
           scormPackageId === null

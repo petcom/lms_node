@@ -7,6 +7,8 @@ Base URL: `/api/v1`
 - Roles: `staff` (create/update), `global-admin` (full access), learners for write/check endpoints.
 
 ## Exams
+Exams are a custom content type and may also appear in the unified content catalog.
+
 ### Create
 POST `/exams`
 

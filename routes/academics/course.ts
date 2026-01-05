@@ -8,6 +8,8 @@ import {
   deleteCourse,
   archiveCourse,
   unarchiveCourse,
+  publishCourse,
+  unpublishCourse,
 } from '../../controller/academics/courseCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import Course from '../../model/Content/Course';
@@ -113,6 +115,24 @@ courseRouter.patch(
   roleRestriction('global-admin'),
   validate(idParam),
   unarchiveCourse
+);
+
+courseRouter.patch(
+  '/:id/publish',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('global-admin'),
+  validate(idParam),
+  publishCourse
+);
+
+courseRouter.patch(
+  '/:id/unpublish',
+  isAuthenticated(),
+  departmentScope(),
+  roleRestriction('global-admin'),
+  validate(idParam),
+  unpublishCourse
 );
 
 export default courseRouter;

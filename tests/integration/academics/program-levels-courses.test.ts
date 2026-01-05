@@ -129,6 +129,9 @@ describe('Program levels, courses, and course content', () => {
       });
 
     expect(courseRes.status).toBe(201);
+    expect(courseRes.body.data.description).toBe('Course description');
+    expect(courseRes.body.data.status).toBe('draft');
+    expect(courseRes.body.data.longDescription).toBe('Course description');
     courseId = courseRes.body.data._id;
 
     const contentRes = await request(app)

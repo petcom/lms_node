@@ -14,47 +14,58 @@ Implement the course catalog model and APIs described in:
 
 ## Phase 1: Schema + Data Model
 1) **ProgramLevel**
-   - Add `courses: ObjectId[]` (source of truth).
+   - [x] Add `courses: ObjectId[]` (source of truth).
 2) **Program**
-   - Add `courses: ObjectId[]` as derived/read-only (populated from levels).
+   - [x] Add `courses: ObjectId[]` as derived/read-only (populated from levels).
 3) **Course**
-   - Add `shortDescription`, `longDescription`.
-   - Add `status` (`draft|rendered|published`), `publishedAt`, `publishedBy`.
-   - Add `primaryInstructors: ObjectId[]`, `secondaryInstructors: ObjectId[]`.
+   - [x] Add `shortDescription`, `longDescription`.
+   - [x] Add `status` (`draft|rendered|published`), `publishedAt`, `publishedBy`.
+   - [x] Add `primaryInstructors: ObjectId[]`, `secondaryInstructors: ObjectId[]`.
 4) **CourseContent**
-   - Add `shortDescription`, `longDescription`.
+   - [x] Add `shortDescription`, `longDescription`.
 5) **CustomContent**
-   - Update `customType` enum to `exam|quiz|exercise|scorm|custom`.
+   - [x] Update `customType` enum to `exam|quiz|exercise|scorm|custom`.
 6) **Lookup**
-   - Add `CourseStatus` values (`draft`, `rendered`, `published`).
+   - [x] Add `CourseStatus` values (`draft`, `rendered`, `published`).
 
 ## Phase 2: API Updates
 1) **ProgramLevel routes**
-   - Accept `courses[]` in create/update.
-   - Return `courses[]` in responses.
+   - [x] Accept `courses[]` in create/update.
+   - [x] Return `courses[]` in responses.
 2) **Program routes**
-   - Return `courses[]` as derived field (read-only).
+   - [x] Return `courses[]` as derived field (read-only).
 3) **Course routes**
-   - Accept `shortDescription`, `longDescription`, `primaryInstructors[]`, `secondaryInstructors[]`.
-   - Manage `status/publishedAt/publishedBy` via publish/unpublish actions or in update flows.
+   - [x] Accept `shortDescription`, `longDescription`, `primaryInstructors[]`, `secondaryInstructors[]`.
+   - [x] Manage `status/publishedAt/publishedBy` via publish/unpublish actions or in update flows.
 4) **CourseContent routes**
-   - Accept/return `shortDescription`, `longDescription`.
+   - [x] Accept/return `shortDescription`, `longDescription`.
 5) **Lists**
-   - Add `GET /api/v1/lists/course-statuses`.
+   - [x] Add `GET /api/v1/lists/course-statuses`.
 
 ## Phase 3: Data Migration + Backfill
-- Backfill `ProgramLevel.courses[]` from existing Course records.
-- Populate derived `Program.courses[]` on read or via a background sync.
-- Normalize CustomContent types (`practice/other` → `exercise/custom`).
-- Set initial Course.status:
+- [x] Backfill `ProgramLevel.courses[]` from existing Course records.
+- [x] Populate derived `Program.courses[]` on read or via a background sync.
+- [x] Normalize CustomContent types (`practice/other` → `exercise/custom`).
+- [x] Set initial Course.status:
   - `published` if content is published and course rendered.
   - `rendered` if RenderedCourse exists but not published.
   - `draft` otherwise.
 
 ## Phase 4: Tests + Validation
-- Update model tests for new fields.
-- Add API integration tests for ProgramLevel courses, Course status, and Lists.
-- Verify backward compatibility for existing course and content APIs.
+- [x] Update model tests for new fields.
+- [x] Add API integration tests for ProgramLevel courses, Course status, and Lists.
+- [x] Verify backward compatibility for existing course and content APIs.
+
+## In-Memory Course Catalog (Queryable)
+**Current**
+- Derived on read from `ProgramLevel.courses[]` when listing/reading Programs.
+- No shared in-memory catalog or cache; each request computes the course list.
+
+**Wanted**
+- A queryable in-memory course catalog (if required by UI/analytics) that can be reused across requests.
+
+**Match**
+- Not a match today. Current implementation is request-time derivation, not a dedicated in-memory catalog.
 
 ## Open Decisions
 - Define authoritative source for instructor assignment (Course vs Class).

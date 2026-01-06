@@ -45,7 +45,6 @@ describe('Schema Cleanup - Remove Orphaned Arrays (DCV-013-016)', () => {
       const program = await Program.create({
         name: 'Test Program',
         description: 'Test Description',
-        duration: '4 years',
         createdBy: adminId,
         department: deptId,
         learners: [learnerId], // Try to set orphaned field
@@ -71,7 +70,6 @@ describe('Schema Cleanup - Remove Orphaned Arrays (DCV-013-016)', () => {
       const program = await Program.create({
         name: 'Test Program',
         description: 'Test Description',
-        duration: '4 years',
         createdBy: adminId,
         department: deptId,
         instructors: [instructorId], // Try to set orphaned field
@@ -96,7 +94,6 @@ describe('Schema Cleanup - Remove Orphaned Arrays (DCV-013-016)', () => {
       const program = await Program.create({
         name: 'Test Program',
         description: 'Test Description',
-        duration: '4 years',
         createdBy: adminId,
         department: deptId,
         courses: [courseId], // Try to set orphaned field
@@ -186,7 +183,8 @@ describe('Schema Cleanup - Remove Orphaned Arrays (DCV-013-016)', () => {
       const schemaObj = Program.schema.obj;
       expect(schemaObj).toHaveProperty('name');
       expect(schemaObj).toHaveProperty('description');
-      expect(schemaObj).toHaveProperty('duration');
+      // DCV-043: duration removed - tracked at Class level
+      expect(schemaObj).not.toHaveProperty('duration');
       expect(schemaObj).toHaveProperty('code');
       expect(schemaObj).toHaveProperty('createdBy');
       expect(schemaObj).toHaveProperty('department');

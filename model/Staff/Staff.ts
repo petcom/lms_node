@@ -81,6 +81,7 @@ const getNameInitials = (name: any) => {
  * DCV-021: email removed - derive from User via shared _id
  * DCV-022: department removed - use departmentMemberships
  * DCV-023: academicYear removed - context from Calendar/Class
+ * DCV-040: isWithdrawn/isSuspended replaced with status enum
  */
 const staffSchema = new Schema<IStaff>(
   {
@@ -105,15 +106,12 @@ const staffSchema = new Schema<IStaff>(
         );
       },
     },
-    // If withdrawn, the staff member will not be able to login
-    isWithdrawn: {
-      type: Boolean,
-      default: false,
-    },
-    // If suspended, the staff member can login but cannot perform any task
-    isSuspended: {
-      type: Boolean,
-      default: false,
+    // DCV-040: Replaced isWithdrawn/isSuspended with status enum
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'withdrawn'],
+      default: 'active',
+      index: true,
     },
     departmentMemberships: {
       type: [membershipSchema],

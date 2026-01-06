@@ -143,8 +143,7 @@
 | `name.display` | String | - | Auto | - | Formatted display name |
 | `dateEmployed` | Date | - | Date.now | - | Employment start date |
 | `instructorId` | String | ✅ | Auto | - | Display ID (TEA###...) |
-| `isWithdrawn` | Boolean | - | false | - | Employment terminated |
-| `isSuspended` | Boolean | - | false | - | Temporarily suspended |
+| `status` | String | - | `active` | enum: `active`, `suspended`, `withdrawn` | Staff status (DCV-040) |
 | `departmentMemberships` | [Membership] | - | undefined | - | Multi-department roles |
 | `departmentMemberships[].departmentId` | ObjectId | ✅ | - | ref: Department | Department reference |
 | `departmentMemberships[].roles` | [String] | - | [] | - | Roles in that department |
@@ -155,7 +154,7 @@
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Removed Fields (DCV-021-023, DCV-036)**:
+**Removed Fields (DCV-021-023, DCV-036, DCV-040)**:
 - `email` - Derive from User via `getEmail()` method
 - `department` - Use `departmentMemberships[0].departmentId` via `primaryDepartment` virtual
 - `academicYear` - Context comes from Calendar/Class, not Staff
@@ -163,6 +162,8 @@
 - `program` - Query courses to find program assignments
 - `programLevel` - Query courses to find program level assignments
 - `examsCreated` - Query Exam.find({ createdBy: staffId }) instead
+- `isWithdrawn` - Replaced by `status: 'withdrawn'` (DCV-040)
+- `isSuspended` - Replaced by `status: 'suspended'` (DCV-040)
 
 **Virtual Getters**:
 - `primaryDepartment` - Returns first department membership's departmentId
@@ -246,10 +247,11 @@
 | `parent` | ObjectId | - | null | ref: Department | Parent department |
 | `ancestors` | [ObjectId] | - | - | ref: Department | Full ancestor path |
 | `passingStyleScore` | Number | - | null | min: 0, max: 100 | Default passing % |
+| `status` | String | - | `active` | enum: `active`, `archived` | Department lifecycle (DCV-042) |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Indexes**: `level`, `parent`, `(name, parent) unique`
+**Indexes**: `level`, `parent`, `(name, parent) unique`, `status`
 
 ---
 
@@ -264,7 +266,6 @@
 | `_id` | ObjectId | Auto | - | - | Primary key |
 | `name` | String | ✅ | - | - | Program name |
 | `description` | String | ✅ | - | - | Program description |
-| `duration` | String | ✅ | `4 years` | - | Duration text |
 | `code` | String | - | Auto | - | Short code |
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
 | `department` | ObjectId | ✅ | - | ref: Department | Owning department |
@@ -273,10 +274,11 @@
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Removed Fields (DCV-013-015)**:
+**Removed Fields (DCV-013-015, DCV-043)**:
 - `learners` - Derive from ProgramEnrollment via `getLearners()` method
 - `instructors` - Derive from Course.primaryInstructors via `getInstructors()` method
 - `courses` - Derive from Course.find({ program }) via `getCourses()` method
+- `duration` - Now tracked at Class level (DCV-043)
 
 **Instance Methods**:
 - `getLearners()` - Returns enrolled learners from ProgramEnrollment
@@ -440,6 +442,7 @@
 |-------|------|----------|---------|------------|-------------|
 | `_id` | ObjectId | Auto | - | - | Primary key |
 | `course` | ObjectId | ✅ | - | ref: Course | Parent course |
+| `title` | String | - | - | - | Segment title (DCV-045) |
 | `shortDescription` | String | - | - | - | Brief summary |
 | `longDescription` | String | - | - | - | Full description |
 | `contentType` | String | ✅ | - | enum: `scorm`, `custom` | Content type |
@@ -465,11 +468,12 @@
 |-------|------|----------|---------|------------|-------------|
 | `_id` | ObjectId | Auto | - | - | Primary key |
 | `title` | String | ✅ | - | - | Content title |
-| `customType` | String | ✅ | - | enum: `exam`, `quiz`, `exercise`, `scorm`, `custom` | Content type |
+| `customType` | String | ✅ | - | enum: `exam`, `quiz`, `exercise`, `custom` | Content type (DCV-046: 'scorm' removed) |
 | `payload` | Mixed | - | - | - | Type-specific data |
 | `html` | String | - | - | - | Rendered HTML content |
 | `css` | String | - | - | - | Custom styling |
 | `department` | ObjectId | - | - | ref: Department | Owning department |
+| `questions` | [ObjectId] | - | - | ref: Question | Questions for quiz/exam types (DCV-047) |
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
@@ -490,6 +494,8 @@
 | `courseId` | ObjectId | ✅ | - | ref: Course | Source course |
 | `contentVersion` | Date | ✅ | - | - | Version timestamp |
 | `html` | String | ✅ | - | - | Rendered HTML |
+| `css` | String | - | - | - | Rendered CSS (DCV-048) |
+| `version` | Number | - | 1 | - | Numeric version for cache busting (DCV-048) |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 

@@ -62,7 +62,6 @@ describe('Grading Policy Fields (DCV-033, DCV-034, DCV-035)', () => {
     program = await Program.create({
       name: 'Test Program',
       description: 'Test program description',
-      duration: '2 years',
       createdBy: adminUser._id,
       department: department._id,
     });

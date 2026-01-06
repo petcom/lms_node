@@ -34,8 +34,9 @@ describe('Course catalog schemas', () => {
     expect(CourseContent.schema.path('longDescription')).toBeTruthy();
   });
 
-  it('defines custom content types including scorm', () => {
+  // DCV-046: 'scorm' removed from customType enum - use CourseContent.scormPackageId
+  it('defines custom content types without scorm', () => {
     const customTypePath: any = CustomContent.schema.path('customType');
-    expect(customTypePath.enumValues).toEqual(['exam', 'quiz', 'exercise', 'scorm', 'custom']);
+    expect(customTypePath.enumValues).toEqual(['exam', 'quiz', 'exercise', 'custom']);
   });
 });

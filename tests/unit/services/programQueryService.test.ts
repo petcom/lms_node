@@ -46,7 +46,6 @@ describe('ProgramQueryService (DCV-017)', () => {
     program = await Program.create({
       name: 'Computer Science',
       description: 'CS Program',
-      duration: '4 years',
       createdBy: new mongoose.Types.ObjectId(),
       department: department._id,
     });
@@ -169,8 +168,7 @@ describe('ProgramQueryService (DCV-017)', () => {
         _id: user._id,
         name: { first: 'Test', last: 'Instructor' },
         email: 'instructor@test.com',
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       });
 
@@ -206,8 +204,7 @@ describe('ProgramQueryService (DCV-017)', () => {
         _id: user._id,
         name: { first: 'Test', last: 'Instructor' },
         email: 'instructor@test.com',
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       });
 

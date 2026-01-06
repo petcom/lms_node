@@ -523,15 +523,15 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-037** | **Remove Course.description (use short/longDescription)** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-038** | **~~Standardize all createdBy to ref:User~~** | ~~**High**~~ | ~~**Medium**~~ | **SUPERSEDED by DCV-053** |
 | **DCV-039** | **Remove Admin.email - derive from User** | **Medium** | **Low** | **DCV-002** | ✅ Complete |
-| **DCV-040** | **Replace Staff.isWithdrawn/isSuspended with status enum** | **Medium** | **Low** | **None** |
+| **DCV-040** | **Replace Staff.isWithdrawn/isSuspended with status enum** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-041** | **Remove Learner.email - derive from User** | **Medium** | **Low** | **DCV-002** | ✅ Complete |
-| **DCV-042** | **Add Department.status enum ['active', 'archived']** | **Medium** | **Low** | **None** |
-| **DCV-043** | **Remove Program.duration - tracked at Class level** | **Medium** | **Low** | **None** |
+| **DCV-042** | **Add Department.status enum ['active', 'archived']** | **Medium** | **Low** | **None** | ✅ Complete |
+| **DCV-043** | **Remove Program.duration - tracked at Class level** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-044** | **Remove ProgramLevel.department and Course.department - inherit from Program** | **Medium** | **Low** | **None** |
-| **DCV-045** | **Add CourseContent segment title field** | **Low** | **Low** | **None** |
-| **DCV-046** | **Remove 'scorm' from CustomContent.customType enum** | **Low** | **Low** | **None** |
-| **DCV-047** | **Add CustomContent.questions ref for quiz/exam types** | **Low** | **Low** | **None** |
-| **DCV-048** | **Add RenderedCourse.css and RenderedCourse.version** | **Low** | **Low** | **None** |
+| **DCV-045** | **Add CourseContent segment title field** | **Low** | **Low** | **None** | ✅ Complete |
+| **DCV-046** | **Remove 'scorm' from CustomContent.customType enum** | **Low** | **Low** | **None** | ✅ Complete |
+| **DCV-047** | **Add CustomContent.questions ref for quiz/exam types** | **Low** | **Low** | **None** | ✅ Complete |
+| **DCV-048** | **Add RenderedCourse.css and RenderedCourse.version** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-049** | **~~Add proper refs to LearnerProgress~~** | ~~**Low**~~ | ~~**Low**~~ | **SUPERSEDED by DCV-052** |
 | **DCV-050** | **Add Settings.features with scope inheritance (global/department/program)** | **Low** | **Medium** | **None** |
 | **DCV-051** | **Create Media model for external hosted content** | **High** | **Medium** | **None** |

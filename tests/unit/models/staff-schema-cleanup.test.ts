@@ -59,8 +59,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
         _id: user._id,
         name: { first: 'Test', last: 'Staff' },
         email: 'staff@test.com', // Try to set email
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       } as any);
 
@@ -80,8 +79,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
       const staff = await Staff.create({
         _id: user._id,
         name: { first: 'Test', last: 'Staff' },
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       });
 
@@ -116,8 +114,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
           departmentId: department._id,
           roles: ['instructor'],
         }],
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       } as any);
 
@@ -141,8 +138,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
           departmentId: department._id,
           roles: ['instructor'],
         }],
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       });
 
@@ -173,8 +169,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
         _id: user._id,
         name: { first: 'Test', last: 'Staff' },
         academicYear: academicYearId, // Try to set deprecated field
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       } as any);
 
@@ -225,8 +220,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
         program: programId,             // Try to set legacy field
         programLevel: programLevelId,   // Try to set legacy field
         examsCreated: [examId],         // Try to set legacy field
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       } as any);
 
@@ -254,8 +248,8 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
       expect(schemaObj).toHaveProperty('name');
       expect(schemaObj).toHaveProperty('dateEmployed');
       expect(schemaObj).toHaveProperty('instructorId');
-      expect(schemaObj).toHaveProperty('isWithdrawn');
-      expect(schemaObj).toHaveProperty('isSuspended');
+      // DCV-040: isWithdrawn/isSuspended replaced with status
+      expect(schemaObj).toHaveProperty('status');
       expect(schemaObj).toHaveProperty('departmentMemberships');
       expect(schemaObj).toHaveProperty('applicationStatus');
       expect(schemaObj).toHaveProperty('createdBy');
@@ -268,8 +262,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
       await expect(Staff.create({
         _id: staffId,
         name: { first: 'Test', last: 'Staff' },
-        isWithdrawn: false,
-        isSuspended: false,
+        status: 'active',
         applicationStatus: 'approved',
       })).rejects.toThrow(/No User exists with _id/);
     });

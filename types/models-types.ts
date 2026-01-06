@@ -75,11 +75,13 @@ export interface IAdmin extends IPerson {
 // DCV-022: department removed - use departmentMemberships / primaryDepartment
 // DCV-023: academicYear removed - context from Calendar/Class
 // DCV-036: course, program, programLevel, examsCreated removed - use CourseAssignment queries
+// DCV-040: isWithdrawn/isSuspended replaced with status enum
+export type StaffStatus = 'active' | 'suspended' | 'withdrawn';
+
 export interface IStaff extends IPerson {
   dateEmployed?: Date;
   instructorId?: string;
-  isWithdrawn: boolean;
-  isSuspended: boolean;
+  status: StaffStatus;
   departmentMemberships?: IDepartmentMembership[];
   applicationStatus: 'pending' | 'approved' | 'rejected';
   createdBy?: Types.ObjectId;
@@ -232,11 +234,11 @@ export interface IAcademicTerm extends Document {
 // - learners: Derive from ProgramEnrollment
 // - instructors: Derive from Course assignments via ProgramLevel
 // - courses: Derive from ProgramLevel.courses or Course.find({ program })
+// DCV-043: duration removed - tracked at Class level
 export interface IProgram extends Document {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  duration: string;
   code?: string;
   createdBy: Types.ObjectId;
   department: Types.ObjectId;
@@ -336,9 +338,11 @@ export interface ICourse extends Document {
 }
 
 // Course Content Interface (unified content)
+// DCV-045: Added title field for segment naming
 export interface ICourseContent extends Document {
   _id: Types.ObjectId;
   course: Types.ObjectId;
+  title?: string;
   shortDescription?: string;
   longDescription?: string;
   contentType: 'scorm' | 'custom';
@@ -387,6 +391,9 @@ export interface IContentAttempt extends Document {
   createdAt: Date;
 }
 
+// DCV-042: Department status type
+export type DepartmentStatus = 'active' | 'archived';
+
 // Department Interface
 export interface IDepartment extends Document {
   _id: Types.ObjectId;
@@ -396,6 +403,7 @@ export interface IDepartment extends Document {
   parent?: Types.ObjectId | null;
   ancestors?: Types.ObjectId[];
   passingStyleScore?: number | null;
+  status: DepartmentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -558,14 +566,17 @@ export interface IRefreshTokenModel extends Model<IRefreshToken> {
 }
 
 // Content: Custom content item
+// DCV-046: 'scorm' removed from customType - use CourseContent.scormPackageId
+// DCV-047: Added questions ref for quiz/exam types
 export interface ICustomContent extends Document {
   _id: Types.ObjectId;
   title: string;
-  customType: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
+  customType: 'exam' | 'quiz' | 'exercise' | 'custom';
   payload?: any;
   html?: string;
   css?: string;
   department?: Types.ObjectId;
+  questions?: Types.ObjectId[];
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -580,11 +591,14 @@ export interface ICourseSegment {
 // Note: ICourse interface is defined earlier in this file (line ~298)
 // This duplicate has been removed to avoid TypeScript conflicts
 
+// DCV-048: Added css and version fields
 export interface IRenderedCourse extends Document {
   _id: Types.ObjectId;
   courseId: Types.ObjectId;
   contentVersion: Date;
   html: string;
+  css?: string;
+  version: number;
   createdAt: Date;
   updatedAt: Date;
 }

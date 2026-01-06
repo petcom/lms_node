@@ -4,6 +4,7 @@ import { IProgram } from '../../types/models-types';
 /**
  * Program Schema
  * Represents academic programs in the system
+ * DCV-043: duration removed - tracked at Class level
  */
 const programSchema = new Schema<IProgram>(
   {
@@ -15,11 +16,7 @@ const programSchema = new Schema<IProgram>(
       type: String,
       required: true,
     },
-    duration: {
-      type: String,
-      required: true,
-      default: '4 years',
-    },
+    // DCV-043: duration removed - tracked at Class level
     // Created automatically - CSFTY
     code: {
       type: String,

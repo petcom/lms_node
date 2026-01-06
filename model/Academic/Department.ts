@@ -1,6 +1,10 @@
 import mongoose, { Schema } from 'mongoose';
 import { IDepartment } from '../../types/models-types';
 
+/**
+ * Department Schema
+ * DCV-042: Added status field ['active', 'archived']
+ */
 const departmentSchema = new Schema<IDepartment>(
   {
     name: {
@@ -33,6 +37,13 @@ const departmentSchema = new Schema<IDepartment>(
       default: null,
       min: 0,
       max: 100,
+    },
+    // DCV-042: Status enum for department lifecycle
+    status: {
+      type: String,
+      enum: ['active', 'archived'],
+      default: 'active',
+      index: true,
     },
   },
   { timestamps: true }

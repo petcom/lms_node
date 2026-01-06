@@ -56,7 +56,6 @@ describe('Field Cleanup (DCV-037, DCV-039, DCV-041)', () => {
     program = await Program.create({
       name: 'Test Program',
       description: 'Test program description',
-      duration: '2 years',
       createdBy: adminUser._id,
       department: department._id,
     });

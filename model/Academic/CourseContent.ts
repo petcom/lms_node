@@ -4,6 +4,7 @@ import { ICourseContent } from '../../types/models-types';
 /**
  * Course Content Schema
  * Unifies SCORM and custom content under a course.
+ * DCV-045: Added title field for segment naming
  */
 const courseContentSchema = new Schema<ICourseContent>(
   {
@@ -12,6 +13,10 @@ const courseContentSchema = new Schema<ICourseContent>(
       ref: 'Course',
       required: true,
       index: true,
+    },
+    // DCV-045: Title field for content segment
+    title: {
+      type: String,
     },
     shortDescription: {
       type: String,

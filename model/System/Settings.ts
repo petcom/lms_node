@@ -9,6 +9,10 @@ const paginationOverrideSchema = new Schema(
   { _id: false }
 );
 
+/**
+ * Settings Schema
+ * DCV-050: Added features field for feature flags with scope inheritance
+ */
 const settingsSchema = new Schema<ISettings>(
   {
     scope: {
@@ -26,6 +30,12 @@ const settingsSchema = new Schema<ISettings>(
         of: paginationOverrideSchema,
         default: undefined,
       },
+    },
+    // DCV-050: Feature flags with scope inheritance (global/department/program)
+    features: {
+      type: Map,
+      of: Boolean,
+      default: undefined,
     },
     updatedBy: {
       type: Schema.Types.ObjectId,

@@ -117,6 +117,7 @@ export interface ILookup extends Document {
   updatedAt: Date;
 }
 
+// DCV-050: Added features field for feature flags
 export interface ISettings extends Document {
   _id: Types.ObjectId;
   scope: 'global';
@@ -131,6 +132,7 @@ export interface ISettings extends Document {
       }
     >;
   };
+  features?: Map<string, boolean>;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -256,19 +258,22 @@ export interface IProgram extends Document {
 }
 
 // Program Level Interface
+// DCV-044: department removed - inherit from Program via getDepartment()
 export interface IProgramLevel extends Document {
   _id: Types.ObjectId;
   program: Types.ObjectId;
   name: string;
   description?: string;
   order: number;
-  department?: Types.ObjectId;
   courses?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  
+  // DCV-044: Method to get department from Program
+  getDepartment(): Promise<Types.ObjectId | undefined>;
 }
 
 // Program Enrollment Interface
@@ -316,6 +321,7 @@ export interface IClassEnrollment extends Document {
 // Course Interface
 // DCV-037: description removed - use shortDescription/longDescription
 // DCV-035: Added defaultGradingPolicy
+// DCV-044: department removed - inherit from Program via getDepartment()
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   title: string;
@@ -323,7 +329,6 @@ export interface ICourse extends Document {
   longDescription?: string;
   program: Types.ObjectId;
   programLevel?: Types.ObjectId;
-  department?: Types.ObjectId;
   isArchived: boolean;
   archivedAt?: Date;
   status?: 'draft' | 'rendered' | 'published';
@@ -335,6 +340,9 @@ export interface ICourse extends Document {
   defaultGradingPolicy?: IGradingPolicy;
   createdAt: Date;
   updatedAt: Date;
+  
+  // DCV-044: Method to get department from Program
+  getDepartment(): Promise<Types.ObjectId | undefined>;
 }
 
 // Course Content Interface (unified content)

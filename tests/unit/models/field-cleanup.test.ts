@@ -204,7 +204,8 @@ describe('Field Cleanup (DCV-037, DCV-039, DCV-041)', () => {
       expect(schemaObj).toHaveProperty('longDescription');
       expect(schemaObj).toHaveProperty('program');
       expect(schemaObj).toHaveProperty('programLevel');
-      expect(schemaObj).toHaveProperty('department');
+      // DCV-044: department removed - inherit from Program via getDepartment()
+      expect(schemaObj).not.toHaveProperty('department');
       expect(schemaObj).toHaveProperty('status');
       expect(schemaObj).toHaveProperty('primaryInstructors');
       expect(schemaObj).toHaveProperty('secondaryInstructors');

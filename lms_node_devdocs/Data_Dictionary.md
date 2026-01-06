@@ -303,12 +303,17 @@
 | `name` | String | ✅ | - | - | Level name |
 | `description` | String | - | - | - | Level description |
 | `order` | Number | ✅ | - | min: 1 | Sequence order |
-| `department` | ObjectId | - | - | ref: Department | ⚠️ Should inherit |
 | `archived` | Boolean | - | false | - | Soft delete flag |
 | `archivedAt` | Date | - | - | - | When archived |
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Removed Fields (DCV-044)**:
+- `department` - Inherit from Program via `getDepartment()` method
+
+**Instance Methods**:
+- `getDepartment()` - Returns department from parent Program
 
 **Indexes**: `program`, `(program, order) unique`, `(program, archived)`
 
@@ -410,7 +415,6 @@
 | `longDescription` | String | - | - | max: 5000 | Full description |
 | `program` | ObjectId | ✅ | - | ref: Program | Parent program |
 | `programLevel` | ObjectId | - | - | ref: ProgramLevel | Parent level |
-| `department` | ObjectId | - | - | ref: Department | ⚠️ Should inherit from Program |
 | `isArchived` | Boolean | - | false | - | Soft delete flag |
 | `status` | String | - | `draft` | enum: `draft`, `rendered`, `published` | Publication status |
 | `publishedAt` | Date | - | - | - | When published |
@@ -425,10 +429,14 @@
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Removed Fields (DCV-037)**:
+**Removed Fields (DCV-037, DCV-044)**:
 - `description` - Use `shortDescription` and `longDescription` instead
+- `department` - Inherit from Program via `getDepartment()` method
 
-**Indexes**: `program`, `(program, programLevel)`, `(department, isArchived)`
+**Instance Methods**:
+- `getDepartment()` - Returns department from parent Program
+
+**Indexes**: `program`, `(program, programLevel)`, `isArchived`
 
 ---
 
@@ -860,6 +868,7 @@
 | `pagination.defaultLimit` | Number | - | 10 | - | Default page size |
 | `pagination.maxLimit` | Number | - | 100 | - | Maximum page size |
 | `pagination.overrides` | Map | - | - | - | Per-entity overrides |
+| `features` | Map<String, Boolean> | - | - | - | Feature flags (DCV-050) |
 | `updatedBy` | ObjectId | - | - | ref: Admin | Last editor |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |

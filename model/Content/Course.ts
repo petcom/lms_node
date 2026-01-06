@@ -6,6 +6,7 @@ import { ICourse } from '../../types/models-types';
  * Represents a unit of completion within a program.
  * 
  * DCV-037: Removed redundant description field - use shortDescription/longDescription
+ * DCV-044: Removed department field - inherit from Program via getDepartment()
  */
 const courseSchema = new Schema<ICourse>(
   {
@@ -31,11 +32,7 @@ const courseSchema = new Schema<ICourse>(
       ref: 'ProgramLevel',
       index: true,
     },
-    department: {
-      type: Schema.Types.ObjectId,
-      ref: 'Department',
-      index: true,
-    },
+    // DCV-044: department removed - inherit from Program via getDepartment()
     isArchived: {
       type: Boolean,
       default: false,
@@ -88,7 +85,14 @@ const courseSchema = new Schema<ICourse>(
 );
 
 courseSchema.index({ program: 1, programLevel: 1 });
-courseSchema.index({ department: 1, isArchived: 1 });
+courseSchema.index({ isArchived: 1 });
+
+// DCV-044: Method to get department from Program
+courseSchema.methods.getDepartment = async function(): Promise<mongoose.Types.ObjectId | undefined> {
+  const Program = mongoose.model('Program');
+  const program = await Program.findById(this.program).select('department').lean();
+  return program?.department;
+};
 
 const Course = mongoose.model<ICourse>('Course', courseSchema);
 

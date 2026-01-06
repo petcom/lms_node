@@ -527,13 +527,13 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-041** | **Remove Learner.email - derive from User** | **Medium** | **Low** | **DCV-002** | ✅ Complete |
 | **DCV-042** | **Add Department.status enum ['active', 'archived']** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-043** | **Remove Program.duration - tracked at Class level** | **Medium** | **Low** | **None** | ✅ Complete |
-| **DCV-044** | **Remove ProgramLevel.department and Course.department - inherit from Program** | **Medium** | **Low** | **None** |
+| **DCV-044** | **Remove ProgramLevel.department and Course.department - inherit from Program** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-045** | **Add CourseContent segment title field** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-046** | **Remove 'scorm' from CustomContent.customType enum** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-047** | **Add CustomContent.questions ref for quiz/exam types** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-048** | **Add RenderedCourse.css and RenderedCourse.version** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-049** | **~~Add proper refs to LearnerProgress~~** | ~~**Low**~~ | ~~**Low**~~ | **SUPERSEDED by DCV-052** |
-| **DCV-050** | **Add Settings.features with scope inheritance (global/department/program)** | **Low** | **Medium** | **None** |
+| **DCV-050** | **Add Settings.features with scope inheritance (global/department/program)** | **Low** | **Medium** | **None** | ✅ Complete |
 | **DCV-051** | **Create Media model for external hosted content** | **High** | **Medium** | **None** |
 | **DCV-052** | **Remove LearnerProgress - migrate tracking to CourseEnrollmentActivity** | **High** | **High** | **DCV-027, DCV-028, DCV-051** |
 | **DCV-053** | **Update all createdBy fields to ref:User (Program, Course, ProgramLevel, CourseContent, CustomContent, Exam, Question, ScormPackage, Media)** | **High** | **Medium** | **DCV-001** |

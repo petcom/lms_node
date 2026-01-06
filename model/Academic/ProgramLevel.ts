@@ -4,6 +4,8 @@ import { IProgramLevel } from '../../types/models-types';
 /**
  * Program Level Schema
  * Represents a sub-program level within a program.
+ * 
+ * DCV-044: department removed - inherit from Program via getDepartment()
  */
 const programLevelSchema = new Schema<IProgramLevel>(
   {
@@ -31,11 +33,7 @@ const programLevelSchema = new Schema<IProgramLevel>(
       required: true,
       min: 1,
     },
-    department: {
-      type: Schema.Types.ObjectId,
-      ref: 'Department',
-      index: true,
-    },
+    // DCV-044: department removed - inherit from Program via getDepartment()
     archived: {
       type: Boolean,
       default: false,
@@ -55,6 +53,13 @@ const programLevelSchema = new Schema<IProgramLevel>(
 
 programLevelSchema.index({ program: 1, order: 1 }, { unique: true });
 programLevelSchema.index({ program: 1, archived: 1 });
+
+// DCV-044: Method to get department from Program
+programLevelSchema.methods.getDepartment = async function(): Promise<mongoose.Types.ObjectId | undefined> {
+  const Program = mongoose.model('Program');
+  const program = await Program.findById(this.program).select('department').lean();
+  return program?.department;
+};
 
 const ProgramLevel = mongoose.model<IProgramLevel>('ProgramLevel', programLevelSchema);
 

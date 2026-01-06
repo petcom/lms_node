@@ -103,28 +103,25 @@
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
-| `_id` | ObjectId | Auto | - | - | Primary key |
+| `_id` | ObjectId | Auto | - | Must match User._id | Primary key (shared with User) |
 | `name.first` | String | ✅ | - | - | First name |
 | `name.middle` | String | - | - | - | Middle name |
 | `name.last` | String | ✅ | - | - | Last name |
 | `name.display` | String | - | Auto | - | Formatted: "Last, First M." |
-| `email` | String | ✅ | - | - | Contact email |
 | `department` | ObjectId | - | - | ref: Department | Primary department |
 | `addresses` | [Address] | - | undefined | - | Mailing addresses |
 | `honor.sex` | String | - | - | - | Biological sex |
 | `honor.gender` | String | - | - | - | Gender identity |
 | `honor.pronouns` | String | - | - | - | Preferred pronouns |
 | `honor.honorific` | String | - | - | - | Title (Dr., Mr., etc.) |
-| `academicTerms` | [ObjectId] | - | - | ref: AcademicTerm | ⚠️ Orphaned |
-| `programs` | [ObjectId] | - | - | ref: Program | ⚠️ Orphaned |
-| `yearGroups` | [ObjectId] | - | - | ref: YearGroup | ⚠️ Orphaned |
-| `academicYears` | [ObjectId] | - | - | ref: AcademicYear | ⚠️ Orphaned |
-| `programLevels` | [ObjectId] | - | - | ref: ProgramLevel | ⚠️ Orphaned |
-| `courses` | [ObjectId] | - | - | ref: Course | ⚠️ Orphaned |
-| `instructors` | [ObjectId] | - | - | ref: Staff | ⚠️ Orphaned |
-| `learners` | [ObjectId] | - | - | ref: Learner | ⚠️ Orphaned |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Removed Fields (DCV-016)**:
+- `email` - Derive from User via shared `_id`
+- `academicTerms`, `programs`, `yearGroups`, `academicYears`, `programLevels`, `courses`, `instructors`, `learners` - Global admins access all via role authorization
+
+**Pre-save Validation**: Requires matching User to exist (DCV-003)
 
 ---
 
@@ -136,12 +133,11 @@
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
-| `_id` | ObjectId | Auto | - | - | Primary key |
+| `_id` | ObjectId | Auto | - | Must match User._id | Primary key (shared with User) |
 | `name.first` | String | ✅ | - | - | First name |
 | `name.middle` | String | - | - | - | Middle name |
 | `name.last` | String | ✅ | - | - | Last name |
 | `name.display` | String | - | Auto | - | Formatted display name |
-| `email` | String | ✅ | - | - | Contact email |
 | `dateEmployed` | Date | - | Date.now | - | Employment start date |
 | `instructorId` | String | ✅ | Auto | - | Display ID (TEA###...) |
 | `isWithdrawn` | Boolean | - | false | - | Employment terminated |
@@ -151,16 +147,27 @@
 | `departmentMemberships[].roles` | [String] | - | [] | - | Roles in that department |
 | `addresses` | [Address] | - | undefined | - | Contact addresses |
 | `honor` | Object | - | undefined | - | Demographics (same as Admin) |
-| `course` | ObjectId | - | - | ref: Course | ⚠️ Unclear purpose |
+| `course` | ObjectId | - | - | ref: Course | ⚠️ Legacy - unclear purpose |
 | `applicationStatus` | String | - | `pending` | enum: `pending`, `approved`, `rejected` | Onboarding status |
-| `program` | ObjectId | - | - | ref: Program | ⚠️ Unclear purpose |
-| `programLevel` | ObjectId | - | - | ref: ProgramLevel | ⚠️ Unclear purpose |
-| `department` | ObjectId | - | - | ref: Department | ⚠️ Redundant with memberships |
-| `academicYear` | ObjectId | - | - | ref: AcademicYear | Current academic year |
-| `examsCreated` | [ObjectId] | - | - | ref: Exam | ⚠️ Orphaned array |
+| `program` | ObjectId | - | - | ref: Program | ⚠️ Legacy - unclear purpose |
+| `programLevel` | ObjectId | - | - | ref: ProgramLevel | ⚠️ Legacy - unclear purpose |
+| `examsCreated` | [ObjectId] | - | - | ref: Exam | ⚠️ Legacy - unclear purpose |
 | `createdBy` | ObjectId | - | - | ref: Admin | Who created this record |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Removed Fields (DCV-021-023)**:
+- `email` - Derive from User via `getEmail()` method
+- `department` - Use `departmentMemberships[0].departmentId` via `primaryDepartment` virtual
+- `academicYear` - Context comes from Calendar/Class, not Staff
+
+**Virtual Getters**:
+- `primaryDepartment` - Returns first department membership's departmentId
+
+**Instance Methods**:
+- `getEmail()` - Fetches email from User collection
+
+**Pre-save Validation**: Requires matching User to exist (DCV-004)
 
 ---
 
@@ -249,13 +256,22 @@
 | `code` | String | - | Auto | - | Short code |
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
 | `department` | ObjectId | ✅ | - | ref: Department | Owning department |
-| `instructors` | [ObjectId] | - | - | ref: Staff | ⚠️ Should derive from courses |
-| `learners` | [ObjectId] | - | [] | ref: Learner | 🔴 Use ProgramEnrollment |
-| `courses` | [ObjectId] | - | [] | ref: Course | 🔴 Derive from ProgramLevel |
 | `archived` | Boolean | - | false | - | Soft delete flag |
 | `archivedAt` | Date | - | - | - | When archived |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Removed Fields (DCV-013-015)**:
+- `learners` - Derive from ProgramEnrollment via `getLearners()` method
+- `instructors` - Derive from Course.primaryInstructors via `getInstructors()` method
+- `courses` - Derive from Course.find({ program }) via `getCourses()` method
+
+**Instance Methods**:
+- `getLearners()` - Returns enrolled learners from ProgramEnrollment
+- `getInstructors()` - Returns instructors from Course assignments
+- `getCourses()` - Returns courses in this program
+- `getLearnerCount()` - Optimized count query
+- `getCourseCount()` - Optimized count query
 
 ---
 

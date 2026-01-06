@@ -491,24 +491,24 @@ const ProgramEnrollmentSchema = new Schema({
 | DCV-005 | Apply validation to Learner model | High | Low | DCV-002 | ✅ Complete |
 | DCV-006 | Update User TypeScript types | Medium | Low | DCV-001 | ✅ Complete |
 | DCV-007 | Update auth middleware for roles array | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
-| DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 | ⏳ Pending |
+| DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
 | DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 | ✅ Complete |
 | DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 | ⏳ Pending |
 | DCV-011 | Update mock data to use shared _id pattern | Low | Low | DCV-001 | ✅ Complete |
 | DCV-012 | Update API documentation | Low | Low | All | ⏳ Pending |
-| **DCV-013** | **Remove Program.learners array** | **High** | **Low** | **None** | ⏳ Pending |
-| **DCV-014** | **Remove Program.instructors array** | **High** | **Low** | **None** | ⏳ Pending |
-| **DCV-015** | **Remove Program.courses array** | **High** | **Low** | **None** |
-| **DCV-016** | **Remove all Admin orphaned arrays (programs, learners, courses, etc.)** | **High** | **Low** | **None** |
-| **DCV-017** | **Create cached query service for program aggregations** | **Medium** | **High** | **DCV-013-015** |
-| **DCV-018** | **Add virtual getters to Program for backwards compatibility** | **Low** | **Medium** | **DCV-013-015** |
-| **DCV-019** | **Evaluate Course.program redundancy** | **Medium** | **Low** | **None** |
-| **DCV-020** | **Create migration script to remove deprecated arrays** | **Low** | **Medium** | **DCV-013-016** |
-| **DCV-021** | **Remove Staff.email - derive from User** | **High** | **Low** | **DCV-002** |
-| **DCV-022** | **Remove Staff.department - use departmentMemberships** | **High** | **Low** | **None** |
-| **DCV-023** | **Remove Staff.academicYear - context from Calendar/Class** | **High** | **Low** | **DCV-024** |
-| **DCV-024** | **Document Class model definition and Calendar integration** | **Medium** | **Medium** | **None** |
-| **DCV-025** | **Create Staff virtual getter for email from User** | **Medium** | **Low** | **DCV-021** |
+| **DCV-013** | **Remove Program.learners array** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-014** | **Remove Program.instructors array** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-015** | **Remove Program.courses array** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-016** | **Remove all Admin orphaned arrays (programs, learners, courses, etc.)** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-017** | **Create cached query service for program aggregations** | **Medium** | **High** | **DCV-013-015** | ✅ Complete |
+| **DCV-018** | **Add virtual getters to Program for backwards compatibility** | **Low** | **Medium** | **DCV-013-015** | ✅ Complete |
+| **DCV-019** | **Evaluate Course.program redundancy** | **Medium** | **Low** | **None** | ✅ Complete (keeping for perf) |
+| **DCV-020** | **Create migration script to remove deprecated arrays** | **Low** | **Medium** | **DCV-013-016** | ✅ Complete |
+| **DCV-021** | **Remove Staff.email - derive from User** | **High** | **Low** | **DCV-002** | ✅ Complete |
+| **DCV-022** | **Remove Staff.department - use departmentMemberships** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-023** | **Remove Staff.academicYear - context from Calendar/Class** | **High** | **Low** | **DCV-024** | ✅ Complete |
+| **DCV-024** | **Document Class model definition and Calendar integration** | **Medium** | **Medium** | **None** | ⏳ Pending |
+| **DCV-025** | **Create Staff virtual getter for email from User** | **Medium** | **Low** | **DCV-021** | ✅ Complete |
 | **DCV-026** | **Redesign ProgramEnrollment with status history + credentialGoal** | **High** | **High** | **None** |
 | **DCV-027** | **Create CourseEnrollmentCurrent model** | **High** | **Medium** | **DCV-026** |
 | **DCV-028** | **Create CourseEnrollmentActivity model** | **High** | **Medium** | **DCV-027** |

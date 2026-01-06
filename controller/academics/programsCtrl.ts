@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
-import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
 import Course from '../../model/Content/Course';
-import { IProgram, IAdmin } from '../../types/models-types';
+import { IProgram } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import { getProgramCourseCatalog, courseCatalogCacheConfig } from '../../utils/courseCatalogCache';
 import { normalizePage, resolvePagination } from '../../utils/pagination';
@@ -50,12 +49,7 @@ export const createProgram = AsyncHandler(
         (req.userAuth as any)?.department || new mongoose.Types.ObjectId(MASTER_DEPARTMENT_ID),
     })) as IProgram;
 
-    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
-    if (admin) {
-      // push program object into logged in Admin
-      admin.programs?.push(programCreated._id); // push the created program ID to the admin instance upon creation.
-      await admin.save();
-    }
+    // DCV-016: Removed admin.programs array push - global admins access all via role
 
     res.status(201).json({
       status: 'success',

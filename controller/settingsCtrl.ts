@@ -15,7 +15,7 @@ export const getSettings = AsyncHandler(async (_req: Request, res: Response): Pr
   let settings = await Settings.findOne({ scope: 'global' }).lean();
   if (!settings) {
     const created = await Settings.create(DEFAULT_SETTINGS);
-    settings = created.toObject();
+    settings = created.toObject() as unknown as typeof settings;
   }
 
   res.status(200).json({

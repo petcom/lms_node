@@ -11,7 +11,6 @@
  */
 import mongoose from 'mongoose';
 import ProgramEnrollment from '../model/Academic/ProgramEnrollment';
-import ProgramLevel from '../model/Academic/ProgramLevel';
 import Course from '../model/Content/Course';
 import Staff from '../model/Staff/Staff';
 import { ILearner, IStaff, ICourse } from '../types/models-types';

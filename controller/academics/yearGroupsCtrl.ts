@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
-import Admin from '../../model/Staff/Admin';
 import YearGroup from '../../model/Academic/YearGroup';
-import { IYearGroup, IAdmin } from '../../types/models-types';
+import { IYearGroup } from '../../types/models-types';
 import { Types } from 'mongoose';
 
 // Request body interfaces
@@ -41,16 +40,7 @@ export const createYearGroup = AsyncHandler(
       createdBy: req.userAuth?._id,
     })) as IYearGroup;
 
-    // find the admin
-    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
-    if (!admin) {
-      throw new Error('Admin not found');
-    }
-
-    // push year group into admin
-    admin.yearGroups?.push(subjectYearGroup._id);
-    // save
-    await admin.save();
+    // DCV-016: Removed admin.yearGroups array push - global admins access all via role
 
     // return response
     res.status(201).json({

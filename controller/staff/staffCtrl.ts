@@ -6,7 +6,6 @@ import StaffRole from '../../model/Staff/StaffRole';
 import User from '../../model/Auth/User';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
-import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
@@ -25,11 +24,17 @@ interface LoginStaffBody {
   password: string;
 }
 
+/**
+ * EVIP Phase 1 (DCV-021): Removed email from Staff updates
+ * Email stored only on User model, use getEmail() method
+ * 
+ * EVIP Phase 2 (DCV-022): Removed department from Staff updates
+ * Use departmentMemberships instead
+ */
 interface UpdateStaffProfileBody {
-  email?: string;
   name?: PersonNameInput;
   password?: string;
-  department?: string;
+  departmentMemberships?: { departmentId: string; roles: string[] }[];
 }
 
 /**
@@ -119,10 +124,7 @@ export const adminRegisterStaff = expressAsyncHandler(
       departmentMemberships,
       scope
     );
-    const chosenDept =
-      department ||
-      (normalizedMemberships?.[0]?.departmentId?.toString() as string | undefined) ||
-      (req.userAuth as any)?.department?.toString();
+    // DCV-022: Staff.department removed - use departmentMemberships
     if (department) {
       if (!mongoose.isValidObjectId(department)) {
         throw new ValidationError('Invalid department id');
@@ -275,15 +277,18 @@ export const getStaffProfile = expressAsyncHandler(
  * @description Staff updating profile
  * @route       UPDATE /api/v1/staff/:staffID/update
  * @access      Private staff only
+ * 
+ * EVIP Phase 1 (DCV-021): Email stored only on User model
+ * EVIP Phase 2 (DCV-022): department field removed, use departmentMemberships
  */
 export const staffUpdateProfile = expressAsyncHandler(
   async (req: Request<{}, {}, UpdateStaffProfileBody>, res: Response): Promise<void> => {
-    const { email, name, password, department } = req.body;
+    const { name, password, departmentMemberships } = req.body;
     const normalizedName = normalizePersonName(name);
+    
+    // DCV-021/DCV-022: Staff model only stores name and departmentMemberships
     const updateFields: {
-      email?: string;
       name?: PersonNameInput;
-      department?: mongoose.Types.ObjectId;
       departmentMemberships?: {
         departmentId: mongoose.Types.ObjectId;
         roles: string[];
@@ -291,96 +296,53 @@ export const staffUpdateProfile = expressAsyncHandler(
         updatedAt?: Date;
       }[];
     } = {};
-    const userUpdates: { email?: string; passwordHash?: string } = {};
+    
+    // DCV-021: Email/password changes go to User model only
+    const userUpdates: { passwordHash?: string } = {};
 
-    // if email is taken
-    if (email) {
-      const emailExists = await User.findOne({ email });
-      if (emailExists && emailExists._id.toString() !== req.userAuth?._id?.toString()) {
-        throw new Error('This email already exists');
-      }
-      updateFields.email = email;
-      userUpdates.email = email;
-    }
-
-    // department change (self) — only allow within own department scope
-    if (department) {
+    // DCV-022: Handle departmentMemberships updates
+    if (departmentMemberships && departmentMemberships.length > 0) {
       const scope = req.departmentScope?.accessibleDepartmentIds;
-      if (!mongoose.isValidObjectId(department)) {
-        throw new ValidationError('Invalid department id');
-      }
-      if (scope && scope !== 'all' && !scope.includes(department)) {
-        throw new AuthorizationError('Access denied for this department');
-      }
-      updateFields.department = new mongoose.Types.ObjectId(department);
-      const staffRecord = await Staff.findById(req.userAuth?._id)
-        .select('departmentMemberships')
-        .lean();
-      const currentMemberships = Array.isArray(staffRecord?.departmentMemberships)
-        ? staffRecord?.departmentMemberships
-        : [];
-      const hasMembership = currentMemberships.some(
-        (membership: any) => membership.departmentId?.toString() === department
-      );
-      if (!hasMembership) {
+      const normalized = await normalizeDepartmentMemberships(departmentMemberships, scope);
+      if (normalized) {
         const now = new Date();
-        updateFields.departmentMemberships = [
-          ...currentMemberships,
-          {
-            departmentId: new mongoose.Types.ObjectId(department),
-            roles: (req.userAuth as any)?.staffRoles || [],
-            createdAt: now,
-            updatedAt: now,
-          },
-        ];
+        updateFields.departmentMemberships = normalized.map((m) => ({
+          ...m,
+          createdAt: now,
+          updatedAt: now,
+        }));
       }
     }
 
     // check if user is updating password
     if (password) {
       userUpdates.passwordHash = await hashPassword(password);
-      if (typeof name !== 'undefined') {
-        updateFields.name = normalizedName ?? name;
-      }
-      // update user
-      const staff = await Staff.findByIdAndUpdate(
-        req.userAuth?._id,
-        updateFields,
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      if (Object.keys(userUpdates).length > 0) {
-        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
-      }
-      res.status(200).json({
-        success: 'success',
-        data: staff,
-        message: 'Staff profile updated successfully',
-      });
-    } else {
-      if (typeof name !== 'undefined') {
-        updateFields.name = normalizedName ?? name;
-      }
-      // update user email and name
-      const staff = await Staff.findByIdAndUpdate(
-        req.userAuth?._id,
-        updateFields,
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      if (Object.keys(userUpdates).length > 0) {
-        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
-      }
-      res.status(200).json({
-        success: 'success',
-        data: staff,
-        message: 'Staff profile updated successfully',
-      });
     }
+    
+    if (typeof name !== 'undefined') {
+      updateFields.name = normalizedName ?? name;
+    }
+
+    // Update Staff model (name and departmentMemberships only per DCV-021/DCV-022)
+    const staff = await Staff.findByIdAndUpdate(
+      req.userAuth?._id,
+      Object.keys(updateFields).length > 0 ? updateFields : {},
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    // DCV-021: Update password on User model only
+    if (Object.keys(userUpdates).length > 0) {
+      await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+    }
+
+    res.status(200).json({
+      success: 'success',
+      data: staff,
+      message: 'Staff profile updated successfully',
+    });
   }
 );
 
@@ -406,8 +368,8 @@ export const adminUpdateStaff = expressAsyncHandler(
       throw new Error('Staff member not found');
     }
 
-    // check if staff member is withdrawn
-    if (staffFound.isWithdrawn) {
+    // DCV-040: check if staff member is withdrawn using status field
+    if (staffFound.status === 'withdrawn') {
       throw new Error('Action denied, staff member is withdrawn');
     }
 

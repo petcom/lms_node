@@ -15,6 +15,9 @@ import { IDepartment } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import { normalizePage, resolvePagination } from '../../utils/pagination';
 
+// Type alias for lean department documents
+type LeanDepartment = mongoose.FlattenMaps<IDepartment> & Required<{ _id: mongoose.Types.ObjectId }>;
+
 type DepartmentSummary = {
   id: string;
   name: string;
@@ -58,7 +61,7 @@ const getLevelNumber = (level: IDepartment['level']): number => {
 };
 
 const toDepartmentSummary = (
-  dept: IDepartment,
+  dept: LeanDepartment,
   passingStyleScore?: number | null
 ): DepartmentSummary => ({
   id: dept._id.toString(),
@@ -133,7 +136,7 @@ const resolveDepartmentScope = async (
 ): Promise<{
   isGlobalScope: boolean;
   departmentIds: string[] | null;
-  departments: IDepartment[];
+  departments: LeanDepartment[];
 }> => {
   const scope = req.departmentScope?.accessibleDepartmentIds;
   const isGlobalScope = !scope || scope === 'all';
@@ -154,15 +157,15 @@ const resolveDepartmentScope = async (
       ? null
       : (scope as string[]);
 
-  const departments = await Department.find(
+  const departments = (await Department.find(
     departmentIds ? { _id: { $in: departmentIds } } : {}
-  ).lean();
+  ).lean()) as unknown as LeanDepartment[];
 
   return { isGlobalScope, departmentIds, departments };
 };
 
-const buildDepartmentRecordMap = (departments: IDepartment[]): Map<string, IDepartment> => {
-  const map = new Map<string, IDepartment>();
+const buildDepartmentRecordMap = (departments: LeanDepartment[]): Map<string, LeanDepartment> => {
+  const map = new Map<string, LeanDepartment>();
   departments.forEach((dept) => {
     map.set(dept._id.toString(), dept);
   });
@@ -170,8 +173,8 @@ const buildDepartmentRecordMap = (departments: IDepartment[]): Map<string, IDepa
 };
 
 const resolvePassingStyleScore = (
-  department: IDepartment,
-  departmentMap: Map<string, IDepartment>,
+  department: LeanDepartment,
+  departmentMap: Map<string, LeanDepartment>,
   masterFallback: number | null
 ): number | null => {
   if (typeof department.passingStyleScore === 'number') {
@@ -192,7 +195,7 @@ const resolvePassingStyleScore = (
 };
 
 const resolveMasterPassingStyleScore = async (
-  departments: IDepartment[]
+  departments: LeanDepartment[]
 ): Promise<number | null> => {
   const localMaster = departments.find((dept) => dept.level === 'master');
   if (typeof localMaster?.passingStyleScore === 'number') {
@@ -205,7 +208,7 @@ const resolveMasterPassingStyleScore = async (
 };
 
 const buildDepartmentMap = async (
-  departments: IDepartment[]
+  departments: LeanDepartment[]
 ): Promise<Map<string, DepartmentSummary>> => {
   const recordMap = buildDepartmentRecordMap(departments);
   const masterFallback = await resolveMasterPassingStyleScore(departments);
@@ -246,7 +249,7 @@ const resolveDepartmentId = async (
   if (!mongoose.isValidObjectId(id)) {
     throw new ValidationError(`Invalid ${label} id`);
   }
-  const doc = await model.findById(id).select('department').lean();
+  const doc = await model.findById(id).select('department').lean() as { department?: mongoose.Types.ObjectId } | null;
   if (!doc) {
     throw new NotFoundError(`${label} not found`);
   }
@@ -289,7 +292,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
     User.find({ _id: { $in: staffIds }, roles: 'staff' }).select('_id email staffRoles').lean(),
   ]);
   // DCV-001: Use primaryRole for backward compat
-  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), { role: user.primaryRole || 'global-admin', email: user.email }]));
+  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), { role: 'global-admin' as const, email: user.email }]));
   const staffUserMap = new Map(
     staffUsers.map((user) => [user._id.toString(), { staffRoles: user.staffRoles || [], email: user.email }])
   );
@@ -388,15 +391,33 @@ export const listDepartmentContent = AsyncHandler(
     const scormPromise =
       type && type !== 'scorm' ? Promise.resolve([]) : ScormPackage.find(scormFilter).lean();
 
-    const courseFilter =
-      departmentObjectIds === null ? {} : { department: { $in: departmentObjectIds } };
-    const coursePromise = Course.find(courseFilter).select('_id department').lean();
+    // DCV-044: Course no longer has department - filter via Program
+    let coursePromise: Promise<{ _id: mongoose.Types.ObjectId; program: mongoose.Types.ObjectId }[]>;
+    if (departmentObjectIds === null) {
+      coursePromise = Course.find({}).select('_id program').lean() as any;
+    } else {
+      // Get programs in the departments first
+      const programsInDepts = await Program.find({ department: { $in: departmentObjectIds } }).select('_id').lean();
+      const programIds = programsInDepts.map(p => p._id);
+      coursePromise = Course.find({ program: { $in: programIds } }).select('_id program').lean() as any;
+    }
 
     const [scormPackages, courses] = await Promise.all([scormPromise, coursePromise]);
     const courseIds = courses.map((course) => course._id);
+    
+    // DCV-044: Build course->department map via Program lookup
+    const programDeptMap = new Map<string, string>();
+    const programIds = [...new Set(courses.map(c => c.program?.toString()).filter(Boolean))];
+    if (programIds.length > 0) {
+      const programs = await Program.find({ _id: { $in: programIds } }).select('_id department').lean();
+      programs.forEach(p => {
+        if (p.department) programDeptMap.set(p._id.toString(), p.department.toString());
+      });
+    }
+    
     const courseDepartmentMap = new Map<string, DepartmentSummary | null>();
     courses.forEach((course) => {
-      const deptId = course.department ? course.department.toString() : null;
+      const deptId = course.program ? programDeptMap.get(course.program.toString()) || null : null;
       courseDepartmentMap.set(
         course._id.toString(),
         deptId ? departmentMap.get(deptId) || null : null
@@ -506,9 +527,9 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
   }
 
   const scope = req.departmentScope?.accessibleDepartmentIds;
+  // DCV-022: department removed from Staff - use departmentMemberships
   const targetDepartmentId =
     departmentId ||
-    staff.department?.toString() ||
     staff.departmentMemberships?.[0]?.departmentId?.toString();
   if (!targetDepartmentId) {
     throw new ValidationError('departmentId is required for staff role updates');
@@ -544,9 +565,7 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
     departmentId: new mongoose.Types.ObjectId(membership.departmentId),
     roles: membership.roles,
   })) as any;
-  if (!staff.department) {
-    staff.department = new mongoose.Types.ObjectId(targetDepartmentId);
-  }
+  // DCV-022: department field removed from Staff - memberships are the source of truth
   await staff.save();
 
   const roleUnion = getUnionRoles(memberships);
@@ -974,7 +993,7 @@ export const updateDepartmentProgram = AsyncHandler(
     const programDept = program.department ? program.department.toString() : null;
     ensureDepartmentScope(scope, programDept, 'Access denied for this program');
 
-    const { name, description, duration, code } = req.body as Record<string, any>;
+    const { name, description, code } = req.body as Record<string, any>;
     if (name && name !== program.name) {
       const existing = await Program.findOne({ name }).lean();
       if (existing) {
@@ -986,9 +1005,7 @@ export const updateDepartmentProgram = AsyncHandler(
     if (description !== undefined) {
       program.description = description;
     }
-    if (duration !== undefined) {
-      program.duration = duration;
-    }
+    // DCV-043: duration removed from Program - tracked at Class level
     if (code !== undefined) {
       program.code = code;
     }
@@ -1021,18 +1038,16 @@ export const updateProgramDepartment = AsyncHandler(
     const programDept = program.department ? program.department.toString() : null;
     ensureDepartmentScope(scope, programDept, 'Access denied for this program');
 
+    // Program.department is required - cannot be unset
     if (departmentId === null) {
-      if (scope && scope !== 'all') {
-        throw new AuthorizationError('Access denied for this department change');
-      }
-      program.department = undefined;
-    } else {
-      if (!mongoose.isValidObjectId(departmentId)) {
-        throw new ValidationError('Invalid department id');
-      }
-      ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
-      program.department = new mongoose.Types.ObjectId(departmentId);
+      throw new ValidationError('Program department cannot be removed - it is a required field');
     }
+    
+    if (!mongoose.isValidObjectId(departmentId)) {
+      throw new ValidationError('Invalid department id');
+    }
+    ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
+    program.department = new mongoose.Types.ObjectId(departmentId);
 
     await program.save();
 
@@ -1181,44 +1196,23 @@ export const updateDepartmentCourse = AsyncHandler(
   }
 );
 
+// DCV-044: Course.department removed - Courses inherit department from Program
+// This endpoint now just validates scope via Program and returns informational message
 export const updateCourseDepartment = AsyncHandler(
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: Request, _res: Response): Promise<void> => {
     const courseId = req.params.id;
-    const { departmentId } = req.body as { departmentId: string | null };
 
     if (!mongoose.isValidObjectId(courseId)) {
       throw new ValidationError('Invalid course id');
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseId).populate('program', 'department');
     if (!course) {
       throw new NotFoundError('Course not found');
     }
 
-    const scope = req.departmentScope?.accessibleDepartmentIds;
-    const courseDept = course.department ? course.department.toString() : null;
-    ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
-
-    if (departmentId === null) {
-      if (scope && scope !== 'all') {
-        throw new AuthorizationError('Access denied for this department change');
-      }
-      course.department = undefined;
-    } else {
-      if (!mongoose.isValidObjectId(departmentId)) {
-        throw new ValidationError('Invalid department id');
-      }
-      ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
-      course.department = new mongoose.Types.ObjectId(departmentId);
-    }
-
-    await course.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Course department updated successfully',
-      data: course,
-    });
+    // DCV-044: Course department is now derived from Program - cannot be set directly
+    throw new ValidationError('Course department cannot be set directly. Courses inherit their department from their Program. Update the Program or move the Course to a different Program.');
   }
 );
 
@@ -1236,23 +1230,23 @@ export const updateCourseProgram = AsyncHandler(
       throw new NotFoundError('Course not found');
     }
 
+    // DCV-044: Get current department via Program
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const courseDept = course.department ? course.department.toString() : null;
+    const currentProgram = course.program ? await Program.findById(course.program).select('department').lean() : null;
+    const courseDept = (currentProgram as any)?.department?.toString() || null;
     ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
 
+    // Course.program is required
     if (programId === null) {
-      course.program = undefined;
-    } else {
-      if (!mongoose.isValidObjectId(programId)) {
-        throw new ValidationError('Invalid program id');
-      }
-      const programDept = await resolveDepartmentId(Program, programId, 'program');
-      ensureDepartmentScope(scope, programDept, 'Access denied for this program');
-      if (courseDept && programDept && courseDept !== programDept) {
-        throw new ValidationError('Program department must match course department');
-      }
-      course.program = new mongoose.Types.ObjectId(programId);
+      throw new ValidationError('Course program cannot be removed - it is a required field');
     }
+    
+    if (!mongoose.isValidObjectId(programId)) {
+      throw new ValidationError('Invalid program id');
+    }
+    const programDept = await resolveDepartmentId(Program, programId, 'program');
+    ensureDepartmentScope(scope, programDept, 'Access denied for this program');
+    course.program = new mongoose.Types.ObjectId(programId);
 
     await course.save();
 

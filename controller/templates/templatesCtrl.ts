@@ -95,7 +95,7 @@ const resolvePassingStyleScore = async (departmentId?: string | null): Promise<n
   }
 
   const ancestorIds = [department.parent, ...(department.ancestors || [])]
-    .filter(Boolean)
+    .filter((id): id is NonNullable<typeof id> => Boolean(id))
     .map((id) => id.toString());
 
   if (ancestorIds.length > 0) {
@@ -186,7 +186,7 @@ export const updateMasterCss = asyncHandler(async (req: Request, res: Response) 
       departmentId: new mongoose.Types.ObjectId(departmentId),
       css,
       version: 1,
-      updatedBy: req.userAuth?._id,
+      updatedBy: req.userAuth!._id,
     });
     res.status(200).json({
       status: 'success',
@@ -203,7 +203,7 @@ export const updateMasterCss = asyncHandler(async (req: Request, res: Response) 
 
   existing.css = css;
   existing.version += 1;
-  existing.updatedBy = req.userAuth?._id;
+  existing.updatedBy = req.userAuth!._id;
   await existing.save();
 
   res.status(200).json({

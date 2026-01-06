@@ -22,7 +22,6 @@ describe('Course API Completion Plan - Phase 1', () => {
   let programLevelId: mongoose.Types.ObjectId;
   let courseId: mongoose.Types.ObjectId;
   let instructorId: mongoose.Types.ObjectId;
-  let instructor2Id: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
     if (mongoose.connection.readyState !== 1) {
@@ -107,12 +106,11 @@ describe('Course API Completion Plan - Phase 1', () => {
     // THEN create Staff with same _id
     // DCV-021: email removed from Staff (derived from User)
     // DCV-022: department replaced with departmentMemberships
-    const instructor2 = await Staff.create({
+    await Staff.create({
       _id: instructor2IdLocal,
       name: { first: 'Jane', last: 'Doe' },
       departmentMemberships: [{ departmentId: masterDepartmentId, roles: ['instructor'] }],
     });
-    instructor2Id = instructor2._id;
   });
 
   describe('1.1 getCourse with segments population', () => {

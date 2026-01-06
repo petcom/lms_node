@@ -45,7 +45,6 @@ describe('SCORM Phase 2: Package Management API', () => {
   let adminToken: string;
   let instructorToken: string;
   let learnerToken: string;
-  const adminId = '0000000000000000000000a1';
   const instructorId = '0000000000000000000000b1';
   const learnerId = '0000000000000000000000c1';
   let packageId: string;
@@ -74,7 +73,7 @@ describe('SCORM Phase 2: Package Management API', () => {
       status: 'active',
     });
     // THEN create Staff with same _id
-    const instructor = await Staff.create({
+    await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Test', last: 'Staff' },
       email: 'instructor@example.com',

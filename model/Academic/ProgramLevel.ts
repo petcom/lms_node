@@ -58,7 +58,7 @@ programLevelSchema.index({ program: 1, archived: 1 });
 // DCV-044: Method to get department from Program
 programLevelSchema.methods.getDepartment = async function(): Promise<mongoose.Types.ObjectId | undefined> {
   const Program = mongoose.model('Program');
-  const program = await Program.findById(this.program).select('department').lean();
+  const program = await Program.findById(this.program).select('department').lean() as { department?: mongoose.Types.ObjectId } | null;
   return program?.department;
 };
 

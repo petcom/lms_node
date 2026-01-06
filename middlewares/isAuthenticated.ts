@@ -7,17 +7,12 @@ import Learner from '../model/Academic/Learner';
 import User from '../model/Auth/User';
 import { AuthenticationError, NotFoundError } from '../utils/errors';
 
-type UserAuth = {
-  _id: any;
-  name: string;
-  email: string;
-  // DCV-001: Support both legacy 'role' (for backward compat) and new 'roles' array
-  role: string;           // Primary role (for backward compatibility)
-  roles: string[];        // All roles (new)
-  primaryRole: string;    // Default dashboard role
-  staffRoles?: string[];  // Renamed from subroles
+// Profile type from lean() query results
+type LeanProfile = {
+  name?: { firstName?: string; lastName?: string; middleName?: string };
+  department?: any;
   departmentMemberships?: { departmentId: any; roles?: string[] }[];
-};
+} | null;
 
 /**
  * Unified authentication middleware
@@ -108,30 +103,36 @@ const isAuthenticated = () => {
         return next(new NotFoundError(`User with ID ${verifiedToken.id} not found`));
       }
 
-      let profile: { name?: string; email?: string; department?: any } | null = null;
+      let profile: LeanProfile = null;
 
       // DCV-001: Use primaryRole (or first role) to determine profile lookup
       const primaryRole = user.primaryRole || (user.roles && user.roles[0]) || 'learner';
 
       if (primaryRole === 'global-admin') {
-        profile = await Admin.findById(user._id).select('name email department').lean();
+        profile = await Admin.findById(user._id).select('name department').lean() as unknown as LeanProfile;
       } else if (primaryRole === 'staff') {
         profile = await Staff.findById(user._id)
-          .select('name email department departmentMemberships')
-          .lean();
+          .select('name department departmentMemberships')
+          .lean() as unknown as LeanProfile;
       } else {
-        profile = await Learner.findById(user._id).select('name email department').lean();
+        profile = await Learner.findById(user._id).select('name department').lean() as unknown as LeanProfile;
       }
 
       if (!profile) {
         return next(new NotFoundError(`Profile for user ${user._id} not found`));
       }
 
+      // Format name from IPersonName
+      const formatName = (name?: { firstName?: string; lastName?: string; middleName?: string }): string => {
+        if (!name) return '';
+        return [name.firstName, name.middleName, name.lastName].filter(Boolean).join(' ');
+      };
+
       // Save user and token info to request object
       // DCV-001: Support both legacy 'role' and new 'roles' array
       req.userAuth = {
         _id: user._id,
-        name: profile.name || '',
+        name: formatName(profile.name),
         email: user.email,
         role: primaryRole,                          // Legacy: for backward compatibility
         roles: user.roles || [primaryRole],         // New: all roles
@@ -139,7 +140,7 @@ const isAuthenticated = () => {
         staffRoles: user.staffRoles || undefined,   // Renamed from subroles
         departmentMemberships:
           primaryRole === 'staff'
-            ? (profile as any).departmentMemberships || undefined
+            ? profile.departmentMemberships || undefined
             : undefined,
         department: profile.department,
       } as any;

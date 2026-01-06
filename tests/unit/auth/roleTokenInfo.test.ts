@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import generateToken from '../../../utils/generateToken';
 import { getTokenInfo } from '../../../controller/auth/authCtrl';
 
@@ -26,8 +26,9 @@ describe('Auth role propagation', () => {
     const json = jest.fn();
     const status = jest.fn().mockReturnThis();
     const res = { status, json } as unknown as Response;
+    const next = jest.fn() as unknown as NextFunction;
 
-    await getTokenInfo(req, res);
+    await getTokenInfo(req, res, next);
 
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(

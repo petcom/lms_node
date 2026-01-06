@@ -387,3 +387,30 @@ Body:
 
 ## Changes (Phase 4)
 - New Program Levels + Courses contract: `lms_node_devdocs/ProgramLevels_Courses-contract.md`.
+
+---
+
+## Important Notes (EVIP Phase 3)
+
+### Department Counts Query Pattern Updates
+
+The `buildCounts` function used in `GET /departments/:id` has been updated to use DCV-compliant query patterns:
+
+**Staff Count (DCV-022):**
+- Previously: `Staff.countDocuments({ department: departmentId })` → Always returned 0
+- Now: `Staff.countDocuments({ 'departmentMemberships.departmentId': departmentId })`
+
+**Course Count (DCV-044):**
+- Previously: `Course.countDocuments({ department: departmentId })` → Always returned 0
+- Now: Two-step query via Program relationship:
+  1. Get program IDs: `Program.find({ department: departmentId })`
+  2. Count courses: `Course.countDocuments({ program: { $in: programIds } })`
+
+**ProgramLevel Count (DCV-044):**
+- Previously: `ProgramLevel.countDocuments({ department: departmentId })` → Always returned 0
+- Now: Two-step query via Program relationship:
+  1. Get program IDs: `Program.find({ department: departmentId })`
+  2. Count levels: `ProgramLevel.countDocuments({ program: { $in: programIds } })`
+
+### Response Shape (Unchanged)
+The response shape remains the same - only the underlying queries have been fixed to return accurate counts.

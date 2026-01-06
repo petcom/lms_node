@@ -160,3 +160,39 @@ DELETE `/course-contents/:id`
 
 ## Changes (Phase 4)
 - No endpoint shape changes; contract remains current for ProgramLevel, Course, and CourseContent routes.
+
+---
+
+## Important Notes (EVIP Phase 2)
+
+### Department Inheritance Pattern (DCV-044)
+
+**Course and ProgramLevel Models:**
+- The `department` field has been **removed** from the schema storage
+- Department is now inherited from the parent Program via `getDepartment()` method
+- This ensures department consistency across the Program hierarchy
+
+**API Request Changes:**
+- `department` field in request bodies is **ignored** for Course and ProgramLevel
+- The department is automatically derived from the associated Program
+- No manual department assignment is needed or supported
+
+**API Response Changes:**
+- Department information should be retrieved via the populated Program
+- Query filters by department still work via Program lookup
+
+**Example:**
+```javascript
+// ❌ WRONG - department no longer stored directly
+POST /courses
+{ "title": "Course 1", "program": "PROG_ID", "department": "DEPT_ID" }
+// department field is ignored
+
+// ✅ CORRECT - department comes from Program
+const course = await Course.findById(id).populate('programId');
+const deptId = course.getDepartment(); // Returns Program's department
+```
+
+### Query Pattern Changes
+- Queries filtering by department should use Program's department
+- Use aggregation or populate to filter courses/levels by department

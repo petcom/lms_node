@@ -3,6 +3,7 @@ import isAuthenticated from '../../middlewares/isAuthenticated';
 import roleRestriction from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 import validate from '../../middlewares/validate';
+import { deprecatedEndpoint } from '../../middlewares/deprecation';
 import {
   listStaffUsers,
   listDepartmentContent,
@@ -93,8 +94,10 @@ departmentResourcesRouter.patch(
   updateDepartmentContent
 );
 
+// DEPRECATED: Use POST /api/v1/programs instead
 departmentResourcesRouter.post(
   '/programs',
+  deprecatedEndpoint('/api/v1/programs', '2026-06-01'),
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),
@@ -102,8 +105,10 @@ departmentResourcesRouter.post(
   createDepartmentProgram
 );
 
+// DEPRECATED: Use PUT /api/v1/programs/:id instead
 departmentResourcesRouter.patch(
   '/programs/:id',
+  deprecatedEndpoint('/api/v1/programs/:id', '2026-06-01'),
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),
@@ -120,8 +125,10 @@ departmentResourcesRouter.patch(
   updateProgramDepartment
 );
 
+// DEPRECATED: Use POST /api/v1/courses instead
 departmentResourcesRouter.post(
   '/courses',
+  deprecatedEndpoint('/api/v1/courses', '2026-06-01'),
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),
@@ -129,8 +136,10 @@ departmentResourcesRouter.post(
   createDepartmentCourse
 );
 
+// DEPRECATED: Use PUT /api/v1/courses/:id instead
 departmentResourcesRouter.patch(
   '/courses/:id',
+  deprecatedEndpoint('/api/v1/courses/:id', '2026-06-01'),
   isAuthenticated(),
   departmentScope(),
   roleRestriction('global-admin'),

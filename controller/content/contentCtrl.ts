@@ -23,7 +23,14 @@ type DepartmentSummary = {
   level: number;
 };
 
-const MASTER_DEPARTMENT_ID = process.env.MASTER_DEPARTMENT_ID || '000000000000000000000d00';
+// Type alias for lean department documents
+type LeanDepartment = {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  code?: string;
+  parent?: mongoose.Types.ObjectId | null;
+  level: 'master' | 'top' | 'sub';
+};
 
 const getLevelNumber = (level: IDepartment['level']): number => {
   if (level === 'master') return 0;
@@ -31,7 +38,7 @@ const getLevelNumber = (level: IDepartment['level']): number => {
   return 2;
 };
 
-const toDepartmentSummary = (dept: IDepartment): DepartmentSummary => ({
+const toDepartmentSummary = (dept: LeanDepartment): DepartmentSummary => ({
   id: dept._id.toString(),
   name: dept.name,
   code: dept.code ?? null,
@@ -122,7 +129,7 @@ const renderCourseHtml = async (
 export const listContent = asyncHandler(async (req: Request, res: Response) => {
   const { type, customType, departmentId } = req.query as {
     type?: 'scorm' | 'custom';
-    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'custom';
     departmentId?: string;
   };
 
@@ -208,7 +215,7 @@ export const getContent = asyncHandler(async (req: Request, res: Response) => {
 
 export const createCustomContent = asyncHandler(async (req: Request, res: Response) => {
   const { customType, title, payload, html, css, departmentId } = req.body as {
-    customType: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
+    customType: 'exam' | 'quiz' | 'exercise' | 'custom';
     title: string;
     payload?: any;
     html?: string;
@@ -245,7 +252,7 @@ export const createCustomContent = asyncHandler(async (req: Request, res: Respon
 
 export const updateCustomContent = asyncHandler(async (req: Request, res: Response) => {
   const { customType, title, payload, html, css, departmentId } = req.body as {
-    customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
+    customType?: 'exam' | 'quiz' | 'exercise' | 'custom';
     title?: string;
     payload?: any;
     html?: string;

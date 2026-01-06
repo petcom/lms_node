@@ -16,11 +16,9 @@ import {
   getInteractionData,
 } from '../../controller/scorm/scormReportCtrl';
 import isAuthenticated from '../../middlewares/isAuthenticated';
-import roleRestriction, { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
+import { isInstructorOrAdmin } from '../../middlewares/roleRestriction';
 import { cachePrivate } from '../../middlewares/caching';
 import departmentScope from '../../middlewares/departmentScope';
-
-const isInstructor = roleRestriction('staff');
 
 const router = express.Router();
 

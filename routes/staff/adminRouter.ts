@@ -24,7 +24,7 @@ import roleRestriction from '../../middlewares/roleRestriction';
 import departmentScope from '../../middlewares/departmentScope';
 import validate from '../../middlewares/validate';
 import { registerAdmin, login } from '../../validators/authValidation';
-import { updateAdminProfile, staffAction } from '../../validators/staffValidation';
+import { updateAdminProfile } from '../../validators/staffValidation';
 import { idParam } from '../../validators/academicValidation';
 import { registerLimiter, authLimiter } from '../../middlewares/rateLimiter';
 

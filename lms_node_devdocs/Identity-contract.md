@@ -2,6 +2,14 @@
 
 Base URL: `/api/v1`
 
+## Important Notes (EVIP Phase 1)
+
+### Email Field Storage (DCV-021, DCV-039, DCV-041)
+- **Email is stored ONLY on the `User` model**, not on Learner, Staff, or Admin models
+- To retrieve email for a person, use the `getEmail()` method on the model
+- When updating profiles, email updates modify the `User` document directly
+- The `email` field in request bodies is accepted but only affects the corresponding User
+
 ## Shared Shapes
 See `lms_node_devdocs/Person_Types.md` for `name`, `addresses`, and `honor` fields.
 
@@ -15,6 +23,7 @@ Body:
 ```
 { "name": { "first": "Ada", "last": "Lovelace" }, "email": "admin@example.com", "password": "..." }
 ```
+Note: Email is stored on User model, not Admin model.
 
 ### Login
 POST `/staff/admins/login`
@@ -54,6 +63,20 @@ GET `/staff/profile`
 
 ### Update (Self)
 PUT `/staff/:staffId/update`
+
+Body:
+```json
+{
+  "name": { "first": "...", "last": "..." },
+  "password": "...",
+  "departmentMemberships": [
+    { "departmentId": "DEPT_ID", "roles": ["instructor"] }
+  ]
+}
+```
+Note (EVIP Phase 1): 
+- `email` field removed from interface - email changes go through User model directly
+- `department` field removed (DCV-022) - use `departmentMemberships` instead
 
 ### Admin Register Staff
 POST `/staff/admins/staff/register`
@@ -96,9 +119,29 @@ GET `/learners/profile`
 ### Update (Self)
 PUT `/learners/update`
 
+Body:
+```json
+{
+  "email": "new-email@example.com",
+  "password": "..."
+}
+```
+Note (EVIP Phase 1): Email updates modify User model only, not Learner model.
+
 ### Admin Directory
 GET `/learners/admins`
 GET `/learners/:learnerID/admins`
 
 ### Admin Update Learner
 PUT `/learners/:learnerID/update/admins`
+
+Body:
+```json
+{
+  "name": { "first": "...", "last": "..." },
+  "email": "new-email@example.com"
+}
+```
+Note (EVIP Phase 1): 
+- `email` in request body updates User model only
+- Learner document only stores name, not email (DCV-041)

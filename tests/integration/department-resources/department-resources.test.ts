@@ -514,7 +514,6 @@ describe('Department Resources API', () => {
   });
 
   it('creates and updates courses', async () => {
-    const academicYear = await AcademicYear.findOne({ name: '2024-2025' }).lean();
     const program = await Program.findOne({ name: 'Alpha Program' }).lean();
 
     if (!program) {

@@ -78,7 +78,7 @@ describe('Program levels, courses, and course content', () => {
     programLevelId = programLevelRes.body.data._id;
 
     const programLevelObjectId = new mongoose.Types.ObjectId(programLevelId);
-    const course = await Course.create({
+    await Course.create({
       title: 'Alpha Course',
       description: 'Alpha course',
       program: programId,

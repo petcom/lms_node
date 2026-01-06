@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import AcademicYear from '../../model/Academic/AcademicYear';
-import Admin from '../../model/Staff/Admin';
-import { IAcademicYear, IAdmin } from '../../types/models-types';
+import { IAcademicYear } from '../../types/models-types';
 
 interface CreateAcademicYearBody {
   name: string;
@@ -41,11 +40,7 @@ export const createAcademicYear = AsyncHandler(
       createdBy: req.userAuth?._id,
     })) as IAcademicYear;
 
-    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
-    if (admin) {
-      admin.academicYears?.push(academicYearCreated._id);
-      await admin.save();
-    }
+    // DCV-016: Removed admin.academicYears array push - global admins access all via role
 
     res.status(201).json({
       status: 'success',

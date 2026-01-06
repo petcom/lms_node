@@ -56,6 +56,10 @@ type DepartmentItem = {
 const buildCounts = async (
   departmentId: mongoose.Types.ObjectId
 ): Promise<DepartmentWithCounts['counts']> => {
+  // Get program IDs for this department first (for derived counts per DCV-044)
+  const departmentPrograms = await Program.find({ department: departmentId }).select('_id').lean();
+  const programIds = departmentPrograms.map(p => p._id);
+
   const [
     adminCount,
     instructorCount,
@@ -65,11 +69,16 @@ const buildCounts = async (
     packageCount,
     globalPackageCount,
   ] = await Promise.all([
+    // Admin still has department field
     Admin.countDocuments({ department: departmentId }),
-    Staff.countDocuments({ department: departmentId }),
+    // DCV-022: Staff uses departmentMemberships instead of department
+    Staff.countDocuments({ 'departmentMemberships.departmentId': departmentId }),
+    // Program still has department field
     Program.countDocuments({ department: departmentId }),
-    Course.countDocuments({ department: departmentId }),
-    ProgramLevel.countDocuments({ department: departmentId }),
+    // DCV-044: Course inherits from Program
+    Course.countDocuments({ program: { $in: programIds } }),
+    // DCV-044: ProgramLevel inherits from Program
+    ProgramLevel.countDocuments({ program: { $in: programIds } }),
     ScormPackage.countDocuments({ department: departmentId, isGlobal: { $ne: true } }),
     ScormPackage.countDocuments({ isGlobal: true }),
   ]);
@@ -233,11 +242,11 @@ export const getDepartments = AsyncHandler(async (_req: Request, res: Response):
   const departments = (base?.data as IDepartment[]) || [];
 
   const departmentsToProcess =
-    departments.length > 0 ? departments : await Department.find({}).lean();
+    departments.length > 0 ? departments : (await Department.find({}).lean() as unknown as IDepartment[]);
 
   const departmentMap = new Map<string, IDepartment>();
   departmentsToProcess.forEach((dept) => {
-    departmentMap.set(dept._id.toString(), dept);
+    departmentMap.set(dept._id.toString(), dept as IDepartment);
   });
 
   const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
@@ -274,11 +283,11 @@ export const getDepartmentHierarchy = AsyncHandler(
     const query =
       scope && scope !== 'all' ? ({ _id: { $in: scope } } as const) : ({} as const);
 
-    const departments = (await Department.find(query).lean()) as IDepartment[];
+    const departments = (await Department.find(query).lean()) as unknown as IDepartment[];
     const nodes = new Map<string, DepartmentItem>();
     const departmentMap = new Map<string, IDepartment>();
     departments.forEach((dept) => {
-      departmentMap.set(dept._id.toString(), dept);
+      departmentMap.set(dept._id.toString(), dept as IDepartment);
     });
     const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
       .select('passingStyleScore')
@@ -326,7 +335,7 @@ export const getDepartment = AsyncHandler(
     ensureScope(req, department._id.toString());
 
     const departmentMap = new Map<string, IDepartment>();
-    departmentMap.set(department._id.toString(), department as IDepartment);
+    departmentMap.set(department._id.toString(), department as unknown as IDepartment);
     const ancestorIds = [
       department.parent,
       ...(department.ancestors || []),
@@ -334,7 +343,7 @@ export const getDepartment = AsyncHandler(
     if (ancestorIds.length > 0) {
       const ancestors = await Department.find({ _id: { $in: ancestorIds } }).lean();
       ancestors.forEach((ancestor) => {
-        departmentMap.set(ancestor._id.toString(), ancestor as IDepartment);
+        departmentMap.set(ancestor._id.toString(), ancestor as unknown as IDepartment);
       });
     }
     const masterRecord = await Department.findById(MASTER_DEPARTMENT_ID)
@@ -345,7 +354,7 @@ export const getDepartment = AsyncHandler(
 
     const counts = await buildCounts(department._id as mongoose.Types.ObjectId);
     const passingStyleScore = resolvePassingStyleScore(
-      department as IDepartment,
+      department as unknown as IDepartment,
       departmentMap,
       masterPassingStyleScore
     );

@@ -55,7 +55,7 @@ const globalSetup = async (): Promise<void> => {
   if (process.env.MONGO_TEST_URI && process.env.SKIP_DB_SETUP !== 'true') {
     await mongoose.connect(process.env.MONGO_TEST_URI);
 
-    const dbName = mongoose.connection.db.databaseName || '';
+    const dbName = mongoose.connection.db?.databaseName || '';
     const shouldReset = /test/i.test(dbName);
 
     if (shouldReset) {

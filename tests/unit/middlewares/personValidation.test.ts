@@ -2,7 +2,7 @@
  * Person Validation Middleware Tests
  * DCV-002: Test requireUserExists validation for Admin, Staff, Learner
  */
-import mongoose, { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import User from '../../../model/Auth/User';
 import Admin from '../../../model/Staff/Admin';

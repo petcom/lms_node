@@ -45,12 +45,12 @@ programLevelRouter
         // Master admin filtering by specific department
         const Program = mongoose.model('Program');
         const programs = await Program.find({ department: new mongoose.Types.ObjectId(requestedDept) }).select('_id').lean();
-        programIds = programs.map(p => p._id);
+        programIds = programs.map(p => p._id as mongoose.Types.ObjectId);
       } else if (scope && scope !== 'all') {
         // Non-master admin - filter to their scope
         const Program = mongoose.model('Program');
         const programs = await Program.find({ department: { $in: scope } }).select('_id').lean();
-        programIds = programs.map(p => p._id);
+        programIds = programs.map(p => p._id as mongoose.Types.ObjectId);
       }
       
       // Store program IDs in request for advancedResults to use

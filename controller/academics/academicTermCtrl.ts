@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
-import Admin from '../../model/Staff/Admin';
 import AcademicTerm from '../../model/Academic/AcademicTerm';
-import { IAcademicTerm, IAdmin } from '../../types/models-types';
+import { IAcademicTerm } from '../../types/models-types';
 
 // Request body interfaces
 interface CreateAcademicTermBody {
@@ -43,12 +42,7 @@ export const createAcademicTerm = AsyncHandler(
       createdBy: req.userAuth?._id,
     })) as IAcademicTerm;
 
-    // push academic term into Admin
-    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
-    if (admin) {
-      admin.academicTerms?.push(academicTermCreated._id); // push the created term ID to the admin instance upon creation.
-      await admin.save();
-    }
+    // DCV-016: Removed admin.academicTerms array push - global admins access all via role
 
     res.status(201).json({
       status: 'success',

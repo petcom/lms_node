@@ -7,6 +7,7 @@ import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
 // DCV-016: Admin import removed - no longer pushing to admin.learners array
 import User from '../../model/Auth/User';
+import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import { ILearner } from '../../types/models-types';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
@@ -137,23 +138,35 @@ export const loginLearner = AsyncHandler(
 export const getLearnerProfile = AsyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const learner = await Learner.findById(req.userAuth?._id)
-      .select('-createdAt -updatedAt')
-      .populate('examResults');
+      .select('-createdAt -updatedAt');
 
     if (!learner) {
       throw new Error('Learner not found');
     }
+    
+    // DCV-041: Get email from User
+    const user = await User.findById(req.userAuth?._id).select('email').lean();
+    
+    // DCV-029: Get program enrollments from ProgramEnrollment model
+    const programEnrollments = await ProgramEnrollment.find({ learner: learner._id })
+      .select('program status enrolledAt')
+      .lean();
+    
+    // DCV-030: Get exam results from ExamResult model
+    const examResults = await ExamResult.find({ learner: learner._id })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+    
     // Get learner profile
     const learnerProfile = {
       name: learner?.name,
-      email: learner?.email,
+      email: user?.email,
       learnerId: learner?.learnerId,
-      programEnrolmentStatuses: learner?.programEnrolmentStatuses || [],
+      programEnrollments: programEnrollments,
     };
-    // get learner exam results
-    const learnerExamResults = learner?.examResults;
-    // current exam
-    const currentExamResult = learnerExamResults?.[learnerExamResults.length - 1];
+    // get latest exam result
+    const currentExamResult = examResults?.[0];
     // check if exam is published
     const isPublished = (currentExamResult as any)?.isPublished;
     // send response
@@ -240,6 +253,8 @@ export const getLearnerByAdmin = AsyncHandler(
  * @description Learner updating profile
  * @route       UPDATE /api/v1/learners/update
  * @access      Private Learner Only
+ * 
+ * EVIP Phase 1 (DCV-041): Email stored only on User model, not Learner
  */
 export const learnerUpdateProfile = AsyncHandler(
   async (req: Request<{}, {}, UpdateProfileBody>, res: Response): Promise<void> => {
@@ -257,46 +272,22 @@ export const learnerUpdateProfile = AsyncHandler(
     // check if user is updating password
     if (password) {
       userUpdates.passwordHash = await hashPassword(password);
-      // update user
-      const learner = await Learner.findByIdAndUpdate(
-        req.userAuth?._id,
-        {
-          email,
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      if (Object.keys(userUpdates).length > 0) {
-        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
-      }
-      res.status(200).json({
-        success: 'success',
-        data: learner,
-        message: 'Learner profile updated successfully',
-      });
-    } else {
-      // update user email and name
-      const learner = await Learner.findByIdAndUpdate(
-        req.userAuth?._id,
-        {
-          email,
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      if (Object.keys(userUpdates).length > 0) {
-        await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
-      }
-      res.status(200).json({
-        success: 'success',
-        data: learner,
-        message: 'Learner profile updated successfully',
-      });
     }
+
+    // DCV-041: Email stored only on User model, not Learner
+    // Update User model for email/password changes
+    if (Object.keys(userUpdates).length > 0) {
+      await User.findByIdAndUpdate(req.userAuth?._id, userUpdates);
+    }
+
+    // Fetch learner (no email field update needed per DCV-041)
+    const learner = await Learner.findById(req.userAuth?._id);
+
+    res.status(200).json({
+      success: 'success',
+      data: learner,
+      message: 'Learner profile updated successfully',
+    });
   }
 );
 
@@ -307,6 +298,8 @@ export const learnerUpdateProfile = AsyncHandler(
  *
  * Notes:  $set operator replaces the value of a field with the specified value - mongoose handles saving those field. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/set/
  * Notes:  $addToSet operator adds a value to an array UNLESS the value is already present. see docs: https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/
+ * 
+ * EVIP Phase 1 (DCV-041): Email stored only on User model, not Learner
  */
 export const adminUpdateLearner = AsyncHandler(
   async (
@@ -327,28 +320,29 @@ export const adminUpdateLearner = AsyncHandler(
       if (emailExists && emailExists._id.toString() !== req.params.learnerID) {
         throw new Error('This email already exists');
       }
+      // DCV-041: Email stored only on User model
+      userUpdates.email = email;
     }
+    
+    // DCV-041: updateFields no longer includes email (email goes to User only)
     const updateFields: {
       name?: PersonNameInput;
-      email?: string;
-    } = {
-      email,
-    };
+    } = {};
     if (typeof name !== 'undefined') {
       updateFields.name = normalizedName ?? name;
     }
-    // update
+    
+    // update Learner (name only, no email per DCV-041)
     const learnerUpdated = await Learner.findByIdAndUpdate(
       req.params.learnerID,
-      {
-        $set: updateFields,
-      },
+      Object.keys(updateFields).length > 0 ? { $set: updateFields } : {},
       {
         new: true,
       }
     );
-    if (email) {
-      userUpdates.email = email;
+    
+    // DCV-041: Update email on User model only
+    if (Object.keys(userUpdates).length > 0) {
       await User.findByIdAndUpdate(req.params.learnerID, userUpdates);
     }
 
@@ -397,13 +391,14 @@ export const writeExam = AsyncHandler(
       throw new Error('You have already taken this exam. Wait for your results.');
     }
 
-    // Check learner status for this program (if specified)
+    // DCV-029: Check learner status for this program via ProgramEnrollment model
     const examProgramId = examFound?.program?.toString();
     if (examProgramId) {
-      const enrollmentStatus = learnerFound.programEnrolmentStatuses?.find(
-        (entry) => entry.programId.toString() === examProgramId
-      );
-      if (enrollmentStatus && enrollmentStatus.status !== 'active') {
+      const enrollment = await ProgramEnrollment.findOne({
+        learner: learnerFound._id,
+        program: examProgramId,
+      }).lean();
+      if (enrollment && enrollment.status !== 'enrolled') {
         throw new Error('You are withdrawn/suspended for this program and cannot take this exam.');
       }
     }
@@ -461,7 +456,8 @@ export const writeExam = AsyncHandler(
     }
 
     // generate exam results
-    const examResults = await ExamResult.create({
+    await ExamResult.create({
+      learner: learnerFound?._id, // DCV-030: Store learner reference
       learnerID: learnerFound?.learnerId,
       exam: examFound?._id,
       grade,
@@ -473,10 +469,7 @@ export const writeExam = AsyncHandler(
       academicYear: examFound?.academicYear,
       answeredQuestions: answeredQuestionsArray,
     });
-    // push results into learners
-    learnerFound.examResults?.push(examResults?._id);
-    // save
-    await learnerFound.save();
+    // DCV-030: examResults array removed from Learner - ExamResult model is the source of truth
 
     // submit request
     res.status(200).json({

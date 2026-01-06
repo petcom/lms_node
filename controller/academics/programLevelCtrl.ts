@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
-import Admin from '../../model/Staff/Admin';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
 import Course from '../../model/Content/Course';
-import { IAdmin, IProgramLevel } from '../../types/models-types';
+import { IProgramLevel } from '../../types/models-types';
 import { invalidateProgramCatalog } from '../../utils/courseCatalogCache';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
@@ -103,12 +102,7 @@ export const createProgramLevel = AsyncHandler(
 
     await invalidateProgramCatalog(program.toString());
 
-    const admin = (await Admin.findById(req.userAuth?._id)) as IAdmin | null;
-    if (admin) {
-      admin.programLevels = admin.programLevels || [];
-      admin.programLevels.push(programLevelCreated._id);
-      await admin.save();
-    }
+    // DCV-016: Removed admin.programLevels array push - global admins access all via role
 
     res.status(201).json({
       status: 'success',
@@ -152,10 +146,13 @@ export const updateProgramLevel = AsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = (existing as any)?.department?.toString();
+    // DCV-044: ProgramLevel inherits department from Program, so no direct department access
+    // Check scope via Program's department
+    const program = await mongoose.model('Program').findById(existing.program).select('department').lean();
+    const departmentId = (program as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
-    const { name, description, order, department, courses } = req.body;
+    const { name, description, order, courses } = req.body;
 
     if (order !== undefined) {
       const duplicate = await ProgramLevel.findOne({
@@ -168,10 +165,7 @@ export const updateProgramLevel = AsyncHandler(
       }
     }
 
-    if (department !== undefined) {
-      const nextDept = department === null ? null : department;
-      assertScopeAccess(scope, nextDept || undefined);
-    }
+    // DCV-044: department field removed from ProgramLevel - inherit from Program
 
     const normalizedCourses = await normalizeCourses(courses, existing.program.toString());
 
@@ -181,12 +175,7 @@ export const updateProgramLevel = AsyncHandler(
         name,
         description,
         order,
-        department:
-          department === null
-            ? null
-            : department
-              ? new mongoose.Types.ObjectId(department)
-              : existing.department,
+        // DCV-044: department removed - inherit from Program
         courses: normalizedCourses ?? existing.courses,
       },
       { new: true }

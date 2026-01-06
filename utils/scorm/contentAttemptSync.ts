@@ -2,6 +2,7 @@ import CourseContent from '../../model/Academic/CourseContent';
 import ContentAttempt from '../../model/Academic/ContentAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import { scormTimeToSeconds } from './cmiDataMapper';
+import { ScormVersion } from '../../types/scorm-types';
 
 const mapStatus = (status?: string) => {
   if (!status) return 'in_progress';
@@ -33,7 +34,7 @@ const deriveMaxScore = (cmi?: any) => {
   return max !== undefined && max !== null ? max : undefined;
 };
 
-const deriveTimeSpent = (cmi?: any, version?: string) => {
+const deriveTimeSpent = (cmi?: any, version?: ScormVersion) => {
   const timeString = cmi?.total_time || cmi?.core?.total_time || '0';
   try {
     return scormTimeToSeconds(timeString, version || 'scorm_1.2');

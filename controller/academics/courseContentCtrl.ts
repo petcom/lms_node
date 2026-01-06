@@ -3,6 +3,7 @@ import AsyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Course from '../../model/Content/Course';
 import CourseContent from '../../model/Academic/CourseContent';
+import Program from '../../model/Academic/Program';
 import { ICourseContent } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
@@ -32,6 +33,14 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
   if (scope && scope !== 'all' && !scope.includes(departmentId)) {
     throw new AuthorizationError('Access denied for this department');
   }
+};
+
+// DCV-044: Helper to get department from Course via Program
+const getCourseDepartment = async (courseId: mongoose.Types.ObjectId | string): Promise<string | undefined> => {
+  const course = await Course.findById(courseId).select('program').lean();
+  if (!course?.program) return undefined;
+  const program = await Program.findById(course.program).select('department').lean();
+  return (program as any)?.department?.toString();
 };
 
 const validateContentType = (body: CreateCourseContentBody | UpdateCourseContentBody) => {
@@ -120,9 +129,9 @@ export const getCourseContent = AsyncHandler(
       throw new NotFoundError('Course content not found');
     }
 
-    const course = await Course.findById(content.course).select('department').lean();
+    // DCV-044: Get department via Program
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = course?.department?.toString();
+    const departmentId = await getCourseDepartment(content.course);
     assertScopeAccess(scope, departmentId);
 
     res.status(200).json({
@@ -143,9 +152,9 @@ export const updateCourseContent = AsyncHandler(
       throw new NotFoundError('Course content not found');
     }
 
-    const course = await Course.findById(content.course).select('department').lean();
+    // DCV-044: Get department via Program
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = course?.department?.toString();
+    const departmentId = await getCourseDepartment(content.course);
     assertScopeAccess(scope, departmentId);
 
     const {
@@ -206,9 +215,9 @@ export const deleteCourseContent = AsyncHandler(
       throw new NotFoundError('Course content not found');
     }
 
-    const course = await Course.findById(content.course).select('department').lean();
+    // DCV-044: Get department via Program
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = course?.department?.toString();
+    const departmentId = await getCourseDepartment(content.course);
     assertScopeAccess(scope, departmentId);
 
     await CourseContent.findByIdAndDelete(req.params.id);

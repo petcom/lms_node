@@ -771,27 +771,6 @@ export interface ILearnerProgress extends Document {
   updatedAt: Date;
 }
 
-export interface IContentAttempt extends Document {
-  _id: Types.ObjectId;
-  learnerId: Types.ObjectId;
-  courseId?: Types.ObjectId;
-  contentId: Types.ObjectId;
-  segmentId: string;
-  contentType: 'scorm' | 'custom';
-  customType?: 'exam' | 'quiz' | 'exercise' | 'scorm' | 'custom';
-  attemptNumber: number;
-  startedAt: Date;
-  submittedAt?: Date;
-  status: 'in_progress' | 'completed' | 'failed';
-  score?: number;
-  maxScore?: number;
-  passed?: boolean;
-  timeSpentSec: number;
-  payload?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // DCV-031: Credential types
 export type CredentialType = 'certificate' | 'degree' | 'diploma';
 export type CredentialStatus = 'draft' | 'active' | 'archived';

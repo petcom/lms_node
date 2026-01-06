@@ -4,16 +4,17 @@ import mongoose from 'mongoose';
 import Program from '../../model/Academic/Program';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
+import { ProgramEnrollmentStatus } from '../../types/models-types';
 
 interface CreateProgramEnrollmentBody {
   learner: string;
   program: string;
-  status?: 'active' | 'completed' | 'withdrawn';
+  status?: ProgramEnrollmentStatus;
   enrolledAt?: string;
 }
 
 interface UpdateProgramEnrollmentBody {
-  status?: 'active' | 'completed' | 'withdrawn';
+  status?: ProgramEnrollmentStatus;
   completedAt?: string;
   withdrawnAt?: string;
 }

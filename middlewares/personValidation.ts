@@ -9,7 +9,7 @@
  * IMPORTANT: Always create the User record FIRST, then create the person record
  * with the same _id. This middleware validates that pattern.
  */
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema } from 'mongoose';
 import User from '../model/Auth/User';
 
 /**

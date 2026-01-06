@@ -5,6 +5,7 @@ import Course from '../../model/Content/Course';
 import ClassModel from '../../model/Academic/Class';
 import CourseEnrollment from '../../model/Academic/CourseEnrollment';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
+import Program from '../../model/Academic/Program';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 
 interface CreateCourseEnrollmentBody {
@@ -27,6 +28,13 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
   if (scope && scope !== 'all' && !scope.includes(departmentId)) {
     throw new AuthorizationError('Access denied for this department');
   }
+};
+
+// DCV-044: Helper to get department from Course via Program
+const getCourseDepartment = async (courseDoc: { program?: mongoose.Types.ObjectId }): Promise<string | undefined> => {
+  if (!courseDoc?.program) return undefined;
+  const program = await Program.findById(courseDoc.program).select('department').lean() as { department?: mongoose.Types.ObjectId } | null;
+  return program?.department?.toString();
 };
 
 const updateProgramEnrollmentStatus = async (
@@ -78,8 +86,9 @@ export const createCourseEnrollment = AsyncHandler(
       throw new NotFoundError('Course not found');
     }
 
+    // DCV-044: Get department via Program
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = courseDoc.department?.toString();
+    const departmentId = await getCourseDepartment(courseDoc);
     assertScopeAccess(scope, departmentId);
 
     let classDoc: any = null;
@@ -131,9 +140,10 @@ export const getCourseEnrollment = AsyncHandler(
       throw new NotFoundError('Course enrollment not found');
     }
 
-    const courseDoc = await Course.findById(enrollment.course).select('department').lean();
+    // DCV-044: Get department via Program
+    const courseDoc = await Course.findById(enrollment.course).select('program').lean();
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = courseDoc?.department?.toString();
+    const departmentId = courseDoc ? await getCourseDepartment(courseDoc) : undefined;
     assertScopeAccess(scope, departmentId);
 
     res.status(200).json({
@@ -151,9 +161,10 @@ export const updateCourseEnrollment = AsyncHandler(
       throw new NotFoundError('Course enrollment not found');
     }
 
-    const courseDoc = await Course.findById(enrollment.course).select('department').lean();
+    // DCV-044: Get department via Program
+    const courseDoc = await Course.findById(enrollment.course).select('program').lean();
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = courseDoc?.department?.toString();
+    const departmentId = courseDoc ? await getCourseDepartment(courseDoc) : undefined;
     assertScopeAccess(scope, departmentId);
 
     const { status, progress, completedAt } = req.body;
@@ -189,9 +200,10 @@ export const deleteCourseEnrollment = AsyncHandler(
       throw new NotFoundError('Course enrollment not found');
     }
 
-    const courseDoc = await Course.findById(enrollment.course).select('department').lean();
+    // DCV-044: Get department via Program
+    const courseDoc = await Course.findById(enrollment.course).select('program').lean();
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = courseDoc?.department?.toString();
+    const departmentId = courseDoc ? await getCourseDepartment(courseDoc) : undefined;
     assertScopeAccess(scope, departmentId);
 
     await CourseEnrollment.findByIdAndDelete(req.params.id);

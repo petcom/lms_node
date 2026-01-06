@@ -1,7 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-const readJson = (filePath: string) => {
+interface ClassLevelPayload {
+  programId: string;
+  order: number;
+}
+
+const readJson = (filePath: string): Record<string, unknown> => {
   const raw = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(raw);
 };
@@ -21,7 +26,7 @@ describe('Migration mapping files', () => {
     const data = readJson(filePath);
 
     expect(typeof data).toBe('object');
-    const entries = Object.entries(data);
+    const entries = Object.entries(data) as [string, ClassLevelPayload][];
     expect(entries.length).toBeGreaterThan(0);
 
     for (const [classLevelId, payload] of entries) {
@@ -47,7 +52,7 @@ describe('Migration mapping files', () => {
     const data = readJson(filePath);
 
     expect(typeof data).toBe('object');
-    const entries = Object.entries(data);
+    const entries = Object.entries(data) as [string, string][];
     expect(entries.length).toBeGreaterThan(0);
 
     for (const [scormPackageId, courseContentId] of entries) {

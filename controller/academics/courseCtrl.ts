@@ -139,8 +139,10 @@ export const updateCourse = AsyncHandler(
       throw new NotFoundError('Course not found');
     }
 
+    // DCV-044: Course inherits department from Program
+    const program = await mongoose.model('Program').findById(course.program).select('department').lean();
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = (course as any)?.department?.toString();
+    const departmentId = (program as any)?.department?.toString();
     assertScopeAccess(scope, departmentId);
 
     const {
@@ -149,7 +151,6 @@ export const updateCourse = AsyncHandler(
       shortDescription,
       longDescription,
       programLevel,
-      department,
       status,
       primaryInstructors,
       secondaryInstructors,
@@ -166,10 +167,7 @@ export const updateCourse = AsyncHandler(
       }
     }
 
-    if (department !== undefined) {
-      const nextDept = department === null ? null : department;
-      assertScopeAccess(scope, nextDept || undefined);
-    }
+    // DCV-044: department removed from Course - inherit from Program
 
     const nextProgramLevel =
       programLevel === null
@@ -182,12 +180,7 @@ export const updateCourse = AsyncHandler(
       title,
       description,
       programLevel: nextProgramLevel,
-      department:
-        department === null
-          ? null
-          : department
-            ? new mongoose.Types.ObjectId(department)
-            : course.department,
+      // DCV-044: department removed from Course - inherit from Program
     };
 
     if (shortDescription !== undefined) {

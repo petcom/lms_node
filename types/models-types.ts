@@ -63,8 +63,11 @@ export interface IPerson extends Document {
 // Admin Interface
 // DCV-016: Removed orphaned arrays (programs, academicTerms, yearGroups, academicYears,
 // programLevels, courses, instructors, learners). Global admins access all via role.
+// DCV-039: email removed - derive from User via getEmail()
 export interface IAdmin extends IPerson {
   department?: Types.ObjectId;
+  // DCV-039: Method to get email from User
+  getEmail(): Promise<string | undefined>;
 }
 
 // Staff Interface
@@ -180,8 +183,10 @@ export interface IMasterTemplate extends Document {
 // Learner Interface
 // Deprecated fields removed in migration: isGraduated, isPromoted*, currentClassLevel,
 // classLevels, academicYear, yearGraduated, examResults, scormProgress.
+// DCV-041: email removed - derive from User via getEmail()
 export interface ILearner extends IPerson {
   learnerId?: string;
+  dateAdmitted?: Date;
   globalStatus: 'active' | 'inactive';
   programEnrolmentStatuses?: Array<{
     programId: Types.ObjectId;
@@ -190,6 +195,8 @@ export interface ILearner extends IPerson {
     statusUpdatedAt?: Date;
   }>;
   createdBy?: Types.ObjectId;
+  // DCV-041: Method to get email from User
+  getEmail(): Promise<string | undefined>;
 }
 
 // Academic Year Interface
@@ -305,12 +312,12 @@ export interface IClassEnrollment extends Document {
 }
 
 // Course Interface
+// DCV-037: description removed - use shortDescription/longDescription
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   title: string;
   shortDescription?: string;
   longDescription?: string;
-  description?: string;
   program: Types.ObjectId;
   programLevel?: Types.ObjectId;
   department?: Types.ObjectId;

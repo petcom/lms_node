@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import { ILearner } from '../../types/models-types';
 import { requireUserExists } from '../../middlewares/personValidation';
+import User from '../Auth/User';
 
 const nameSchema = new Schema(
   {
@@ -65,13 +66,17 @@ const getNameInitials = (name: any) => {
 /**
  * Learner Schema
  * Represents learners in the LMS system
+ * 
+ * DCV-041: Removed email field - derive from User via getEmail() method
  */
 const learnerSchema = new Schema<ILearner>(
   {
     name: nameSchema,
-    email: {
-      type: String,
-      required: true,
+    // DCV-041: email removed - derive from User via shared _id
+    // Use learner.getEmail() to retrieve email from User collection
+    dateAdmitted: {
+      type: Date,
+      default: Date.now,
     },
     learnerId: {
       type: String,
@@ -126,10 +131,16 @@ const learnerSchema = new Schema<ILearner>(
 );
 
 // Indexes for query performance
-learnerSchema.index({ email: 1 }, { unique: true });
+// DCV-041: email index removed - email now in User collection
 learnerSchema.index({ learnerId: 1 }, { unique: true });
 learnerSchema.index({ globalStatus: 1 });
 learnerSchema.index({ createdAt: -1 });
+
+// DCV-041: getEmail method - derives email from User via shared _id
+learnerSchema.methods.getEmail = async function(): Promise<string | undefined> {
+  const user = await User.findById(this._id).select('email');
+  return user?.email;
+};
 
 // DCV-005: Apply User validation middleware
 requireUserExists(learnerSchema);

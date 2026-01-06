@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import ScormAttempt from '../../model/Scorm/ScormAttempt';
 import ScormPackage from '../../model/Scorm/ScormPackage';
 import Learner from '../../model/Academic/Learner';
+import User from '../../model/Auth/User';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import { AuthorizationError, ValidationError } from '../../utils/errors';
@@ -56,6 +57,16 @@ const isPackageAccessible = (
   }
 
   return true;
+};
+
+// DCV-041: Helper to get learner emails from User collection
+const getLearnerEmails = async (learnerIds: mongoose.Types.ObjectId[]): Promise<Map<string, string>> => {
+  const users = await User.find({ _id: { $in: learnerIds } }).select('_id email').lean();
+  const emailMap = new Map<string, string>();
+  users.forEach((user) => {
+    emailMap.set(user._id.toString(), user.email);
+  });
+  return emailMap;
 };
 
 const parseDateRange = (start?: string | string[], end?: string | string[]) => {
@@ -293,8 +304,9 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
     }
 
     // Get all attempts for this package
+    // DCV-041: email no longer on Learner - populated from User below
     const attempts = await ScormAttempt.find(query)
-      .populate('learner', 'name email')
+      .populate('learner', 'name')
       .sort({ startedAt: -1 });
 
     const programLearners =
@@ -357,6 +369,10 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
     // Group by learner
     const learnerMap = new Map();
 
+    // DCV-041: Get learner emails from User collection
+    const learnerObjectIds = learnerIds.map(id => new mongoose.Types.ObjectId(id));
+    const learnerEmailMap = await getLearnerEmails(learnerObjectIds);
+
     filteredAttempts.forEach((attempt) => {
       const learner = attempt.learner as any;
       if (!learner) return;
@@ -367,7 +383,7 @@ export const getPackageAnalytics = async (req: Request, res: Response) => {
         learnerMap.set(learnerId, {
           learnerId: learner._id,
           learnerName: getPersonDisplayName(learner.name),
-          learnerEmail: learner.email,
+          learnerEmail: learnerEmailMap.get(learnerId) || '',
           attempts: [],
         });
       }
@@ -475,6 +491,9 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
       throw new AuthorizationError('Access denied for this package');
     }
 
+    // DCV-041: Get email from User instead of Learner
+    const learnerEmail = learner?._id ? (await getLearnerEmails([learner._id])).get(learner._id.toString()) : '';
+
     return res.status(200).json({
       success: true,
       data: {
@@ -482,7 +501,7 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
         learner: {
           id: learner._id,
           name: getPersonDisplayName(learner.name),
-          email: learner.email,
+          email: learnerEmail || '',
         },
         package: {
           id: pkg._id,
@@ -557,8 +576,9 @@ export const exportTrackingData = async (req: Request, res: Response) => {
     }
 
     // Get attempts
+    // DCV-041: email no longer on Learner - populated from User below
     const attempts = await ScormAttempt.find(query)
-      .populate('learner', 'name email')
+      .populate('learner', 'name')
       .populate('package', 'title version department uploadedBy isGlobal program programLevel')
       .sort({ startedAt: -1 });
 
@@ -597,17 +617,22 @@ export const exportTrackingData = async (req: Request, res: Response) => {
     });
 
     // Prepare export data
+    // DCV-041: Get learner emails from User collection
+    const uniqueLearnerIds = [...new Set(filteredAttempts.map(a => (a.learner as any)?._id?.toString()).filter(Boolean))];
+    const exportLearnerEmailMap = await getLearnerEmails(uniqueLearnerIds.map(id => new mongoose.Types.ObjectId(id)));
+    
     const exportData = filteredAttempts.map((attempt) => {
       const learner = attempt.learner as any;
       const pkg = attempt.package as any;
       const score = getAttemptScore(attempt);
       const timeSpent = calculateTotalTimeSpent([attempt]);
       const cmi = attempt.cmi as any;
+      const learnerId = learner?._id?.toString();
 
       return {
         learnerId: learner._id,
         learnerName: getPersonDisplayName(learner.name),
-        learnerEmail: learner.email,
+        learnerEmail: exportLearnerEmailMap.get(learnerId) || '',
         packageId: pkg._id,
         packageTitle: pkg.title,
         packageVersion: pkg.version,

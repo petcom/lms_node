@@ -102,16 +102,16 @@ export const registerAdminCtrl = expressAsyncHandler(
       status: 'active',
     });
 
+    // DCV-039: Admin.email removed - email stored in User only
     const admin = await Admin.create({
       _id: user._id,
       name: normalizedName ?? name,
-      email,
     });
 
     const sanitizedUser = {
       _id: admin._id,
       name: admin.name,
-      email: admin.email,
+      email: user.email, // DCV-039: Get email from User, not Admin
       // DCV-001: Provide both role and roles for backward compatibility
       role: user.primaryRole,
       roles: user.roles,

@@ -117,9 +117,12 @@
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Removed Fields (DCV-016)**:
-- `email` - Derive from User via shared `_id`
-- `academicTerms`, `programs`, `yearGroups`, `academicYears`, `programLevels`, `courses`, `instructors`, `learners` - Global admins access all via role authorization
+**Removed Fields (DCV-016, DCV-039)**:
+- `email` - Derive from User via `getEmail()` method (DCV-039)
+- `academicTerms`, `programs`, `yearGroups`, `academicYears`, `programLevels`, `courses`, `instructors`, `learners` - Global admins access all via role authorization (DCV-016)
+
+**Instance Methods**:
+- `getEmail()` - Fetches email from User collection
 
 **Pre-save Validation**: Requires matching User to exist (DCV-003)
 
@@ -196,12 +199,12 @@
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
-| `_id` | ObjectId | Auto | - | - | Primary key |
+| `_id` | ObjectId | Auto | - | Must match User._id | Primary key (shared with User) |
 | `name.first` | String | ✅ | - | - | First name |
 | `name.middle` | String | - | - | - | Middle name |
 | `name.last` | String | ✅ | - | - | Last name |
 | `name.display` | String | - | Auto | - | Formatted display name |
-| `email` | String | ✅ | - | Unique | Contact/login email |
+| `dateAdmitted` | Date | - | Date.now | - | When admitted |
 | `learnerId` | String | ✅ | Auto | Unique | Display ID (LRN###...) |
 | `addresses` | [Address] | - | undefined | - | Contact addresses |
 | `honor` | Object | - | undefined | - | Demographics |
@@ -214,7 +217,15 @@
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Indexes**: `email (unique)`, `learnerId (unique)`, `globalStatus`, `createdAt`
+**Removed Fields (DCV-041)**:
+- `email` - Derive from User via `getEmail()` method
+
+**Instance Methods**:
+- `getEmail()` - Fetches email from User collection
+
+**Indexes**: `learnerId (unique)`, `globalStatus`, `createdAt`
+
+**Pre-save Validation**: Requires matching User to exist (DCV-005)
 
 ---
 
@@ -395,10 +406,9 @@
 | `title` | String | ✅ | - | - | Course title |
 | `shortDescription` | String | - | - | max: 500 | Brief summary |
 | `longDescription` | String | - | - | max: 5000 | Full description |
-| `description` | String | - | - | - | ⚠️ Redundant field |
 | `program` | ObjectId | ✅ | - | ref: Program | Parent program |
 | `programLevel` | ObjectId | - | - | ref: ProgramLevel | Parent level |
-| `department` | ObjectId | - | - | ref: Department | ⚠️ Should inherit |
+| `department` | ObjectId | - | - | ref: Department | ⚠️ Should inherit from Program |
 | `isArchived` | Boolean | - | false | - | Soft delete flag |
 | `status` | String | - | `draft` | enum: `draft`, `rendered`, `published` | Publication status |
 | `publishedAt` | Date | - | - | - | When published |
@@ -409,6 +419,9 @@
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Removed Fields (DCV-037)**:
+- `description` - Use `shortDescription` and `longDescription` instead
 
 **Indexes**: `program`, `(program, programLevel)`, `(department, isArchived)`
 

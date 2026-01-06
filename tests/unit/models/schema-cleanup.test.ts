@@ -196,7 +196,8 @@ describe('Schema Cleanup - Remove Orphaned Arrays (DCV-013-016)', () => {
     it('Admin should still have essential fields', () => {
       const schemaObj = Admin.schema.obj;
       expect(schemaObj).toHaveProperty('name');
-      expect(schemaObj).toHaveProperty('email');
+      // DCV-039: email removed - derive from User via getEmail()
+      expect(schemaObj).not.toHaveProperty('email');
       expect(schemaObj).toHaveProperty('department');
       expect(schemaObj).toHaveProperty('addresses');
       expect(schemaObj).toHaveProperty('honor');

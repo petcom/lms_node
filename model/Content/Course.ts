@@ -4,6 +4,8 @@ import { ICourse } from '../../types/models-types';
 /**
  * Course Schema
  * Represents a unit of completion within a program.
+ * 
+ * DCV-037: Removed redundant description field - use shortDescription/longDescription
  */
 const courseSchema = new Schema<ICourse>(
   {
@@ -17,9 +19,7 @@ const courseSchema = new Schema<ICourse>(
     longDescription: {
       type: String,
     },
-    description: {
-      type: String,
-    },
+    // DCV-037: description removed - use shortDescription/longDescription
     program: {
       type: Schema.Types.ObjectId,
       ref: 'Program',

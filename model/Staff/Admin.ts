@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import { IAdmin } from '../../types/models-types';
 import { requireUserExists } from '../../middlewares/personValidation';
+import User from '../Auth/User';
 
 const nameSchema = new Schema(
   {
@@ -50,14 +51,14 @@ const honorSchema = new Schema(
  * DCV-016: Removed orphaned arrays (programs, academicTerms, yearGroups, academicYears,
  * programLevels, courses, instructors, learners). Global admins access all resources
  * via their role, not through explicit array membership.
+ * 
+ * DCV-039: Removed email field - derive from User via getEmail() method
  */
 const adminSchema = new Schema<IAdmin>(
   {
     name: nameSchema,
-    email: {
-      type: String,
-      required: true,
-    },
+    // DCV-039: email removed - derive from User via shared _id
+    // Use admin.getEmail() to retrieve email from User collection
     department: {
       type: Schema.Types.ObjectId,
       ref: 'Department',
@@ -81,8 +82,14 @@ const adminSchema = new Schema<IAdmin>(
 );
 
 // Indexes for query performance
-adminSchema.index({ email: 1 }, { unique: true });
+// DCV-039: email index removed - email now in User collection
 adminSchema.index({ createdAt: -1 });
+
+// DCV-039: getEmail method - derives email from User via shared _id
+adminSchema.methods.getEmail = async function(): Promise<string | undefined> {
+  const user = await User.findById(this._id).select('email');
+  return user?.email;
+};
 
 // DCV-003: Apply User validation middleware
 requireUserExists(adminSchema);

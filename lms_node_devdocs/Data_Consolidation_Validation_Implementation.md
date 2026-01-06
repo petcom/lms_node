@@ -520,11 +520,11 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** |
 | **DCV-035** | **Add defaultGradingPolicy to Course model** | **Medium** | **Low** | **None** |
 | **DCV-036** | **Remove Staff legacy fields (course, program, programLevel, examsCreated)** | **High** | **Low** | **None** | ✅ Complete |
-| **DCV-037** | **Remove Course.description (use short/longDescription)** | **High** | **Low** | **None** |
+| **DCV-037** | **Remove Course.description (use short/longDescription)** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-038** | **~~Standardize all createdBy to ref:User~~** | ~~**High**~~ | ~~**Medium**~~ | **SUPERSEDED by DCV-053** |
-| **DCV-039** | **Remove Admin.email - derive from User** | **Medium** | **Low** | **DCV-002** |
+| **DCV-039** | **Remove Admin.email - derive from User** | **Medium** | **Low** | **DCV-002** | ✅ Complete |
 | **DCV-040** | **Replace Staff.isWithdrawn/isSuspended with status enum** | **Medium** | **Low** | **None** |
-| **DCV-041** | **Remove Learner.email - derive from User** | **Medium** | **Low** | **DCV-002** |
+| **DCV-041** | **Remove Learner.email - derive from User** | **Medium** | **Low** | **DCV-002** | ✅ Complete |
 | **DCV-042** | **Add Department.status enum ['active', 'archived']** | **Medium** | **Low** | **None** |
 | **DCV-043** | **Remove Program.duration - tracked at Class level** | **Medium** | **Low** | **None** |
 | **DCV-044** | **Remove ProgramLevel.department and Course.department - inherit from Program** | **Medium** | **Low** | **None** |

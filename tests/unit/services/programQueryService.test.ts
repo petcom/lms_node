@@ -78,11 +78,11 @@ describe('ProgramQueryService (DCV-017)', () => {
         globalStatus: 'active',
       });
 
-      // Create enrollment
+      // Create enrollment (DCV-026: status changed from 'active' to 'enrolled')
       await ProgramEnrollment.create({
         learner: learner._id,
         program: program._id,
-        status: 'active',
+        status: 'enrolled',
         enrolledAt: new Date(),
       });
 
@@ -125,10 +125,11 @@ describe('ProgramQueryService (DCV-017)', () => {
         globalStatus: 'active',
       });
 
+      // DCV-026: status changed from 'active' to 'enrolled'
       await ProgramEnrollment.create({
         learner: activeLearner._id,
         program: program._id,
-        status: 'active',
+        status: 'enrolled',
         enrolledAt: new Date(),
       });
 

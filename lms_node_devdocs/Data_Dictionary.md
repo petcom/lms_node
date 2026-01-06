@@ -655,29 +655,147 @@ As of the DCV-053 implementation, **all `createdBy` fields now reference the `Us
 
 **Collection**: `programenrollments`  
 **File**: `model/Academic/ProgramEnrollment.ts`  
-**Purpose**: Learner enrollment in programs
+**Purpose**: Learner enrollment lifecycle tracking with credential goals (DCV-026 redesign)
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
 | `_id` | ObjectId | Auto | - | - | Primary key |
 | `learner` | ObjectId | ✅ | - | ref: Learner | Enrolled learner |
 | `program` | ObjectId | ✅ | - | ref: Program | Target program |
-| `status` | String | - | `active` | enum: `active`, `completed`, `withdrawn` | Enrollment status |
-| `enrolledAt` | Date | ✅ | Date.now | - | Enrollment date |
-| `completedAt` | Date | - | - | - | Completion date |
+| `credentialGoal` | String | - | `none` | enum: `certificate`, `degree`, `none` | What learner is working toward |
+| `targetCredential` | ObjectId | - | - | ref: Credential | Specific credential being pursued |
+| `currentProgramLevel` | ObjectId | - | - | ref: ProgramLevel | Current level (null for single-course) |
+| `status` | String | - | `applied` | enum: `applied`, `enrolled`, `on-leave`, `withdrawn`, `completed` | Enrollment status |
+| `statusHistory` | Array | - | [] | - | Full audit trail of status changes |
+| `statusHistory[].status` | String | ✅ | - | enum: same as status | Status value |
+| `statusHistory[].reason` | String | - | - | - | Reason for change |
+| `statusHistory[].changedBy` | ObjectId | - | - | ref: User | Who made the change |
+| `statusHistory[].changedAt` | Date | - | Date.now | - | When change occurred |
+| `enrolledAt` | Date | ✅ | Date.now | - | Initial enrollment date |
+| `completedAt` | Date | - | - | - | Program completion date |
 | `withdrawnAt` | Date | - | - | - | Withdrawal date |
+| `leaveReason` | String | - | - | - | Reason for leave of absence |
+| `leaveStartDate` | Date | - | - | - | When leave started |
+| `expectedReturnDate` | Date | - | - | - | Expected return from leave |
+| `completionType` | String | - | - | enum: `with-certificate`, `with-degree`, `coursework-only`, `incomplete` | How program was completed |
+| `withdrawalReason` | String | - | - | - | Reason for withdrawal |
+| `withdrawnBy` | ObjectId | - | - | ref: User | Who initiated withdrawal |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Indexes**: `learner`, `program`, `(learner, program) unique`, `(program, status)`
+**Indexes**: `learner`, `program`, `(learner, program) unique`, `(program, status)`, `(learner, status)`, `(credentialGoal, targetCredential)`
+
+**Notes**:
+- DCV-026: Complete redesign with credential goal tracking and expanded status lifecycle
+- Status workflow: applied → enrolled → (on-leave ↔) → completed/withdrawn
+- `statusHistory` provides complete audit trail for all status changes
+- Replaces deprecated Learner.programEnrolmentStatuses array (DCV-029)
 
 ---
 
-### CourseEnrollment
+### CourseEnrollmentCurrent
+
+**Collection**: `courseenrollmentcurrents`  
+**File**: `model/Academic/CourseEnrollmentCurrent.ts`  
+**Purpose**: Track active course enrollments with progress (DCV-027)
+
+| Field | Type | Required | Default | Validation | Description |
+|-------|------|----------|---------|------------|-------------|
+| `_id` | ObjectId | Auto | - | - | Primary key |
+| `learner` | ObjectId | ✅ | - | ref: Learner | Enrolled learner |
+| `course` | ObjectId | ✅ | - | ref: Course | Target course |
+| `programEnrollment` | ObjectId | ✅ | - | ref: ProgramEnrollment | Links to program for credential tracking |
+| `enrolledAt` | Date | ✅ | Date.now | - | Course enrollment date |
+| `progress` | Object | - | {} | - | Progress tracking container |
+| `progress.examAttempts` | Array | - | [] | - | Exam attempt records |
+| `progress.examAttempts[].examId` | ObjectId | ✅ | - | ref: Exam | Exam reference |
+| `progress.examAttempts[].examType` | String | - | - | enum: `quiz`, `midterm`, `final`, `assignment`, `practice` | Exam type |
+| `progress.examAttempts[].attemptNumber` | Number | ✅ | - | min: 1 | Attempt number |
+| `progress.examAttempts[].points` | Number | - | - | - | Points earned |
+| `progress.examAttempts[].maxPoints` | Number | - | - | - | Maximum points |
+| `progress.examAttempts[].percentage` | Number | - | - | - | Score percentage |
+| `progress.examAttempts[].attemptedAt` | Date | - | Date.now | - | When attempted |
+| `progress.examAttempts[].timeSpent` | Number | - | - | - | Time in seconds |
+| `progress.mediaProgress` | Array | - | [] | - | Media viewing progress |
+| `progress.mediaProgress[].mediaId` | ObjectId | ✅ | - | ref: Media | Media reference |
+| `progress.mediaProgress[].viewedMinutes` | Number | - | 0 | - | Minutes watched |
+| `progress.mediaProgress[].requiredMinutes` | Number | - | - | - | Required viewing time |
+| `progress.mediaProgress[].verified` | Boolean | - | false | - | Viewing verified |
+| `progress.mediaProgress[].lastViewedAt` | Date | - | - | - | Last activity |
+| `progress.scormAttempts` | Array | - | [] | - | SCORM package attempts |
+| `progress.scormAttempts[].scormPackageId` | ObjectId | ✅ | - | ref: ScormPackage | SCORM reference |
+| `progress.scormAttempts[].attemptNumber` | Number | ✅ | - | min: 1 | Attempt number |
+| `progress.scormAttempts[].score` | Number | - | - | - | Raw score |
+| `progress.scormAttempts[].scaledScore` | Number | - | - | 0.0-1.0 | Normalized score |
+| `progress.scormAttempts[].completionStatus` | String | - | `unknown` | enum: `unknown`, `not-attempted`, `incomplete`, `completed` | SCORM completion |
+| `progress.scormAttempts[].successStatus` | String | - | `unknown` | enum: `unknown`, `passed`, `failed` | SCORM success |
+| `progress.scormAttempts[].attemptedAt` | Date | - | Date.now | - | When attempted |
+| `progress.scormAttempts[].timeSpent` | Number | - | - | - | Time in seconds |
+| `lastActivityAt` | Date | - | Date.now | - | Last activity timestamp |
+| `createdAt` | Date | Auto | - | - | Record creation |
+| `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Indexes**: `(learner, course) unique`, `programEnrollment`, `(learner, lastActivityAt desc)`
+
+**Notes**:
+- DCV-027: New model for active course enrollments
+- **Temporary record**: Deleted when course ends (moved to CourseEnrollmentActivity)
+- Links to ProgramEnrollment for credential progress tracking
+- Replaces deprecated LearnerProgress model (DCV-052)
+
+---
+
+### CourseEnrollmentActivity
+
+**Collection**: `courseenrollmentactivities`  
+**File**: `model/Academic/CourseEnrollmentActivity.ts`  
+**Purpose**: Permanent record of completed/withdrawn course enrollments (DCV-028)
+
+| Field | Type | Required | Default | Validation | Description |
+|-------|------|----------|---------|------------|-------------|
+| `_id` | ObjectId | Auto | - | - | Primary key |
+| `learner` | ObjectId | ✅ | - | ref: Learner | Learner who completed/withdrew |
+| `course` | ObjectId | ✅ | - | ref: Course | Completed course |
+| `programEnrollment` | ObjectId | ✅ | - | ref: ProgramEnrollment | Links to program for credential tracking |
+| `outcome` | String | ✅ | - | enum: `passed`, `failed`, `withdrawn` | Final outcome |
+| `enrolledAt` | Date | - | - | - | When originally enrolled |
+| `completedAt` | Date | - | Date.now | - | When course ended |
+| `finalScoring` | Object | - | - | - | Final scoring breakdown |
+| `finalScoring.totalPoints` | Number | - | - | - | Total points earned |
+| `finalScoring.maxPoints` | Number | - | - | - | Maximum possible points |
+| `finalScoring.percentage` | Number | - | - | - | Final percentage |
+| `finalScoring.exams` | Object | - | - | - | Exam scoring breakdown |
+| `finalScoring.media` | Object | - | - | - | Media scoring breakdown |
+| `finalScoring.scorm` | Object | - | - | - | SCORM scoring breakdown |
+| `attemptHistory` | Object | - | - | - | Complete attempt history from CourseEnrollmentCurrent |
+| `attemptHistory.examAttempts` | Array | - | [] | - | All exam attempts |
+| `attemptHistory.mediaProgress` | Array | - | [] | - | Final media progress |
+| `attemptHistory.scormAttempts` | Array | - | [] | - | All SCORM attempts |
+| `creditsEarned` | Number | - | 0 | - | Credits earned for passed course |
+| `visibleToLearner` | Boolean | - | true | - | Whether learner can see in transcript |
+| `withdrawalReason` | String | - | - | - | Reason if withdrawn |
+| `withdrawnBy` | ObjectId | - | - | ref: User | Who initiated withdrawal |
+| `notes` | String | - | - | - | Instructor/admin notes |
+| `createdAt` | Date | Auto | - | - | Record creation |
+| `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Indexes**: `(learner, outcome)`, `programEnrollment`, `(course, outcome)`, `(learner, visibleToLearner, completedAt desc)`
+
+**Notes**:
+- DCV-028: New model for permanent course completion history
+- **Permanent record**: Never deleted - serves as audit log
+- Created by moving data from CourseEnrollmentCurrent when course ends (DCV-032)
+- `creditsEarned` accumulates toward credential requirements
+
+---
+
+### CourseEnrollment (Legacy)
 
 **Collection**: `courseenrollments`  
 **File**: `model/Academic/CourseEnrollment.ts`  
-**Purpose**: Learner enrollment in courses
+**Purpose**: Learner enrollment in courses (DEPRECATED - see CourseEnrollmentCurrent/Activity)
+
+> **⚠️ Deprecation Notice**: This model is being replaced by CourseEnrollmentCurrent and CourseEnrollmentActivity as part of DCV-027/028. New code should use the new models.
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|

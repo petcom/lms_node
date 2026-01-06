@@ -50,10 +50,11 @@ export class ProgramQueryService {
       }
     }
     
-    // Query ProgramEnrollment for active learners
+    // Query ProgramEnrollment for enrolled learners
+    // DCV-026: status changed from 'active' to 'enrolled'
     const enrollments = await ProgramEnrollment.find({ 
       program: new mongoose.Types.ObjectId(programId), 
-      status: 'active' 
+      status: 'enrolled' 
     }).populate('learner');
     
     const learners = enrollments
@@ -181,11 +182,12 @@ export class ProgramQueryService {
   
   /**
    * Get learner count for a program (optimized)
+   * DCV-026: status changed from 'active' to 'enrolled'
    */
   async getLearnerCount(programId: string): Promise<number> {
     return ProgramEnrollment.countDocuments({ 
       program: new mongoose.Types.ObjectId(programId), 
-      status: 'active' 
+      status: 'enrolled' 
     });
   }
   

@@ -188,16 +188,13 @@ export interface IMasterTemplate extends Document {
 // Deprecated fields removed in migration: isGraduated, isPromoted*, currentClassLevel,
 // classLevels, academicYear, yearGraduated, examResults, scormProgress.
 // DCV-041: email removed - derive from User via getEmail()
+// DCV-029: programEnrolmentStatuses removed - use ProgramEnrollment model
 export interface ILearner extends IPerson {
   learnerId?: string;
   dateAdmitted?: Date;
   globalStatus: 'active' | 'inactive';
-  programEnrolmentStatuses?: Array<{
-    programId: Types.ObjectId;
-    status: 'active' | 'withdrawn' | 'suspended';
-    statusReason?: string;
-    statusUpdatedAt?: Date;
-  }>;
+  // DCV-029: programEnrolmentStatuses removed
+  // Program enrollment status is now tracked in ProgramEnrollment model
   createdBy?: Types.ObjectId;
   // DCV-041: Method to get email from User
   getEmail(): Promise<string | undefined>;
@@ -276,15 +273,151 @@ export interface IProgramLevel extends Document {
   getDepartment(): Promise<Types.ObjectId | undefined>;
 }
 
-// Program Enrollment Interface
+// DCV-026: Credential Goal enum
+export type CredentialGoal = 'certificate' | 'degree' | 'none';
+
+// DCV-026: Program Enrollment Status enum (expanded)
+export type ProgramEnrollmentStatus = 'applied' | 'enrolled' | 'on-leave' | 'withdrawn' | 'completed';
+
+// DCV-026: Completion Type enum
+export type ProgramCompletionType = 'with-certificate' | 'with-degree' | 'coursework-only' | 'incomplete';
+
+// DCV-026: Status History Entry
+export interface IStatusHistoryEntry {
+  status: ProgramEnrollmentStatus;
+  reason?: string;
+  changedBy?: Types.ObjectId;
+  changedAt: Date;
+}
+
+// DCV-026: Program Enrollment Interface (Redesigned)
+// Tracks learner enrollment lifecycle with credential goals
 export interface IProgramEnrollment extends Document {
   _id: Types.ObjectId;
   learner: Types.ObjectId;
   program: Types.ObjectId;
-  status: 'active' | 'completed' | 'withdrawn';
+  // DCV-026: Credential tracking
+  credentialGoal: CredentialGoal;
+  targetCredential?: Types.ObjectId;
+  currentProgramLevel?: Types.ObjectId;
+  // DCV-026: Expanded status
+  status: ProgramEnrollmentStatus;
+  statusHistory: IStatusHistoryEntry[];
+  // Dates
   enrolledAt: Date;
   completedAt?: Date;
   withdrawnAt?: Date;
+  // DCV-026: Leave tracking
+  leaveReason?: string;
+  leaveStartDate?: Date;
+  expectedReturnDate?: Date;
+  // DCV-026: Completion/withdrawal details
+  completionType?: ProgramCompletionType;
+  withdrawalReason?: string;
+  withdrawnBy?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// DCV-027: Exam Attempt Interface
+export interface IExamAttempt {
+  examId: Types.ObjectId;
+  examType?: 'quiz' | 'midterm' | 'final' | 'assignment' | 'practice';
+  attemptNumber: number;
+  points?: number;
+  maxPoints?: number;
+  percentage?: number;
+  attemptedAt: Date;
+  timeSpent?: number;
+}
+
+// DCV-027: Media Progress Interface
+export interface IMediaProgress {
+  mediaId: Types.ObjectId;
+  viewedMinutes: number;
+  requiredMinutes?: number;
+  verified: boolean;
+  lastViewedAt?: Date;
+}
+
+// DCV-027: SCORM Attempt Interface
+export interface IScormAttempt {
+  scormPackageId: Types.ObjectId;
+  attemptNumber: number;
+  score?: number;
+  scaledScore?: number;
+  completionStatus: 'unknown' | 'not-attempted' | 'incomplete' | 'completed';
+  successStatus: 'unknown' | 'passed' | 'failed';
+  attemptedAt: Date;
+  timeSpent?: number;
+}
+
+// DCV-027: Course Progress Interface
+export interface ICourseProgress {
+  examAttempts?: IExamAttempt[];
+  mediaProgress?: IMediaProgress[];
+  scormAttempts?: IScormAttempt[];
+}
+
+// DCV-027: Course Enrollment Current Interface
+// Tracks active course enrollments (temporary - deleted when course ends)
+export interface ICourseEnrollmentCurrent extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  course: Types.ObjectId;
+  programEnrollment: Types.ObjectId;
+  enrolledAt: Date;
+  progress: ICourseProgress;
+  lastActivityAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// DCV-028: Course Outcome enum
+export type CourseOutcome = 'passed' | 'failed' | 'withdrawn';
+
+// DCV-028: Scoring Breakdown Interface
+export interface IScoringBreakdown {
+  points?: number;
+  maxPoints?: number;
+  percentage?: number;
+  scaledScore?: number;
+}
+
+// DCV-028: Final Scoring Interface
+export interface IFinalScoring {
+  totalPoints?: number;
+  maxPoints?: number;
+  percentage?: number;
+  exams?: IScoringBreakdown;
+  media?: IScoringBreakdown;
+  scorm?: IScoringBreakdown;
+}
+
+// DCV-028: Attempt History Interface
+export interface IAttemptHistory {
+  examAttempts?: IExamAttempt[];
+  mediaProgress?: IMediaProgress[];
+  scormAttempts?: IScormAttempt[];
+}
+
+// DCV-028: Course Enrollment Activity Interface
+// Permanent record of completed/withdrawn course enrollments
+export interface ICourseEnrollmentActivity extends Document {
+  _id: Types.ObjectId;
+  learner: Types.ObjectId;
+  course: Types.ObjectId;
+  programEnrollment: Types.ObjectId;
+  outcome: CourseOutcome;
+  enrolledAt?: Date;
+  completedAt: Date;
+  finalScoring?: IFinalScoring;
+  attemptHistory?: IAttemptHistory;
+  creditsEarned: number;
+  visibleToLearner: boolean;
+  withdrawalReason?: string;
+  withdrawnBy?: Types.ObjectId;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }

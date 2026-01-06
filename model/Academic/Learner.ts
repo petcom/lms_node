@@ -104,26 +104,9 @@ const learnerSchema = new Schema<ILearner>(
       enum: ['active', 'inactive'],
       default: 'active',
     },
-    programEnrolmentStatuses: [
-      {
-        programId: {
-          type: Schema.Types.ObjectId,
-          ref: 'Program',
-          required: true,
-        },
-        status: {
-          type: String,
-          enum: ['active', 'withdrawn', 'suspended'],
-          required: true,
-        },
-        statusReason: {
-          type: String,
-        },
-        statusUpdatedAt: {
-          type: Date,
-        },
-      },
-    ],
+    // DCV-029: programEnrolmentStatuses removed
+    // Program enrollment status is now tracked in ProgramEnrollment model
+    // with full status history and credential goal tracking
   },
   {
     timestamps: true,

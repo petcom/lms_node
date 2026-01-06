@@ -61,8 +61,9 @@ const updateProgramEnrollmentStatus = async (
     return;
   }
 
+  // DCV-026: status changed from 'active' to 'enrolled'
   if (programEnrollment.status === 'completed') {
-    programEnrollment.status = 'active';
+    programEnrollment.status = 'enrolled';
     programEnrollment.completedAt = undefined;
     await programEnrollment.save();
   }

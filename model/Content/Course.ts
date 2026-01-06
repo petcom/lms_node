@@ -66,9 +66,10 @@ const courseSchema = new Schema<ICourse>(
     archivedAt: {
       type: Date,
     },
+    // DCV-053: createdBy references User (shared _id pattern)
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'Admin',
+      ref: 'User',
       required: true,
     },
     // DCV-035: Default grading policy for assessments in this course

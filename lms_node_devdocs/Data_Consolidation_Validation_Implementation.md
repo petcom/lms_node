@@ -514,7 +514,7 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-028** | **Create CourseEnrollmentActivity model** | **High** | **Medium** | **DCV-027** |
 | **DCV-029** | **Remove Learner.programEnrolmentStatuses** | **High** | **Low** | **DCV-026** |
 | **DCV-030** | **Create enrollment migration script** | **Medium** | **High** | **DCV-026-028** |
-| **DCV-031** | **Create Credential model (certificates/degrees)** | **Medium** | **Medium** | **None** |
+| **DCV-031** | **Create Credential model (certificates/degrees)** | **Medium** | **Medium** | **None** | ✅ Complete |
 | **DCV-032** | **Create course completion workflow (Current → Activity)** | **High** | **Medium** | **DCV-027, DCV-028** |
 | **DCV-033** | **Add gradingPolicy + maxAttempts to Exam model** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** | ✅ Complete |
@@ -534,9 +534,9 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-048** | **Add RenderedCourse.css and RenderedCourse.version** | **Low** | **Low** | **None** | ✅ Complete |
 | **DCV-049** | **~~Add proper refs to LearnerProgress~~** | ~~**Low**~~ | ~~**Low**~~ | **SUPERSEDED by DCV-052** |
 | **DCV-050** | **Add Settings.features with scope inheritance (global/department/program)** | **Low** | **Medium** | **None** | ✅ Complete |
-| **DCV-051** | **Create Media model for external hosted content** | **High** | **Medium** | **None** |
+| **DCV-051** | **Create Media model for external hosted content** | **High** | **Medium** | **None** | ✅ Complete |
 | **DCV-052** | **Remove LearnerProgress - migrate tracking to CourseEnrollmentActivity** | **High** | **High** | **DCV-027, DCV-028, DCV-051** |
-| **DCV-053** | **Update all createdBy fields to ref:User (Program, Course, ProgramLevel, CourseContent, CustomContent, Exam, Question, ScormPackage, Media)** | **High** | **Medium** | **DCV-001** |
+| **DCV-053** | **Update all createdBy fields to ref:User (Program, Course, ProgramLevel, CourseContent, CustomContent, Exam, Question, ScormPackage, Media)** | **High** | **Medium** | **DCV-001** | ✅ Complete |
 
 ---
 

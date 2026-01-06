@@ -5,6 +5,18 @@
 
 ---
 
+## Important Conventions
+
+### DCV-053: createdBy References User Model
+
+As of the DCV-053 implementation, **all `createdBy` fields now reference the `User` model** instead of `Admin` or `Staff`. This works seamlessly with the shared `_id` pattern (User._id === Staff._id === Admin._id) established in DCV-001.
+
+**Affected models**: Program, Course, ProgramLevel, CourseContent, CustomContent, Exam, Question, ScormPackage, Media, Credential
+
+> **Note**: Some entries below may still show `ref: Admin` or `ref: Staff` for historical reference, but the actual schema uses `ref: User`.
+
+---
+
 ## Table of Contents
 
 1. [Authentication Models](#authentication-models)
@@ -382,6 +394,38 @@
 
 ---
 
+### Credential
+
+**Collection**: `credentials`  
+**File**: `model/Academic/Credential.ts`  
+**Purpose**: Certificates, degrees, and diplomas that learners can earn
+**DCV-031**: New model for credential tracking
+
+| Field | Type | Required | Default | Validation | Description |
+|-------|------|----------|---------|------------|-------------|
+| `_id` | ObjectId | Auto | - | - | Primary key |
+| `name` | String | ✅ | - | - | Credential name |
+| `description` | String | - | - | - | Credential description |
+| `type` | String | ✅ | - | enum: certificate, degree, diploma | Credential type |
+| `program` | ObjectId | ✅ | - | ref: Program | Associated program |
+| `createdBy` | ObjectId | ✅ | - | ref: User | Creator (DCV-053) |
+| `status` | String | - | `draft` | enum: draft, active, archived | Credential status |
+| `requirements` | Array | - | - | - | Completion requirements |
+| `requirements.description` | String | ✅ | - | - | Requirement description |
+| `requirements.minCredits` | Number | - | - | - | Minimum credits needed |
+| `requirements.minScore` | Number | - | - | - | Minimum score needed |
+| `requirements.requiredCourses` | Array<ObjectId> | - | - | ref: Course | Required courses |
+| `totalCreditsRequired` | Number | - | - | - | Total credits for credential |
+| `validityMonths` | Number | - | - | - | Certificate validity period |
+| `createdAt` | Date | Auto | - | - | Record creation |
+| `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Indexes**:
+- `{ program: 1, type: 1 }`
+- `{ status: 1 }`
+
+---
+
 ### YearGroup
 
 **Collection**: `yeargroups`  
@@ -506,6 +550,40 @@
 | `version` | Number | - | 1 | - | Numeric version for cache busting (DCV-048) |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+---
+
+### Media
+
+**Collection**: `medias`  
+**File**: `model/Content/Media.ts`  
+**Purpose**: External hosted content (videos, audio, documents, images, embeds)
+**DCV-051**: New model for external content references
+
+| Field | Type | Required | Default | Validation | Description |
+|-------|------|----------|---------|------------|-------------|
+| `_id` | ObjectId | Auto | - | - | Primary key |
+| `name` | String | ✅ | - | - | Media name |
+| `description` | String | - | - | - | Media description |
+| `type` | String | ✅ | - | enum: video, audio, document, image, embed | Media type |
+| `url` | String | ✅ | - | - | External URL |
+| `department` | ObjectId | ✅ | - | ref: Department | Owning department |
+| `createdBy` | ObjectId | ✅ | - | ref: User | Creator (DCV-053) |
+| `status` | String | - | `draft` | enum: draft, published, archived | Media status |
+| `durationSeconds` | Number | - | - | - | Duration for video/audio |
+| `mimeType` | String | - | - | - | MIME type |
+| `fileSize` | Number | - | - | - | File size in bytes |
+| `thumbnailUrl` | String | - | - | - | Thumbnail image URL |
+| `embedCode` | String | - | - | - | HTML embed code |
+| `provider` | String | - | - | - | Provider name (YouTube, Vimeo, etc.) |
+| `providerId` | String | - | - | - | Provider-specific ID |
+| `createdAt` | Date | Auto | - | - | Record creation |
+| `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Indexes**:
+- `{ department: 1, type: 1 }`
+- `{ department: 1, status: 1 }`
+- `{ createdBy: 1 }`
 
 ---
 

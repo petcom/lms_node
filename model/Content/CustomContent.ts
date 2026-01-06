@@ -38,9 +38,10 @@ const customContentSchema = new Schema<ICustomContent>(
       type: Schema.Types.ObjectId,
       ref: 'Question',
     }],
+    // DCV-053: createdBy references User (shared _id pattern)
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'Admin',
+      ref: 'User',
       required: true,
     },
   },

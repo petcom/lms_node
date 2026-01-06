@@ -36,9 +36,10 @@ const questionSchema = new Schema<IQuestion>(
       type: Boolean,
       default: false,
     },
+    // DCV-053: createdBy references User (shared _id pattern)
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'Staff',
+      ref: 'User',
       required: true,
     },
   },

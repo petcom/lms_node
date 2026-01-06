@@ -75,9 +75,10 @@ const examSchema = new Schema<IExam>(
       type: Schema.Types.ObjectId,
       ref: 'ProgramLevel',
     },
+    // DCV-053: createdBy references User (shared _id pattern)
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'Staff',
+      ref: 'User',
       required: true,
     },
     academicYear: {

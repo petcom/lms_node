@@ -652,3 +652,53 @@ export interface IContentAttempt extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// DCV-031: Credential types
+export type CredentialType = 'certificate' | 'degree' | 'diploma';
+export type CredentialStatus = 'draft' | 'active' | 'archived';
+
+export interface ICredentialRequirement {
+  description: string;
+  minCredits?: number;
+  minScore?: number;
+  requiredCourses?: Types.ObjectId[];
+}
+
+export interface ICredential extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  type: CredentialType;
+  program: Types.ObjectId;
+  createdBy: Types.ObjectId;
+  status: CredentialStatus;
+  requirements?: ICredentialRequirement[];
+  totalCreditsRequired?: number;
+  validityMonths?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// DCV-051: Media types
+export type MediaType = 'video' | 'audio' | 'document' | 'image' | 'embed';
+export type MediaStatus = 'draft' | 'published' | 'archived';
+
+export interface IMedia extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  type: MediaType;
+  url: string;
+  department: Types.ObjectId;
+  createdBy: Types.ObjectId;
+  status: MediaStatus;
+  durationSeconds?: number;
+  mimeType?: string;
+  fileSize?: number;
+  thumbnailUrl?: string;
+  embedCode?: string;
+  provider?: string;
+  providerId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

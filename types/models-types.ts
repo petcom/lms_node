@@ -68,6 +68,9 @@ export interface IAdmin extends IPerson {
 }
 
 // Staff Interface
+// DCV-021: email removed - derive from User via getEmail()
+// DCV-022: department removed - use departmentMemberships / primaryDepartment
+// DCV-023: academicYear removed - context from Calendar/Class
 export interface IStaff extends IPerson {
   dateEmployed?: Date;
   instructorId?: string;
@@ -78,10 +81,14 @@ export interface IStaff extends IPerson {
   applicationStatus: 'pending' | 'approved' | 'rejected';
   program?: Types.ObjectId;
   programLevel?: Types.ObjectId;
-  academicYear?: Types.ObjectId;
   examsCreated?: Types.ObjectId[];
-  department?: Types.ObjectId;
   createdBy?: Types.ObjectId;
+  
+  // DCV-021: Method to get email from User
+  getEmail(): Promise<string | undefined>;
+  // DCV-022: Virtual/method for primary department
+  primaryDepartment?: Types.ObjectId;
+  getPrimaryDepartment(): Types.ObjectId | undefined;
 }
 
 export interface IDepartmentMembership {

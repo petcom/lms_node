@@ -276,42 +276,45 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
         };
 
   const [admins, staffMembers] = await Promise.all([
-    Admin.find(adminFilter).select('name email department').lean(),
-    Staff.find(staffFilter).select('name email department departmentMemberships').lean(),
+    Admin.find(adminFilter).select('name department').lean(),
+    // DCV-021, DCV-022: email and department removed from Staff
+    Staff.find(staffFilter).select('name departmentMemberships').lean(),
   ]);
   const adminIds = admins.map((admin) => admin._id);
   const staffIds = staffMembers.map((staff) => staff._id);
   const [adminUsers, staffUsers] = await Promise.all([
     // DCV-001: Query using roles array
-    User.find({ _id: { $in: adminIds }, roles: 'global-admin' }).select('_id roles primaryRole').lean(),
-    User.find({ _id: { $in: staffIds }, roles: 'staff' }).select('_id staffRoles').lean(),
+    // DCV-021: Include email in selection
+    User.find({ _id: { $in: adminIds }, roles: 'global-admin' }).select('_id email roles primaryRole').lean(),
+    User.find({ _id: { $in: staffIds }, roles: 'staff' }).select('_id email staffRoles').lean(),
   ]);
   // DCV-001: Use primaryRole for backward compat
-  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), user.primaryRole || 'global-admin']));
+  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), { role: user.primaryRole || 'global-admin', email: user.email }]));
   const staffUserMap = new Map(
-    staffUsers.map((user) => [user._id.toString(), user.staffRoles || []])
+    staffUsers.map((user) => [user._id.toString(), { staffRoles: user.staffRoles || [], email: user.email }])
   );
 
   const adminItems: StaffUser[] = admins.map((admin) => {
     const deptId = admin.department ? admin.department.toString() : null;
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
+    const userInfo = adminUserMap.get(admin._id.toString());
     return {
       id: admin._id.toString(),
       name: getDisplayName(admin.name),
-      email: admin.email,
-      role: adminUserMap.get(admin._id.toString()) || 'global-admin',
+      email: userInfo?.email || '',
+      role: userInfo?.role || 'global-admin',
       department: deptSummary,
     };
   });
 
   const staffItems: StaffUser[] = staffMembers.map((staff) => {
-    const fallbackRoles = staffUserMap.get(staff._id.toString()) || [];
+    const userInfo = staffUserMap.get(staff._id.toString());
+    const fallbackRoles = userInfo?.staffRoles || [];
     const memberships = resolveStaffMemberships(staff, fallbackRoles);
     const scopedMemberships = filterMembershipsByScope(memberships, departmentIds);
     const roles = getUnionRoles(scopedMemberships.length > 0 ? scopedMemberships : memberships);
-    const deptId = staff.department
-      ? staff.department.toString()
-      : scopedMemberships[0]?.departmentId || memberships[0]?.departmentId;
+    // DCV-022: department field removed - use memberships
+    const deptId = scopedMemberships[0]?.departmentId || memberships[0]?.departmentId;
     const deptSummary = deptId ? departmentMap.get(deptId) || null : null;
     const membershipSummaries = (departmentIds === null ? memberships : scopedMemberships).map(
       (membership) => ({
@@ -322,7 +325,7 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
     return {
       id: staff._id.toString(),
       name: getDisplayName(staff.name),
-      email: staff.email,
+      email: userInfo?.email || '',
       role: 'staff',
       roles,
       department: deptSummary,

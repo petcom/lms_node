@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import { IStaff } from '../../types/models-types';
 import { requireUserExists } from '../../middlewares/personValidation';
+import User from '../Auth/User';
 
 const nameSchema = new Schema(
   {
@@ -76,14 +77,16 @@ const getNameInitials = (name: any) => {
 /**
  * Staff Schema
  * Represents staff members in the LMS system
+ * 
+ * DCV-021: email removed - derive from User via shared _id
+ * DCV-022: department removed - use departmentMemberships
+ * DCV-023: academicYear removed - context from Calendar/Class
  */
 const staffSchema = new Schema<IStaff>(
   {
     name: nameSchema,
-    email: {
-      type: String,
-      required: true,
-    },
+    // DCV-021: email field removed - derive from User via shared _id
+    // Use staff.getEmail() to retrieve email from User collection
     dateEmployed: {
       type: Date,
       default: Date.now,
@@ -143,14 +146,8 @@ const staffSchema = new Schema<IStaff>(
       type: Schema.Types.ObjectId,
       ref: 'ProgramLevel',
     },
-    department: {
-      type: Schema.Types.ObjectId,
-      ref: 'Department',
-    },
-    academicYear: {
-      type: Schema.Types.ObjectId,
-      ref: 'AcademicYear',
-    },
+    // DCV-022: department field removed - use departmentMemberships
+    // DCV-023: academicYear field removed - context from Calendar/Class
     examsCreated: [
       {
         type: Schema.Types.ObjectId,
@@ -166,7 +163,7 @@ const staffSchema = new Schema<IStaff>(
 );
 
 // Indexes for query performance
-staffSchema.index({ email: 1 }, { unique: true });
+// DCV-021: email index removed - email now in User collection
 staffSchema.index({ instructorId: 1 }, { unique: true });
 staffSchema.index({ course: 1 });
 staffSchema.index({ programLevel: 1 });
@@ -178,6 +175,22 @@ staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
 staffSchema.index({ course: 1, programLevel: 1 });
 staffSchema.index({ applicationStatus: 1, createdAt: -1 });
+
+// DCV-021: getEmail method - derives email from User via shared _id
+staffSchema.methods.getEmail = async function(): Promise<string | undefined> {
+  const user = await User.findById(this._id).select('email');
+  return user?.email;
+};
+
+// DCV-022: primaryDepartment virtual - first department membership
+staffSchema.virtual('primaryDepartment').get(function() {
+  return this.departmentMemberships?.[0]?.departmentId;
+});
+
+// DCV-022: getPrimaryDepartment method for explicit retrieval
+staffSchema.methods.getPrimaryDepartment = function() {
+  return this.departmentMemberships?.[0]?.departmentId;
+};
 
 // DCV-004: Apply User validation middleware
 requireUserExists(staffSchema);

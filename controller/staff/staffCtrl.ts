@@ -132,11 +132,11 @@ export const adminRegisterStaff = expressAsyncHandler(
     }
 
     // staff created
+    // DCV-021: email removed from Staff - stored in User only
+    // DCV-022: department removed from Staff - using departmentMemberships
     const staffCreated = await Staff.create({
       _id: user._id,
       name: normalizedName ?? name,
-      email,
-      department: chosenDept ? new mongoose.Types.ObjectId(chosenDept) : undefined,
       departmentMemberships: normalizedMemberships,
     });
 
@@ -538,20 +538,33 @@ export const getStaffByDepartment = expressAsyncHandler(
     }
 
     // Find all staff in this department
-    const staffList = await Staff.find({ department: new mongoose.Types.ObjectId(departmentId) })
-      .select('name email')
+    // DCV-022: Updated to use departmentMemberships instead of deprecated department field
+    const staffList = await Staff.find({ 
+      'departmentMemberships.departmentId': new mongoose.Types.ObjectId(departmentId) 
+    })
+      .select('name departmentMemberships')
       .lean();
 
+    // DCV-021: Get emails from User collection
+    const staffIds = staffList.map(s => s._id);
+    const users = await User.find({ _id: { $in: staffIds } })
+      .select('_id email')
+      .lean();
+    const emailMap = new Map(users.map(u => [u._id.toString(), u.email]));
+
     // Transform to expected format for instructor selector
-    const formattedStaff = staffList.map((staff: any) => ({
-      _id: staff._id,
-      displayName: staff.name?.first && staff.name?.last
-        ? `${staff.name.first} ${staff.name.last}`
-        : staff.email,
-      firstName: staff.name?.first || '',
-      lastName: staff.name?.last || '',
-      email: staff.email,
-    }));
+    const formattedStaff = staffList.map((staff: any) => {
+      const email = emailMap.get(staff._id.toString()) || '';
+      return {
+        _id: staff._id,
+        displayName: staff.name?.first && staff.name?.last
+          ? `${staff.name.first} ${staff.name.last}`
+          : email,
+        firstName: staff.name?.first || '',
+        lastName: staff.name?.last || '',
+        email,
+      };
+    });
 
     res.status(200).json({
       status: 'success',

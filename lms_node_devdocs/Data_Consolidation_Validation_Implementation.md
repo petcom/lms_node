@@ -509,13 +509,13 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-023** | **Remove Staff.academicYear - context from Calendar/Class** | **High** | **Low** | **DCV-024** | ✅ Complete |
 | **DCV-024** | **Document Class model definition and Calendar integration** | **Medium** | **Medium** | **None** | ✅ Complete |
 | **DCV-025** | **Create Staff virtual getter for email from User** | **Medium** | **Low** | **DCV-021** | ✅ Complete |
-| **DCV-026** | **Redesign ProgramEnrollment with status history + credentialGoal** | **High** | **High** | **None** |
-| **DCV-027** | **Create CourseEnrollmentCurrent model** | **High** | **Medium** | **DCV-026** |
-| **DCV-028** | **Create CourseEnrollmentActivity model** | **High** | **Medium** | **DCV-027** |
-| **DCV-029** | **Remove Learner.programEnrolmentStatuses** | **High** | **Low** | **DCV-026** |
-| **DCV-030** | **Create enrollment migration script** | **Medium** | **High** | **DCV-026-028** |
+| **DCV-026** | **Redesign ProgramEnrollment with status history + credentialGoal** | **High** | **High** | **None** | ✅ Complete |
+| **DCV-027** | **Create CourseEnrollmentCurrent model** | **High** | **Medium** | **DCV-026** | ✅ Complete |
+| **DCV-028** | **Create CourseEnrollmentActivity model** | **High** | **Medium** | **DCV-027** | ✅ Complete |
+| **DCV-029** | **Remove Learner.programEnrolmentStatuses** | **High** | **Low** | **DCV-026** | ✅ Complete |
+| **DCV-030** | **Create enrollment migration script** | **Medium** | **High** | **DCV-026-028** | ✅ Complete |
 | **DCV-031** | **Create Credential model (certificates/degrees)** | **Medium** | **Medium** | **None** | ✅ Complete |
-| **DCV-032** | **Create course completion workflow (Current → Activity)** | **High** | **Medium** | **DCV-027, DCV-028** |
+| **DCV-032** | **Create course completion workflow (Current → Activity)** | **High** | **Medium** | **DCV-027, DCV-028** | ✅ Complete |
 | **DCV-033** | **Add gradingPolicy + maxAttempts to Exam model** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-035** | **Add defaultGradingPolicy to Course model** | **Medium** | **Low** | **None** | ✅ Complete |
@@ -535,7 +535,7 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-049** | **~~Add proper refs to LearnerProgress~~** | ~~**Low**~~ | ~~**Low**~~ | **SUPERSEDED by DCV-052** |
 | **DCV-050** | **Add Settings.features with scope inheritance (global/department/program)** | **Low** | **Medium** | **None** | ✅ Complete |
 | **DCV-051** | **Create Media model for external hosted content** | **High** | **Medium** | **None** | ✅ Complete |
-| **DCV-052** | **Remove LearnerProgress - migrate tracking to CourseEnrollmentActivity** | **High** | **High** | **DCV-027, DCV-028, DCV-051** |
+| **DCV-052** | **Remove LearnerProgress - migrate tracking to CourseEnrollmentActivity** | **High** | **High** | **DCV-027, DCV-028, DCV-051** | ✅ Complete |
 | **DCV-053** | **Update all createdBy fields to ref:User (Program, Course, ProgramLevel, CourseContent, CustomContent, Exam, Question, ScormPackage, Media)** | **High** | **Medium** | **DCV-001** | ✅ Complete |
 
 ---

@@ -837,11 +837,18 @@ As of the DCV-053 implementation, **all `createdBy` fields now reference the `Us
 
 ## Progress & Assessment Models
 
-### LearnerProgress
+### LearnerProgress (DEPRECATED)
 
 **Collection**: `learnerprogresses`  
 **File**: `model/Content/LearnerProgress.ts`  
 **Purpose**: Track learner progress on content segments
+
+> **⚠️ DEPRECATED (DCV-052)**: This model is deprecated as of Phase 15. New code should use:
+> - **CourseEnrollmentCurrent**: For active/in-progress course tracking
+> - **CourseEnrollmentActivity**: For completed/withdrawn course history
+>
+> This model is retained for backward compatibility with existing data.
+> Use `scripts/migrate-enrollment-system.ts` to migrate legacy data.
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|

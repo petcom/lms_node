@@ -1,6 +1,20 @@
 import mongoose, { Schema } from 'mongoose';
 import { ILearnerProgress } from '../../types/models-types';
 
+/**
+ * LearnerProgress Schema
+ * 
+ * @deprecated DCV-052: This model is DEPRECATED as of Phase 15.
+ * 
+ * New code should use:
+ * - CourseEnrollmentCurrent: For active/in-progress course tracking
+ * - CourseEnrollmentActivity: For completed/withdrawn course history
+ * 
+ * This model is retained for backward compatibility with existing data.
+ * A migration script will move legacy data to the new models.
+ * 
+ * See services/enrollmentService.ts for the new enrollment workflow.
+ */
 const learnerProgressSchema = new Schema<ILearnerProgress>(
   {
     learnerId: {

@@ -46,6 +46,10 @@ const honorSchema = new Schema(
 /**
  * Admin Schema
  * Represents system administrators who manage the LMS
+ * 
+ * DCV-016: Removed orphaned arrays (programs, academicTerms, yearGroups, academicYears,
+ * programLevels, courses, instructors, learners). Global admins access all resources
+ * via their role, not through explicit array membership.
  */
 const adminSchema = new Schema<IAdmin>(
   {
@@ -66,54 +70,10 @@ const adminSchema = new Schema<IAdmin>(
       type: honorSchema,
       default: undefined,
     },
-    academicTerms: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'AcademicTerm',
-      },
-    ],
-    programs: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Program',
-      },
-    ],
-    yearGroups: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'YearGroup',
-      },
-    ],
-    academicYears: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'AcademicYear',
-      },
-    ],
-    programLevels: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'ProgramLevel',
-      },
-    ],
-    courses: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Course',
-      },
-    ],
-    instructors: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Staff',
-      },
-    ],
-    learners: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Learner',
-      },
-    ],
+    // DCV-016: Removed orphaned arrays:
+    // - academicTerms, programs, yearGroups, academicYears, programLevels,
+    //   courses, instructors, learners
+    // Global admins access all resources via role-based authorization
   },
   {
     timestamps: true,

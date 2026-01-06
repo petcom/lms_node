@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Staff from '../../model/Staff/Staff';
-import Admin from '../../model/Staff/Admin';
+// DCV-016: Admin import removed - no longer pushing to admin.instructors array
 import StaffRole from '../../model/Staff/StaffRole';
 import User from '../../model/Auth/User';
 import { hashPassword, isPassMatched } from '../../utils/helpers';
@@ -94,12 +94,7 @@ export const adminRegisterStaff = expressAsyncHandler(
     const { name, email, password, department, departmentMemberships } = req.body;
     const normalizedName = normalizePersonName(name);
 
-    // find the admin
-    const adminFound = await Admin.findById(req.userAuth?._id);
-    if (!adminFound) {
-      throw new Error('Admin not found');
-    }
-
+    // DCV-016: Admin validation via roleRestriction middleware, no need for Admin.findById
     // check if the staff member already exists
     const existingStaff = await User.findOne({ email });
     if (existingStaff) {
@@ -152,10 +147,7 @@ export const adminRegisterStaff = expressAsyncHandler(
       await User.findByIdAndUpdate(user._id, { $set: { staffRoles: roleUnion } });
     }
 
-    // push staff into admin
-    adminFound.instructors?.push(staffCreated._id);
-    await adminFound.save();
-
+    // DCV-016: Removed admin.instructors array push - global admins access all staff via role
     // send response
     res.status(201).json({
       status: 'success',

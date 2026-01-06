@@ -61,16 +61,10 @@ export interface IPerson extends Document {
 }
 
 // Admin Interface
+// DCV-016: Removed orphaned arrays (programs, academicTerms, yearGroups, academicYears,
+// programLevels, courses, instructors, learners). Global admins access all via role.
 export interface IAdmin extends IPerson {
   department?: Types.ObjectId;
-  academicYears?: Types.ObjectId[];
-  academicTerms?: Types.ObjectId[];
-  programs?: Types.ObjectId[];
-  yearGroups?: Types.ObjectId[];
-  instructors?: Types.ObjectId[];
-  learners?: Types.ObjectId[];
-  programLevels?: Types.ObjectId[];
-  courses?: Types.ObjectId[];
 }
 
 // Staff Interface
@@ -223,6 +217,10 @@ export interface IAcademicTerm extends Document {
 }
 
 // Program Interface
+// DCV-013-015: Removed orphaned arrays (learners, instructors, courses)
+// - learners: Derive from ProgramEnrollment
+// - instructors: Derive from Course assignments via ProgramLevel
+// - courses: Derive from ProgramLevel.courses or Course.find({ program })
 export interface IProgram extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -231,9 +229,6 @@ export interface IProgram extends Document {
   code?: string;
   createdBy: Types.ObjectId;
   department: Types.ObjectId;
-  instructors?: Types.ObjectId[];
-  learners?: Types.ObjectId[];
-  courses?: Types.ObjectId[];
   archived: boolean;
   archivedAt?: Date;
   createdAt: Date;

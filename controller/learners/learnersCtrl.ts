@@ -5,7 +5,7 @@ import { hashPassword, isPassMatched } from '../../utils/helpers';
 import generateToken from '../../utils/generateToken';
 import Exam from '../../model/Academic/Exam';
 import ExamResult from '../../model/Academic/ExamResults';
-import Admin from '../../model/Staff/Admin';
+// DCV-016: Admin import removed - no longer pushing to admin.learners array
 import User from '../../model/Auth/User';
 import { ILearner } from '../../types/models-types';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
@@ -51,11 +51,7 @@ export const adminRegisterLearner = AsyncHandler(
   async (req: Request<{}, {}, RegisterLearnerBody>, res: Response): Promise<void> => {
     const { name, email, password } = req.body;
     const normalizedName = normalizePersonName(name);
-    // find the admin
-    const adminFound = await Admin.findById(req.userAuth?._id);
-    if (!adminFound) {
-      throw new Error('Admin not found');
-    }
+    // DCV-016: Admin validation via roleRestriction middleware, no need for Admin.findById
     // check if the learner already exists
     const learnerUser = await User.findOne({ email });
     if (learnerUser) {
@@ -77,9 +73,7 @@ export const adminRegisterLearner = AsyncHandler(
       name: normalizedName ?? name,
       email,
     });
-    // push instructor into admin
-    adminFound.learners?.push(learnerRegistered?._id);
-    await adminFound.save();
+    // DCV-016: Removed admin.learners array push - global admins access all learners via role
     // send response
     res.status(201).json({
       status: 'success',

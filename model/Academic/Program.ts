@@ -46,28 +46,10 @@ const programSchema = new Schema<IProgram>(
       required: true,
       index: true,
     },
-    // Instructors that are in charge of the program
-    instructors: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Staff',
-      },
-    ],
-    learners: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Learner',
-        default: [],
-      },
-    ],
-    // Derived from ProgramLevel.courses (read-only)
-    courses: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Course',
-        default: [],
-      },
-    ],
+    // DCV-013, DCV-014, DCV-015: Removed orphaned arrays
+    // - learners: Derive from ProgramEnrollment.find({ program: programId })
+    // - instructors: Derive from Course.primaryInstructors/secondaryInstructors via ProgramLevel
+    // - courses: Derive from ProgramLevel.courses or Course.find({ program: programId })
     archived: {
       type: Boolean,
       default: false,

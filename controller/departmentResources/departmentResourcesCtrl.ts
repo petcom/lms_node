@@ -592,23 +592,30 @@ export const updateStaffDepartment = AsyncHandler(
       if (scope && scope !== 'all') {
         throw new AuthorizationError('Access denied for this department change');
       }
-      const currentDept = staff.department?.toString();
-      if (currentDept) {
+      // DCV-022: department field removed - use departmentMemberships
+      const currentDeptMembership = staff.departmentMemberships?.[0]?.departmentId?.toString();
+      if (currentDeptMembership) {
         const memberships = resolveStaffMemberships(staff, []).filter(
-          (membership) => membership.departmentId !== currentDept
+          (membership) => membership.departmentId !== currentDeptMembership
         );
         staff.departmentMemberships = memberships.map((membership) => ({
           departmentId: new mongoose.Types.ObjectId(membership.departmentId),
           roles: membership.roles,
         })) as any;
       }
-      staff.department = undefined;
     } else if (departmentId) {
       ensureDepartmentScope(scope, departmentId, 'Access denied for this department');
-      staff.department = new mongoose.Types.ObjectId(departmentId);
+      // DCV-022: Add department to memberships instead of setting department field
       const memberships = resolveStaffMemberships(staff, []);
       if (!memberships.some((membership) => membership.departmentId === departmentId)) {
-        memberships.push({ departmentId, roles: [] });
+        memberships.unshift({ departmentId, roles: [] }); // Add as first (primary)
+      } else {
+        // Move to front if already exists
+        const idx = memberships.findIndex((m) => m.departmentId === departmentId);
+        if (idx > 0) {
+          const [moved] = memberships.splice(idx, 1);
+          memberships.unshift(moved);
+        }
       }
       staff.departmentMemberships = memberships.map((membership) => ({
         departmentId: new mongoose.Types.ObjectId(membership.departmentId),
@@ -1110,10 +1117,13 @@ export const updateDepartmentCourse = AsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const courseDept = course.department ? course.department.toString() : null;
+    // DCV-044: Get department from Program via getDepartment() method
+    const courseDeptId = await course.getDepartment?.();
+    const courseDept = courseDeptId ? courseDeptId.toString() : null;
     ensureDepartmentScope(scope, courseDept, 'Access denied for this course');
 
-    const { title, description, program, programLevel } = req.body as Record<string, any>;
+    // DCV-037: description renamed to shortDescription/longDescription
+    const { title, shortDescription, longDescription, description, program, programLevel } = req.body as Record<string, any>;
 
     if (title && title !== course.title) {
       const existing = await Course.findOne({ title, program: course.program }).lean();
@@ -1123,8 +1133,16 @@ export const updateDepartmentCourse = AsyncHandler(
       course.title = title;
     }
 
-    if (description !== undefined) {
-      course.description = description;
+    // DCV-037: Handle both legacy 'description' and new shortDescription/longDescription
+    if (shortDescription !== undefined) {
+      course.shortDescription = shortDescription;
+    } else if (description !== undefined) {
+      // Legacy support: map description to shortDescription
+      course.shortDescription = description;
+    }
+    
+    if (longDescription !== undefined) {
+      course.longDescription = longDescription;
     }
 
     if (program !== undefined) {

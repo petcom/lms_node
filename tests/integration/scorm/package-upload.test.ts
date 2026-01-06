@@ -61,30 +61,37 @@ describe('SCORM Package Upload API', () => {
 
     const staffPassword = await hashPassword('Password123!');
     const adminPassword = await hashPassword('Password123!');
+
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor-upload@example.com',
+      passwordHash: staffPassword,
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'Upload' },
       email: 'instructor-upload@example.com',
     });
-    await User.create({
-      _id: new mongoose.Types.ObjectId(instructorId),
-      email: 'instructor-upload@example.com',
-      passwordHash: staffPassword,
-      role: 'staff',
-      status: 'active',
-    });
 
-    await Admin.create({
-      _id: new mongoose.Types.ObjectId(adminId),
-      name: { first: 'Admin', last: 'Upload' },
-      email: 'admin-upload@example.com',
-    });
+    // Create User FIRST (required by personValidation middleware)
     await User.create({
       _id: new mongoose.Types.ObjectId(adminId),
       email: 'admin-upload@example.com',
       passwordHash: adminPassword,
-      role: 'global-admin',
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
       status: 'active',
+    });
+    // THEN create Admin with same _id
+    await Admin.create({
+      _id: new mongoose.Types.ObjectId(adminId),
+      name: { first: 'Admin', last: 'Upload' },
+      email: 'admin-upload@example.com',
     });
   });
 

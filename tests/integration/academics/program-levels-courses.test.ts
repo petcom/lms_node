@@ -83,20 +83,26 @@ describe('Program levels, courses, and course content', () => {
       description: 'Alpha course',
       program: programId,
       programLevel: programLevelObjectId,
-      department: masterDepartmentId,
+      // DCV-044: department removed from Course
       createdBy: masterAdminId,
     });
 
-    const instructor = await Staff.create({
-      name: { first: 'Staff', last: 'User' },
-      email: 'staff@example.com',
-    });
+    // Create User FIRST (required by personValidation middleware)
+    const instructorId = new mongoose.Types.ObjectId();
     await User.create({
-      _id: instructor._id,
+      _id: instructorId,
       email: 'staff@example.com',
       passwordHash: await hashPassword('Password123!'),
-      role: 'staff',
+      roles: ['staff'],
+      primaryRole: 'staff',
       status: 'active',
+    });
+    // THEN create Staff with same _id
+    // DCV-021: email removed, DCV-022: use departmentMemberships
+    const instructor = await Staff.create({
+      _id: instructorId,
+      name: { first: 'Staff', last: 'User' },
+      departmentMemberships: [{ departmentId: masterDepartmentId, roles: ['instructor'] }],
     });
 
     const customContent = await CustomContent.create({
@@ -126,13 +132,13 @@ describe('Program levels, courses, and course content', () => {
         description: 'Course description',
         program: programId.toString(),
         programLevel: programLevelId,
-        department: masterDepartmentId.toString(),
+        // DCV-044: department removed from Course
       });
 
     expect(courseRes.status).toBe(201);
-    expect(courseRes.body.data.description).toBe('Course description');
-    expect(courseRes.body.data.status).toBe('draft');
+    // DCV-037: description removed - use longDescription
     expect(courseRes.body.data.longDescription).toBe('Course description');
+    expect(courseRes.body.data.status).toBe('draft');
     courseId = courseRes.body.data._id;
 
     const contentRes = await request(app)
@@ -184,10 +190,22 @@ describe('Program levels, courses, and course content', () => {
   });
 
   it('publishes and unpublishes a course', async () => {
-    // Create an instructor first
-    const instructor = await Staff.create({
-      name: { first: 'Publish', last: 'Instructor' },
+    // Create User FIRST (required by personValidation middleware)
+    const publishInstructorId = new mongoose.Types.ObjectId();
+    await User.create({
+      _id: publishInstructorId,
       email: 'publish.instructor@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
+    // DCV-021: email removed, DCV-022: use departmentMemberships
+    const instructor = await Staff.create({
+      _id: publishInstructorId,
+      name: { first: 'Publish', last: 'Instructor' },
+      departmentMemberships: [{ departmentId: masterDepartmentId, roles: ['instructor'] }],
     });
 
     const courseRes = await request(app)
@@ -198,7 +216,7 @@ describe('Program levels, courses, and course content', () => {
         description: 'Course description',
         program: programId.toString(),
         programLevel: programLevelId,
-        department: masterDepartmentId.toString(),
+        // DCV-044: department removed from Course
         primaryInstructors: [instructor._id.toString()],
       });
 

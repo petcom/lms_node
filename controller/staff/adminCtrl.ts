@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import Staff from '../../model/Staff/Staff';
 import Learner from '../../model/Academic/Learner';
+import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
 import logAudit from '../../utils/auditLogger';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
 
@@ -25,34 +26,65 @@ const staffInScope = (staff: any, scope: string[] | 'all' | undefined) => {
   return staffDept ? scope.includes(staffDept) : false;
 };
 
-const upsertProgramStatus = (
-  learner: any,
+/**
+ * DCV-029: Update ProgramEnrollment status instead of deprecated learner.programEnrolmentStatuses
+ * Creates enrollment if not exists, updates status if exists
+ */
+const updateProgramEnrollmentStatus = async (
+  learnerId: mongoose.Types.ObjectId,
   programId: mongoose.Types.ObjectId,
-  status: 'active' | 'suspended' | 'withdrawn',
-  reason?: string
+  status: 'enrolled' | 'on-leave' | 'withdrawn' | 'completed',
+  reason?: string,
+  userId?: mongoose.Types.ObjectId
 ) => {
   const now = new Date();
-  const statuses = Array.isArray(learner.programEnrolmentStatuses)
-    ? learner.programEnrolmentStatuses
-    : [];
-  const existing = statuses.find(
-    (entry: any) => entry.programId?.toString() === programId.toString()
-  );
-
-  if (existing) {
-    existing.status = status;
-    existing.statusReason = reason;
-    existing.statusUpdatedAt = now;
-  } else {
-    statuses.push({
-      programId,
+  
+  // Find or create ProgramEnrollment
+  let enrollment = await ProgramEnrollment.findOne({ learner: learnerId, program: programId });
+  
+  if (!enrollment) {
+    enrollment = new ProgramEnrollment({
+      learner: learnerId,
+      program: programId,
       status,
-      statusReason: reason,
-      statusUpdatedAt: now,
+      enrolledAt: now,
+      statusHistory: [{
+        status,
+        reason,
+        changedBy: userId,
+        changedAt: now,
+      }],
     });
+  } else {
+    const oldStatus = enrollment.status;
+    enrollment.status = status;
+    
+    // Add to status history
+    const statusHistory = enrollment.statusHistory || [];
+    statusHistory.push({
+      status,
+      reason,
+      changedBy: userId,
+      changedAt: now,
+    });
+    enrollment.statusHistory = statusHistory;
+    
+    // Set leave/withdrawal dates if applicable
+    if (status === 'on-leave') {
+      enrollment.leaveStartDate = now;
+      enrollment.leaveReason = reason;
+    } else if (status === 'withdrawn') {
+      enrollment.withdrawnAt = now;
+      enrollment.withdrawalReason = reason;
+    } else if (status === 'enrolled' && (oldStatus === 'on-leave' || oldStatus === 'withdrawn')) {
+      // Returning from leave/withdrawal
+      enrollment.leaveStartDate = undefined;
+      enrollment.expectedReturnDate = undefined;
+    }
   }
-
-  learner.programEnrolmentStatuses = statuses;
+  
+  await enrollment.save();
+  return enrollment;
 };
 
 // Request body interfaces
@@ -195,15 +227,21 @@ export const getAdminProfileCtrl = expressAsyncHandler(
       ? await Admin.findById(adminId).select('-createdAt -updatedAt').lean()
       : null;
 
-    const profile = admin || req.userAuth;
-
-    if (!profile) {
+    if (!admin) {
       res.status(404).json({
         status: 'error',
         message: 'Admin not found',
       });
       return;
     }
+
+    // DCV-039: Get email from User since Admin.email was removed
+    const user = await User.findById(adminId).select('email').lean();
+
+    const profile = {
+      ...admin,
+      email: user?.email,
+    };
 
     res.status(200).json({
       status: 'success',
@@ -323,8 +361,9 @@ export const adminSuspendInstructorCtrl = expressAsyncHandler(
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
-    instructor.isSuspended = true;
+    // DCV-040: Use status enum instead of isSuspended boolean
+    const before = { status: instructor.status };
+    instructor.status = 'suspended';
     await instructor.save();
 
     await logAudit({
@@ -334,7 +373,7 @@ export const adminSuspendInstructorCtrl = expressAsyncHandler(
       entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: true, isWithdrawn: instructor.isWithdrawn },
+      after: { status: 'suspended' },
     });
 
     res.status(200).json({
@@ -369,8 +408,9 @@ export const adminUnsuspendinstructorCtrl = expressAsyncHandler(
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
-    instructor.isSuspended = false;
+    // DCV-040: Use status enum instead of isSuspended boolean
+    const before = { status: instructor.status };
+    instructor.status = 'active';
     await instructor.save();
 
     await logAudit({
@@ -380,7 +420,7 @@ export const adminUnsuspendinstructorCtrl = expressAsyncHandler(
       entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: false, isWithdrawn: instructor.isWithdrawn },
+      after: { status: 'active' },
     });
 
     res.status(200).json({
@@ -415,8 +455,9 @@ export const adminWithdrawInstructorCtrl = expressAsyncHandler(
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
-    instructor.isWithdrawn = true;
+    // DCV-040: Use status enum instead of isWithdrawn boolean
+    const before = { status: instructor.status };
+    instructor.status = 'withdrawn';
     await instructor.save();
 
     await logAudit({
@@ -426,7 +467,7 @@ export const adminWithdrawInstructorCtrl = expressAsyncHandler(
       entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: instructor.isSuspended, isWithdrawn: true },
+      after: { status: 'withdrawn' },
     });
 
     res.status(200).json({
@@ -461,8 +502,9 @@ export const adminUnwithdrawInstructorCtrl = expressAsyncHandler(
       throw new AuthorizationError('Access denied for this staff member');
     }
 
-    const before = { isSuspended: instructor.isSuspended, isWithdrawn: instructor.isWithdrawn };
-    instructor.isWithdrawn = false;
+    // DCV-040: Use status enum instead of isWithdrawn boolean
+    const before = { status: instructor.status };
+    instructor.status = 'active';
     await instructor.save();
 
     await logAudit({
@@ -472,7 +514,7 @@ export const adminUnwithdrawInstructorCtrl = expressAsyncHandler(
       entityId: instructor._id,
       reason,
       before,
-      after: { isSuspended: instructor.isSuspended, isWithdrawn: false },
+      after: { status: 'active' },
     });
 
     res.status(200).json({
@@ -509,9 +551,14 @@ export const adminSuspendLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
-    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'suspended', reason);
-    await learner.save();
+    // DCV-029: Use ProgramEnrollment instead of deprecated programEnrolmentStatuses
+    const enrollment = await updateProgramEnrollmentStatus(
+      learner._id as mongoose.Types.ObjectId,
+      new mongoose.Types.ObjectId(programId),
+      'on-leave', // 'suspended' maps to 'on-leave' in new schema
+      reason,
+      (req as any).userAuth?._id
+    );
 
     await logAudit({
       req,
@@ -519,13 +566,13 @@ export const adminSuspendLearnerCtrl = expressAsyncHandler(
       entityType: 'Learner',
       entityId: learner._id,
       reason,
-      before,
-      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
+      before: {},
+      after: { enrollmentStatus: enrollment.status },
     });
 
     res.status(200).json({
       status: 'success',
-      data: learner,
+      data: { learner, enrollment },
       message: 'Learner suspended successfully',
     });
   }
@@ -557,9 +604,14 @@ export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
-    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'active', reason);
-    await learner.save();
+    // DCV-029: Use ProgramEnrollment instead of deprecated programEnrolmentStatuses
+    const enrollment = await updateProgramEnrollmentStatus(
+      learner._id as mongoose.Types.ObjectId,
+      new mongoose.Types.ObjectId(programId),
+      'enrolled', // 'active' maps to 'enrolled' in new schema
+      reason,
+      (req as any).userAuth?._id
+    );
 
     await logAudit({
       req,
@@ -567,13 +619,13 @@ export const adminUnsuspendLearnerCtrl = expressAsyncHandler(
       entityType: 'Learner',
       entityId: learner._id,
       reason,
-      before,
-      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
+      before: {},
+      after: { enrollmentStatus: enrollment.status },
     });
 
     res.status(200).json({
       status: 'success',
-      data: learner,
+      data: { learner, enrollment },
       message: 'Learner unsuspended successfully',
     });
   }
@@ -605,9 +657,14 @@ export const adminWithdrawLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
-    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'withdrawn', reason);
-    await learner.save();
+    // DCV-029: Use ProgramEnrollment instead of deprecated programEnrolmentStatuses
+    const enrollment = await updateProgramEnrollmentStatus(
+      learner._id as mongoose.Types.ObjectId,
+      new mongoose.Types.ObjectId(programId),
+      'withdrawn',
+      reason,
+      (req as any).userAuth?._id
+    );
 
     await logAudit({
       req,
@@ -615,13 +672,13 @@ export const adminWithdrawLearnerCtrl = expressAsyncHandler(
       entityType: 'Learner',
       entityId: learner._id,
       reason,
-      before,
-      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
+      before: {},
+      after: { enrollmentStatus: enrollment.status },
     });
 
     res.status(200).json({
       status: 'success',
-      data: learner,
+      data: { learner, enrollment },
       message: 'Learner withdrawn successfully',
     });
   }
@@ -653,9 +710,14 @@ export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
       throw new NotFoundError('Learner not found');
     }
 
-    const before = { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] };
-    upsertProgramStatus(learner, new mongoose.Types.ObjectId(programId), 'active', reason);
-    await learner.save();
+    // DCV-029: Use ProgramEnrollment instead of deprecated programEnrolmentStatuses
+    const enrollment = await updateProgramEnrollmentStatus(
+      learner._id as mongoose.Types.ObjectId,
+      new mongoose.Types.ObjectId(programId),
+      'enrolled', // 'active' maps to 'enrolled' in new schema
+      reason,
+      (req as any).userAuth?._id
+    );
 
     await logAudit({
       req,
@@ -663,13 +725,13 @@ export const adminUnwithdrawLearnerCtrl = expressAsyncHandler(
       entityType: 'Learner',
       entityId: learner._id,
       reason,
-      before,
-      after: { programEnrolmentStatuses: learner.programEnrolmentStatuses || [] },
+      before: {},
+      after: { enrollmentStatus: enrollment.status },
     });
 
     res.status(200).json({
       status: 'success',
-      data: learner,
+      data: { learner, enrollment },
       message: 'Learner unwithdrawn successfully',
     });
   }

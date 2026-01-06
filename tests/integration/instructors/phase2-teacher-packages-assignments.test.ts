@@ -57,30 +57,36 @@ describe('Instructor Phase 2: Packages & Assignments', () => {
     await Admin.deleteMany({ _id: adminId });
     await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor1@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
     });
+
+    // Create User FIRST (required by personValidation middleware)
     await User.create({
-      _id: new mongoose.Types.ObjectId(instructorId),
-      email: 'instructor1@example.com',
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin@example.com',
       passwordHash: await hashPassword('Password123!'),
-      role: 'staff',
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
       status: 'active',
     });
-
+    // THEN create Admin with same _id
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-    });
-    await User.create({
-      _id: new mongoose.Types.ObjectId(adminId),
-      email: 'admin@example.com',
-      passwordHash: await hashPassword('Password123!'),
-      role: 'global-admin',
-      status: 'active',
     });
   });
 

@@ -90,48 +90,52 @@ describe('Department Resources API', () => {
     ]);
 
     const hashedPassword = await hashPassword('Password@123');
-    await Admin.create([
-      {
-        _id: masterAdminId,
-        name: { first: 'Master', last: 'Admin' },
-        email: 'master@example.com',
-        department: masterDepartmentId,
-      },
-      {
-        _id: topAdminId,
-        name: { first: 'Top', last: 'Admin' },
-        email: 'top@example.com',
-        department: topDepartmentId,
-      },
-      {
-        _id: subAdminId,
-        name: { first: 'Sub', last: 'Admin' },
-        email: 'sub@example.com',
-        department: subDepartmentId,
-      },
-    ]);
 
+    // Create Users FIRST (required by personValidation middleware)
     await User.create([
       {
         _id: masterAdminId,
         email: 'master@example.com',
         passwordHash: hashedPassword,
-        role: 'global-admin',
+        roles: ['global-admin'],
+        primaryRole: 'global-admin',
         status: 'active',
       },
       {
         _id: topAdminId,
         email: 'top@example.com',
         passwordHash: hashedPassword,
-        role: 'global-admin',
+        roles: ['global-admin'],
+        primaryRole: 'global-admin',
         status: 'active',
       },
       {
         _id: subAdminId,
         email: 'sub@example.com',
         passwordHash: hashedPassword,
-        role: 'global-admin',
+        roles: ['global-admin'],
+        primaryRole: 'global-admin',
         status: 'active',
+      },
+    ]);
+
+    // THEN create Admins with same _ids
+    // DCV-039: email removed from Admin (stored in User)
+    await Admin.create([
+      {
+        _id: masterAdminId,
+        name: { first: 'Master', last: 'Admin' },
+        department: masterDepartmentId,
+      },
+      {
+        _id: topAdminId,
+        name: { first: 'Top', last: 'Admin' },
+        department: topDepartmentId,
+      },
+      {
+        _id: subAdminId,
+        name: { first: 'Sub', last: 'Admin' },
+        department: subDepartmentId,
       },
     ]);
 
@@ -139,8 +143,8 @@ describe('Department Resources API', () => {
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b1'),
         name: { first: 'Alpha', last: 'Instructor' },
-        email: 'alpha.instructor@example.com',
-        department: topDepartmentId,
+        // DCV-021: email removed from Staff (stored in User)
+        // DCV-022: department removed (use departmentMemberships)
         departmentMemberships: [
           { departmentId: topDepartmentId, roles: ['instructor'] },
         ],
@@ -148,8 +152,6 @@ describe('Department Resources API', () => {
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b2'),
         name: { first: 'Sub', last: 'Instructor' },
-        email: 'sub.instructor@example.com',
-        department: subDepartmentId,
         departmentMemberships: [
           { departmentId: subDepartmentId, roles: ['instructor'] },
         ],
@@ -157,8 +159,6 @@ describe('Department Resources API', () => {
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b3'),
         name: { first: 'Beta', last: 'Instructor' },
-        email: 'beta.instructor@example.com',
-        department: otherDepartmentId,
         departmentMemberships: [
           { departmentId: otherDepartmentId, roles: ['instructor'] },
         ],
@@ -166,25 +166,35 @@ describe('Department Resources API', () => {
       {
         _id: new mongoose.Types.ObjectId('0000000000000000000000b4'),
         name: { first: 'Multi', last: 'Instructor' },
-        email: 'multi.instructor@example.com',
-        department: topDepartmentId,
         departmentMemberships: [
           { departmentId: topDepartmentId, roles: ['instructor'] },
           { departmentId: otherDepartmentId, roles: ['content-admin'] },
         ],
       },
     ];
-    await Staff.create(staffEntries);
+
+    // DCV-021: Define emails separately for User creation
+    const staffEmails = [
+      'alpha.instructor@example.com',
+      'sub.instructor@example.com',
+      'beta.instructor@example.com',
+      'multi.instructor@example.com',
+    ];
+
+    // Create Users FIRST (required by personValidation middleware)
     await User.create(
-      staffEntries.map((staff) => ({
+      staffEntries.map((staff, idx) => ({
         _id: staff._id,
-        email: staff.email,
+        email: staffEmails[idx],
         passwordHash: hashedPassword,
-        role: 'staff',
+        roles: ['staff'],
+        primaryRole: 'staff',
         status: 'active',
         subroles: [],
       }))
     );
+    // THEN create Staff with same _ids
+    await Staff.create(staffEntries);
 
     await ScormPackage.create([
       {
@@ -265,11 +275,13 @@ describe('Department Resources API', () => {
       description: 'Alpha course',
       program: program._id,
       programLevel: programLevel._id,
-      department: topDepartmentId,
+      // DCV-044: department removed from Course
       createdBy: masterAdminId,
     });
 
-    const instructor = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
+    // DCV-021: Use _id instead of email (email removed from Staff)
+    const alphaInstructorId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+    const instructor = await Staff.findById(alphaInstructorId).lean();
     if (!instructor) {
       throw new Error('Instructor not found for exam setup');
     }
@@ -382,7 +394,9 @@ describe('Department Resources API', () => {
       { name: 'billing-admin' },
     ]);
 
-    const staff = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
+    // DCV-021: Use _id instead of email (email removed from Staff)
+    const alphaInstructorId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+    const staff = await Staff.findById(alphaInstructorId).lean();
     if (!staff) {
       throw new Error('Staff member not found for role update');
     }
@@ -397,7 +411,9 @@ describe('Department Resources API', () => {
   });
 
   it('updates staff department within scope', async () => {
-    const staff = await Staff.findOne({ email: 'alpha.instructor@example.com' }).lean();
+    // DCV-021: Use _id instead of email (email removed from Staff)
+    const alphaInstructorId = new mongoose.Types.ObjectId('0000000000000000000000b1');
+    const staff = await Staff.findById(alphaInstructorId).lean();
     if (!staff) {
       throw new Error('Staff member not found for department update');
     }
@@ -408,7 +424,12 @@ describe('Department Resources API', () => {
       .send({ departmentId: otherDepartmentId.toString() });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.department).toBe(otherDepartmentId.toString());
+    // DCV-022: department field removed - check departmentMemberships instead
+    const memberships = res.body.data.departmentMemberships || [];
+    const hasDepartment = memberships.some(
+      (m: any) => m.departmentId?.toString() === otherDepartmentId.toString()
+    );
+    expect(hasDepartment).toBe(true);
   });
 
   it('creates and updates custom content', async () => {
@@ -520,10 +541,11 @@ describe('Department Resources API', () => {
     const updateRes = await request(app)
       .patch(`/api/v1/department-resources/courses/${course._id.toString()}`)
       .set('Authorization', `Bearer ${topAdminToken}`)
-      .send({ description: 'Updated course description' });
+      .send({ shortDescription: 'Updated course description' });
 
     expect(updateRes.status).toBe(200);
-    expect(updateRes.body.data.description).toBe('Updated course description');
+    // DCV-037: description renamed to shortDescription
+    expect(updateRes.body.data.shortDescription).toBe('Updated course description');
 
     const programUpdateRes = await request(app)
       .patch(`/api/v1/department-resources/courses/${course._id.toString()}/program`)
@@ -533,13 +555,12 @@ describe('Department Resources API', () => {
     expect(programUpdateRes.status).toBe(200);
     expect(programUpdateRes.body.data.program).toBe(program._id.toString());
 
-    const deptRes = await request(app)
-      .patch(`/api/v1/department-resources/courses/${course._id.toString()}/department`)
-      .set('Authorization', `Bearer ${masterToken}`)
-      .send({ departmentId: otherDepartmentId.toString() });
-
-    expect(deptRes.status).toBe(200);
-    expect(deptRes.body.data.department).toBe(otherDepartmentId.toString());
+    // DCV-044: Course.department removed - department is now inherited from Program
+    // Updating course department is no longer supported
+    // Test that the getDepartment() method works correctly via Program
+    const courseWithProgram = await Course.findById(course._id).populate('program');
+    const courseDept = await (courseWithProgram as any).getDepartment?.();
+    expect(courseDept?.toString()).toBe(topDepartmentId.toString());
   });
 
   it('updates department metadata', async () => {

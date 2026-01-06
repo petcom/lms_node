@@ -23,13 +23,13 @@ const baseProgram = (department: mongoose.Types.ObjectId) => ({
 
 const baseCourse = (
   title: string,
-  department: mongoose.Types.ObjectId,
+  _department: mongoose.Types.ObjectId, // DCV-044: department no longer on Course
   program: mongoose.Types.ObjectId
 ) => ({
   title,
   description: `${title} desc`,
   program,
-  department,
+  // DCV-044: department removed from Course - inherits from Program
   createdBy: masterAdminId,
 });
 

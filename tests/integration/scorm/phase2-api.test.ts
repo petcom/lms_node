@@ -63,17 +63,21 @@ describe('SCORM Phase 2: Package Management API', () => {
     await Staff.deleteMany({ email: 'instructor@example.com' });
     await User.deleteMany({ _id: instructorId });
     const passwordHash = await hashPassword('Password123!');
+
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor@example.com',
+      passwordHash,
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     const instructor = await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Test', last: 'Staff' },
       email: 'instructor@example.com',
-    });
-    await User.create({
-      _id: instructor._id,
-      email: 'instructor@example.com',
-      passwordHash,
-      role: 'staff',
-      status: 'active',
     });
   });
 

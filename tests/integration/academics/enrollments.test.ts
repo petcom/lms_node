@@ -96,17 +96,22 @@ describe('Enrollment APIs', () => {
     });
     courseId = course._id;
 
+    // Create User FIRST (required by personValidation middleware)
+    const learnerIdLocal = new mongoose.Types.ObjectId();
+    await User.create({
+      _id: learnerIdLocal,
+      email: 'learner1@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['learner'],
+      primaryRole: 'learner',
+      status: 'active',
+    });
+    // THEN create Learner with same _id
     const learner = await Learner.create({
+      _id: learnerIdLocal,
       name: { first: 'Learner', last: 'One' },
       email: 'learner1@example.com',
       globalStatus: 'active',
-    });
-    await User.create({
-      _id: learner._id,
-      email: 'learner1@example.com',
-      passwordHash: await hashPassword('Password123!'),
-      role: 'learner',
-      status: 'active',
     });
     learnerId = learner._id;
   });

@@ -21,33 +21,41 @@ describe('Admin instructor status actions', () => {
     await User.deleteMany({ _id: { $in: [adminId, instructorId] } });
 
     const adminPassword = await hashPassword('Password123!');
+
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: adminId,
+      email: 'admin@example.com',
+      passwordHash: adminPassword,
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
+      status: 'active',
+    });
+    // THEN create Admin with same _id
     await Admin.create({
       _id: adminId,
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
     });
-    await User.create({
-      _id: adminId,
-      email: 'admin@example.com',
-      passwordHash: adminPassword,
-      role: 'global-admin',
-      status: 'active',
-    });
 
     const staffPassword = await hashPassword('Password123!');
+
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: instructorId,
+      email: 'instructor@example.com',
+      passwordHash: staffPassword,
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     await Staff.create({
       _id: instructorId,
       name: { first: 'Staff', last: 'User' },
       email: 'instructor@example.com',
       isSuspended: false,
       isWithdrawn: false,
-    });
-    await User.create({
-      _id: instructorId,
-      email: 'instructor@example.com',
-      passwordHash: staffPassword,
-      role: 'staff',
-      status: 'active',
     });
   });
 
@@ -67,7 +75,8 @@ describe('Admin instructor status actions', () => {
       .send({ reason: 'policy' });
 
     expect(suspendRes.status).toBe(200);
-    expect(suspendRes.body.data.isSuspended).toBe(true);
+    // DCV-040: Uses status enum instead of isSuspended boolean
+    expect(suspendRes.body.data.status).toBe('suspended');
 
     const unsuspendRes = await request(app)
       .put(`/api/v1/staff/admins/unsuspend/staff/${instructorId.toString()}`)
@@ -75,7 +84,7 @@ describe('Admin instructor status actions', () => {
       .send({ reason: 'reviewed' });
 
     expect(unsuspendRes.status).toBe(200);
-    expect(unsuspendRes.body.data.isSuspended).toBe(false);
+    expect(unsuspendRes.body.data.status).toBe('active');
 
     const withdrawRes = await request(app)
       .put(`/api/v1/staff/admins/withdraw/staff/${instructorId.toString()}`)
@@ -83,7 +92,7 @@ describe('Admin instructor status actions', () => {
       .send({ reason: 'leave' });
 
     expect(withdrawRes.status).toBe(200);
-    expect(withdrawRes.body.data.isWithdrawn).toBe(true);
+    expect(withdrawRes.body.data.status).toBe('withdrawn');
 
     const unwithdrawRes = await request(app)
       .put(`/api/v1/staff/admins/unwithdraw/staff/${instructorId.toString()}`)
@@ -91,6 +100,6 @@ describe('Admin instructor status actions', () => {
       .send({ reason: 'returned' });
 
     expect(unwithdrawRes.status).toBe(200);
-    expect(unwithdrawRes.body.data.isWithdrawn).toBe(false);
+    expect(unwithdrawRes.body.data.status).toBe('active');
   });
 });

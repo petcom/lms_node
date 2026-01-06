@@ -24,13 +24,13 @@ const baseProgram = (department: mongoose.Types.ObjectId) => ({
 
 const baseProgramLevel = (
   name: string,
-  department: mongoose.Types.ObjectId,
+  _department: mongoose.Types.ObjectId, // DCV-044: department no longer on ProgramLevel
   program: mongoose.Types.ObjectId
 ) => ({
   name,
   description: `${name} desc`,
   createdBy: masterAdminId,
-  department,
+  // DCV-044: department removed from ProgramLevel - inherits from Program
   program,
   order: 1,
 });

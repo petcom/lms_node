@@ -8,6 +8,8 @@ import Course from '../../../model/Content/Course';
 import CourseContent from '../../../model/Academic/CourseContent';
 import RenderedCourse from '../../../model/Content/RenderedCourse';
 import Staff from '../../../model/Staff/Staff';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const adminToken = 'test-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
@@ -42,6 +44,7 @@ describe('Course API Completion Plan - Phase 1', () => {
       CourseContent.deleteMany({}),
       RenderedCourse.deleteMany({}),
       Staff.deleteMany({}),
+      User.deleteMany({}),
     ]);
 
     await Department.create({
@@ -65,24 +68,49 @@ describe('Course API Completion Plan - Phase 1', () => {
       name: 'Level 1',
       description: 'Level desc',
       order: 1,
-      department: masterDepartmentId,
+      // DCV-044: department removed from ProgramLevel
       createdBy: masterAdminId,
       courses: [],
     });
     programLevelId = programLevel._id;
 
-    // Create instructors
-    const instructor = await Staff.create({
-      name: { first: 'John', last: 'Smith' },
+    // Create User FIRST (required by personValidation middleware)
+    const instructor1Id = new mongoose.Types.ObjectId();
+    await User.create({
+      _id: instructor1Id,
       email: 'john.smith@example.com',
-      department: masterDepartmentId,
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
+    // DCV-021: email removed from Staff (derived from User)
+    // DCV-022: department replaced with departmentMemberships
+    const instructor = await Staff.create({
+      _id: instructor1Id,
+      name: { first: 'John', last: 'Smith' },
+      departmentMemberships: [{ departmentId: masterDepartmentId, roles: ['instructor'] }],
     });
     instructorId = instructor._id;
 
-    const instructor2 = await Staff.create({
-      name: { first: 'Jane', last: 'Doe' },
+    // Create User FIRST (required by personValidation middleware)
+    const instructor2IdLocal = new mongoose.Types.ObjectId();
+    await User.create({
+      _id: instructor2IdLocal,
       email: 'jane.doe@example.com',
-      department: masterDepartmentId,
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
+    // DCV-021: email removed from Staff (derived from User)
+    // DCV-022: department replaced with departmentMemberships
+    const instructor2 = await Staff.create({
+      _id: instructor2IdLocal,
+      name: { first: 'Jane', last: 'Doe' },
+      departmentMemberships: [{ departmentId: masterDepartmentId, roles: ['instructor'] }],
     });
     instructor2Id = instructor2._id;
   });
@@ -94,7 +122,7 @@ describe('Course API Completion Plan - Phase 1', () => {
         description: 'Test course',
         program: programId,
         programLevel: programLevelId,
-        department: masterDepartmentId,
+        // DCV-044: department removed from Course - inherits from Program
         createdBy: masterAdminId,
         primaryInstructors: [instructorId],
       });
@@ -166,7 +194,7 @@ describe('Course API Completion Plan - Phase 1', () => {
         description: 'No segments',
         program: programId,
         programLevel: programLevelId,
-        department: masterDepartmentId,
+        // DCV-044: department removed from Course
         createdBy: masterAdminId,
       });
 
@@ -239,7 +267,7 @@ describe('Course API Completion Plan - Phase 1', () => {
         description: 'Test course',
         program: programId,
         programLevel: programLevelId,
-        department: masterDepartmentId,
+        // DCV-044: department removed from Course
         createdBy: masterAdminId,
         status: 'rendered',
         primaryInstructors: [],
@@ -296,7 +324,7 @@ describe('Course API Completion Plan - Phase 1', () => {
         description: 'Test course for HTTP method aliases',
         program: programId,
         programLevel: programLevelId,
-        department: masterDepartmentId,
+        // DCV-044: department removed from Course
         createdBy: masterAdminId,
         primaryInstructors: [instructorId],
       });

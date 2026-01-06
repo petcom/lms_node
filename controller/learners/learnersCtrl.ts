@@ -68,17 +68,21 @@ export const adminRegisterLearner = AsyncHandler(
       status: 'active',
     });
     // Learner created
+    // DCV-041: email removed from Learner - stored only in User
     const learnerRegistered = await Learner.create({
       _id: user._id,
       name: normalizedName ?? name,
-      email,
     });
     // DCV-016: Removed admin.learners array push - global admins access all learners via role
     // send response
+    // DCV-041: Include email in response from User
     res.status(201).json({
       status: 'success',
       message: 'Learner registered Successfuly',
-      data: learnerRegistered,
+      data: {
+        ...learnerRegistered.toObject(),
+        email, // DCV-041: Include email derived from User
+      },
     });
   }
 );
@@ -171,7 +175,19 @@ export const getLearnerProfile = AsyncHandler(
  */
 export const getAllLearnersByAdmin = AsyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
-    res.status(200).json(res.results);
+    // DCV-041: Add email to each learner from User collection
+    const results = res.results as any;
+    if (results?.data && Array.isArray(results.data)) {
+      const learnerIds = results.data.map((l: any) => l._id);
+      const users = await User.find({ _id: { $in: learnerIds } }).select('_id email').lean();
+      const emailMap = new Map(users.map(u => [u._id.toString(), u.email]));
+      
+      results.data = results.data.map((learner: any) => ({
+        ...learner.toObject ? learner.toObject() : learner,
+        email: emailMap.get(learner._id.toString()),
+      }));
+    }
+    res.status(200).json(results);
   }
 );
 
@@ -197,10 +213,16 @@ export const getLearnerByAdmin = AsyncHandler(
         return;
       }
 
+      // DCV-041: Get email from User (email removed from Learner)
+      const email = await learner.getEmail?.();
+
       res.status(200).json({
         status: 'success',
         message: 'Learner fetched successfully',
-        data: learner,
+        data: {
+          ...learner.toObject(),
+          email, // DCV-041: Include email derived from User
+        },
       });
     } catch (error) {
       // If an error occurs (e.g., CastError for invalid ObjectId)

@@ -56,30 +56,36 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     await Admin.deleteMany({ _id: adminId });
     await User.deleteMany({ _id: { $in: [instructorId, adminId] } });
 
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: new mongoose.Types.ObjectId(instructorId),
+      email: 'instructor1@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     await Staff.create({
       _id: new mongoose.Types.ObjectId(instructorId),
       name: { first: 'Staff', last: 'One' },
       email: 'instructor1@example.com',
     });
+
+    // Create User FIRST (required by personValidation middleware)
     await User.create({
-      _id: new mongoose.Types.ObjectId(instructorId),
-      email: 'instructor1@example.com',
+      _id: new mongoose.Types.ObjectId(adminId),
+      email: 'admin@example.com',
       passwordHash: await hashPassword('Password123!'),
-      role: 'staff',
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
       status: 'active',
     });
-
+    // THEN create Admin with same _id
     await Admin.create({
       _id: new mongoose.Types.ObjectId(adminId),
       name: { first: 'Admin', last: 'User' },
       email: 'admin@example.com',
-    });
-    await User.create({
-      _id: new mongoose.Types.ObjectId(adminId),
-      email: 'admin@example.com',
-      passwordHash: await hashPassword('Password123!'),
-      role: 'global-admin',
-      status: 'active',
     });
   });
 
@@ -87,7 +93,7 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     await ClassModel.deleteMany({});
     await ClassEnrollment.deleteMany({});
     await Learner.deleteMany({});
-    await User.deleteMany({ role: 'learner' });
+    await User.deleteMany({ roles: 'learner' });
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
     await Course.deleteMany({});
@@ -104,6 +110,7 @@ describe('Instructor Phase 4: Attempts Listing', () => {
     await ClassModel.deleteMany({});
     await ClassEnrollment.deleteMany({});
     await Learner.deleteMany({});
+    await User.deleteMany({ roles: 'learner' });
     await ContentAttempt.deleteMany({});
     await CourseContent.deleteMany({});
     await Course.deleteMany({});
@@ -153,16 +160,21 @@ describe('Instructor Phase 4: Attempts Listing', () => {
       createdBy: new mongoose.Types.ObjectId(adminId),
     });
 
-    const learner = await Learner.create({
-      name: { first: 'Learner', last: 'One' },
-      email: 's1@example.com',
-    });
+    // Create User FIRST (required by personValidation middleware)
+    const learnerId = new mongoose.Types.ObjectId();
     await User.create({
-      _id: learner._id,
+      _id: learnerId,
       email: 's1@example.com',
       passwordHash: await hashPassword('Learner123!'),
-      role: 'learner',
+      roles: ['learner'],
+      primaryRole: 'learner',
       status: 'active',
+    });
+    // THEN create Learner with same _id
+    const learner = await Learner.create({
+      _id: learnerId,
+      name: { first: 'Learner', last: 'One' },
+      email: 's1@example.com',
     });
 
     await ClassEnrollment.create({

@@ -34,48 +34,63 @@ courseRouter
     isAuthenticated(),
     departmentScope(),
     isInstructorOrAdmin,
-    advancedResults(Course, undefined, (req) => {
+    // DCV-044: Course no longer has department field - filter via Program lookup
+    async (req, _res, next) => {
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const requestedDept =
         typeof req.query.department === 'string' ? req.query.department : undefined;
+      
+      // Pre-fetch program IDs that match the department scope
+      let programIds: mongoose.Types.ObjectId[] | undefined;
+      
+      if (scope === 'all' && requestedDept && mongoose.isValidObjectId(requestedDept)) {
+        // Master admin filtering by specific department
+        const Program = mongoose.model('Program');
+        const programs = await Program.find({ department: new mongoose.Types.ObjectId(requestedDept) }).select('_id').lean();
+        programIds = programs.map(p => p._id);
+      } else if (scope && scope !== 'all') {
+        // Non-master admin - filter to their scope
+        const Program = mongoose.model('Program');
+        const programs = await Program.find({ department: { $in: scope } }).select('_id').lean();
+        programIds = programs.map(p => p._id);
+      }
+      
+      // Store program IDs in request for advancedResults to use
+      (req as any)._scopedProgramIds = programIds;
+      next();
+    },
+    advancedResults(Course, undefined, (req) => {
       const requestedProgram =
         typeof req.query.program === 'string' ? req.query.program : undefined;
       const requestedProgramLevel =
         typeof req.query.programLevel === 'string' ? req.query.programLevel : undefined;
       const includeArchived = req.query.includeArchived === 'true';
       const archivedFilter = includeArchived ? {} : { isArchived: false };
+      const scopedProgramIds = (req as any)._scopedProgramIds;
 
-      const programFilter =
-        requestedProgram && mongoose.isValidObjectId(requestedProgram)
-          ? { program: new mongoose.Types.ObjectId(requestedProgram) }
-          : {};
       const programLevelFilter =
         requestedProgramLevel && mongoose.isValidObjectId(requestedProgramLevel)
           ? { programLevel: new mongoose.Types.ObjectId(requestedProgramLevel) }
           : {};
 
-      if (scope === 'all' && requestedDept && mongoose.isValidObjectId(requestedDept)) {
+      // DCV-044: Filter by program IDs (derived from department scope)
+      if (scopedProgramIds !== undefined) {
         return {
           ...archivedFilter,
-          ...programFilter,
           ...programLevelFilter,
-          department: new mongoose.Types.ObjectId(requestedDept),
-        } as any;
-      }
-
-      if (scope && scope !== 'all') {
-        return {
-          ...archivedFilter,
-          ...programFilter,
-          ...programLevelFilter,
-          department: { $in: scope },
+          program: { $in: scopedProgramIds },
+          ...(requestedProgram && mongoose.isValidObjectId(requestedProgram)
+            ? { program: new mongoose.Types.ObjectId(requestedProgram) }
+            : {}),
         } as any;
       }
 
       return {
         ...archivedFilter,
-        ...programFilter,
         ...programLevelFilter,
+        ...(requestedProgram && mongoose.isValidObjectId(requestedProgram)
+          ? { program: new mongoose.Types.ObjectId(requestedProgram) }
+          : {}),
       } as any;
     }),
     getCourses

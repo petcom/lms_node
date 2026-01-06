@@ -197,7 +197,10 @@ export const courseUpdate = {
   }),
   body: Joi.object({
     title: Joi.string().trim(),
-    description: Joi.string().trim(),
+    // DCV-037: description renamed to shortDescription/longDescription
+    shortDescription: Joi.string().trim(),
+    longDescription: Joi.string().trim(),
+    description: Joi.string().trim(), // Legacy support
     program: objectId,
     programLevel: objectId,
   }).min(1),

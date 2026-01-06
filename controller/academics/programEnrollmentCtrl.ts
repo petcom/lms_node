@@ -49,7 +49,8 @@ export const createProgramEnrollment = AsyncHandler(
     const enrollment = await ProgramEnrollment.create({
       learner: new mongoose.Types.ObjectId(learner),
       program: new mongoose.Types.ObjectId(program),
-      status: status || 'active',
+      // DCV-026: default status changed from 'active' to 'enrolled'
+      status: status || 'enrolled',
       enrolledAt: enrolledAt ? new Date(enrolledAt) : new Date(),
       completedAt: status === 'completed' ? new Date() : undefined,
       withdrawnAt: status === 'withdrawn' ? new Date() : undefined,

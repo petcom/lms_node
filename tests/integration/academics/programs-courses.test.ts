@@ -6,6 +6,8 @@ import Program from '../../../model/Academic/Program';
 import ProgramLevel from '../../../model/Academic/ProgramLevel';
 import Course from '../../../model/Content/Course';
 import Staff from '../../../model/Staff/Staff';
+import User from '../../../model/Auth/User';
+import { hashPassword } from '../../../utils/helpers';
 
 const adminToken = 'test-global-admin-token';
 const masterAdminId = new mongoose.Types.ObjectId('0000000000000000000000a1');
@@ -36,6 +38,7 @@ describe('Program courses endpoint', () => {
       ProgramLevel.deleteMany({}),
       Course.deleteMany({}),
       Staff.deleteMany({}),
+      User.deleteMany({}),
     ]);
 
     await Department.create({
@@ -54,7 +57,19 @@ describe('Program courses endpoint', () => {
     });
     programId = program._id;
 
+    // Create User FIRST (required by personValidation middleware)
+    const instructorIdLocal = new mongoose.Types.ObjectId();
+    await User.create({
+      _id: instructorIdLocal,
+      email: 'ada@example.com',
+      passwordHash: await hashPassword('Password123!'),
+      roles: ['staff'],
+      primaryRole: 'staff',
+      status: 'active',
+    });
+    // THEN create Staff with same _id
     const instructor = await Staff.create({
+      _id: instructorIdLocal,
       name: { first: 'Ada', last: 'Lovelace' },
       email: 'ada@example.com',
     });

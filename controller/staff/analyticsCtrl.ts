@@ -71,7 +71,7 @@ export const getProgramAnalytics = AsyncHandler(async (req: Request, res: Respon
       $group: {
         _id: '$program',
         activeLearners: {
-          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ['$status', 'enrolled'] }, 1, 0] },
         },
         totalAll: { $sum: 1 },
         completedWindow: {

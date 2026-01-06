@@ -80,18 +80,22 @@ const seedAcademicContext = async () => {
   });
 
   const passwordHash = await hashPassword('Password123!');
+
+  // Create User FIRST (required by personValidation middleware)
+  await User.create({
+    _id: adminId,
+    email: 'runtime.admin@example.com',
+    passwordHash,
+    roles: ['global-admin'],
+    primaryRole: 'global-admin',
+    status: 'active',
+  });
+  // THEN create Admin with same _id
   await Admin.create({
     _id: adminId,
     name: { first: 'Runtime', last: 'Admin' },
     email: 'runtime.admin@example.com',
     department: departmentId,
-  });
-  await User.create({
-    _id: adminId,
-    email: 'runtime.admin@example.com',
-    passwordHash,
-    role: 'global-admin',
-    status: 'active',
   });
 
   const program = await Program.create({
@@ -139,17 +143,20 @@ const seedAttempt = async () => {
     createdBy: adminId,
   });
   await Learner.deleteMany({ _id: learnerId });
-  await Learner.create({
-    _id: learnerId,
-    name: { first: 'Runtime', last: 'Learner' },
-    email: 'runtime.learner@example.com',
-  });
+  // Create User FIRST (required by personValidation middleware)
   await User.create({
     _id: learnerId,
     email: 'runtime.learner@example.com',
     passwordHash: await hashPassword('Password123!'),
-    role: 'learner',
+    roles: ['learner'],
+    primaryRole: 'learner',
     status: 'active',
+  });
+  // THEN create Learner with same _id
+  await Learner.create({
+    _id: learnerId,
+    name: { first: 'Runtime', last: 'Learner' },
+    email: 'runtime.learner@example.com',
   });
 
   const attempt = await ScormAttempt.create({

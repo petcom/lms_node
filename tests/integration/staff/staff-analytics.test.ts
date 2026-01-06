@@ -85,7 +85,7 @@ describe('Staff Analytics API', () => {
       {
         learner: learners[2],
         program: program._id,
-        status: 'active',
+        status: 'enrolled',
         enrolledAt: withinWindow,
         createdAt: withinWindow,
         updatedAt: withinWindow,

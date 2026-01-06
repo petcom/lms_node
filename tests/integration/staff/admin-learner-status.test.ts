@@ -22,31 +22,39 @@ describe('Admin learner status actions', () => {
     await User.deleteMany({ _id: { $in: [adminId, learnerId] } });
 
     const adminPassword = await hashPassword('Password123!');
+
+    // Create User FIRST (required by personValidation middleware)
+    await User.create({
+      _id: adminId,
+      email: 'admin-learner@example.com',
+      passwordHash: adminPassword,
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
+      status: 'active',
+    });
+    // THEN create Admin with same _id
     await Admin.create({
       _id: adminId,
       name: { first: 'Admin', last: 'User' },
       email: 'admin-learner@example.com',
     });
-    await User.create({
-      _id: adminId,
-      email: 'admin-learner@example.com',
-      passwordHash: adminPassword,
-      role: 'global-admin',
-      status: 'active',
-    });
 
     const learnerPassword = await hashPassword('Password123!');
-    await Learner.create({
-      _id: learnerId,
-      name: { first: 'Learner', last: 'User' },
-      email: 'learner@example.com',
-    });
+
+    // Create User FIRST (required by personValidation middleware)
     await User.create({
       _id: learnerId,
       email: 'learner@example.com',
       passwordHash: learnerPassword,
-      role: 'learner',
+      roles: ['learner'],
+      primaryRole: 'learner',
       status: 'active',
+    });
+    // THEN create Learner with same _id
+    await Learner.create({
+      _id: learnerId,
+      name: { first: 'Learner', last: 'User' },
+      email: 'learner@example.com',
     });
   });
 
@@ -66,10 +74,8 @@ describe('Admin learner status actions', () => {
       .send({ reason: 'policy', programId: programId.toString() });
 
     expect(suspendRes.status).toBe(200);
-    const suspendedStatus = suspendRes.body.data.programEnrolmentStatuses.find(
-      (entry: any) => entry.programId.toString() === programId.toString()
-    );
-    expect(suspendedStatus.status).toBe('suspended');
+    // DCV-029: Response now returns { learner, enrollment } instead of programEnrolmentStatuses
+    expect(suspendRes.body.data.enrollment.status).toBe('on-leave'); // 'suspended' maps to 'on-leave'
 
     const unsuspendRes = await request(app)
       .put(`/api/v1/staff/admins/unsuspend/learner/${learnerId.toString()}`)
@@ -77,10 +83,7 @@ describe('Admin learner status actions', () => {
       .send({ reason: 'reviewed', programId: programId.toString() });
 
     expect(unsuspendRes.status).toBe(200);
-    const unsuspendedStatus = unsuspendRes.body.data.programEnrolmentStatuses.find(
-      (entry: any) => entry.programId.toString() === programId.toString()
-    );
-    expect(unsuspendedStatus.status).toBe('active');
+    expect(unsuspendRes.body.data.enrollment.status).toBe('enrolled'); // 'active' maps to 'enrolled'
 
     const withdrawRes = await request(app)
       .put(`/api/v1/staff/admins/withdraw/learner/${learnerId.toString()}`)
@@ -88,10 +91,7 @@ describe('Admin learner status actions', () => {
       .send({ reason: 'leave', programId: programId.toString() });
 
     expect(withdrawRes.status).toBe(200);
-    const withdrawnStatus = withdrawRes.body.data.programEnrolmentStatuses.find(
-      (entry: any) => entry.programId.toString() === programId.toString()
-    );
-    expect(withdrawnStatus.status).toBe('withdrawn');
+    expect(withdrawRes.body.data.enrollment.status).toBe('withdrawn');
 
     const unwithdrawRes = await request(app)
       .put(`/api/v1/staff/admins/unwithdraw/learner/${learnerId.toString()}`)
@@ -99,9 +99,6 @@ describe('Admin learner status actions', () => {
       .send({ reason: 'returned', programId: programId.toString() });
 
     expect(unwithdrawRes.status).toBe(200);
-    const unwithdrawnStatus = unwithdrawRes.body.data.programEnrolmentStatuses.find(
-      (entry: any) => entry.programId.toString() === programId.toString()
-    );
-    expect(unwithdrawnStatus.status).toBe('active');
+    expect(unwithdrawRes.body.data.enrollment.status).toBe('enrolled'); // 'active' maps to 'enrolled'
   });
 });

@@ -39,7 +39,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
 
   describe('DCV-021: Staff.email removed - derive from User', () => {
     it('should not have email as a required field in Staff schema', () => {
-      const schemaObj = Staff.schema.obj;
+      const schemaObj = Staff.schema.obj as Record<string, any>;
       // email should either not exist or not be required
       if (schemaObj.email) {
         expect(schemaObj.email.required).not.toBe(true);

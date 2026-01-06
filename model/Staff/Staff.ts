@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IStaff } from '../../types/models-types';
+import { requireUserExists } from '../../middlewares/personValidation';
 
 const nameSchema = new Schema(
   {
@@ -177,6 +178,9 @@ staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
 staffSchema.index({ course: 1, programLevel: 1 });
 staffSchema.index({ applicationStatus: 1, createdAt: -1 });
+
+// DCV-004: Apply User validation middleware
+requireUserExists(staffSchema);
 
 // Model
 const Staff = mongoose.model<IStaff>('Staff', staffSchema);

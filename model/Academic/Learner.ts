@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { ILearner } from '../../types/models-types';
+import { requireUserExists } from '../../middlewares/personValidation';
 
 const nameSchema = new Schema(
   {
@@ -129,6 +130,9 @@ learnerSchema.index({ email: 1 }, { unique: true });
 learnerSchema.index({ learnerId: 1 }, { unique: true });
 learnerSchema.index({ globalStatus: 1 });
 learnerSchema.index({ createdAt: -1 });
+
+// DCV-005: Apply User validation middleware
+requireUserExists(learnerSchema);
 
 // Model
 const Learner = mongoose.model<ILearner>('Learner', learnerSchema);

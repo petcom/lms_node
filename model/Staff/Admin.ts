@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IAdmin } from '../../types/models-types';
+import { requireUserExists } from '../../middlewares/personValidation';
 
 const nameSchema = new Schema(
   {
@@ -122,6 +123,9 @@ const adminSchema = new Schema<IAdmin>(
 // Indexes for query performance
 adminSchema.index({ email: 1 }, { unique: true });
 adminSchema.index({ createdAt: -1 });
+
+// DCV-003: Apply User validation middleware
+requireUserExists(adminSchema);
 
 // Model
 const Admin = mongoose.model<IAdmin>('Admin', adminSchema);

@@ -485,14 +485,14 @@ const ProgramEnrollmentSchema = new Schema({
 | Task ID | Description | Priority | Effort | Dependencies | Status |
 |---------|-------------|----------|--------|--------------|--------|
 | DCV-001 | Update User schema: role→roles, add primaryRole, rename subroles→staffRoles | High | Medium | None | ✅ Complete |
-| DCV-002 | Create shared person validation middleware | High | Medium | DCV-001 | ⏳ Pending |
-| DCV-003 | Apply validation to Admin model | High | Low | DCV-002 | ⏳ Pending |
-| DCV-004 | Apply validation to Staff model | High | Low | DCV-002 | ⏳ Pending |
-| DCV-005 | Apply validation to Learner model | High | Low | DCV-002 | ⏳ Pending |
+| DCV-002 | Create shared person validation middleware | High | Medium | DCV-001 | ✅ Complete |
+| DCV-003 | Apply validation to Admin model | High | Low | DCV-002 | ✅ Complete |
+| DCV-004 | Apply validation to Staff model | High | Low | DCV-002 | ✅ Complete |
+| DCV-005 | Apply validation to Learner model | High | Low | DCV-002 | ✅ Complete |
 | DCV-006 | Update User TypeScript types | Medium | Low | DCV-001 | ✅ Complete |
 | DCV-007 | Update auth middleware for roles array | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
 | DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 | ⏳ Pending |
-| DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 | 🔄 In Progress |
+| DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 | ✅ Complete |
 | DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 | ⏳ Pending |
 | DCV-011 | Update mock data to use shared _id pattern | Low | Low | DCV-001 | ✅ Complete |
 | DCV-012 | Update API documentation | Low | Low | All | ⏳ Pending |

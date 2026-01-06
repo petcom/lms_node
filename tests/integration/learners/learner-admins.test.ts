@@ -37,6 +37,15 @@ describe('Learner admin routes', () => {
 
   beforeEach(async () => {
     await Promise.all([Admin.deleteMany({}), Learner.deleteMany({}), User.deleteMany({})]);
+    // DCV-002: Create User first, then Admin with same _id
+    await User.create({
+      _id: masterAdminId,
+      email: 'global-admin@example.com',
+      passwordHash: '$2a$10$exampleHash',
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
+      status: 'active',
+    });
     await Admin.create({
       _id: masterAdminId,
       name: { first: 'Global', last: 'Admin' },

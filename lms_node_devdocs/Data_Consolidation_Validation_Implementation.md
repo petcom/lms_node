@@ -493,9 +493,9 @@ const ProgramEnrollmentSchema = new Schema({
 | DCV-007 | Update auth middleware for roles array | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
 | DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
 | DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 | ✅ Complete |
-| DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 | ⏳ Pending |
+| DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 | ✅ Complete |
 | DCV-011 | Update mock data to use shared _id pattern | Low | Low | DCV-001 | ✅ Complete |
-| DCV-012 | Update API documentation | Low | Low | All | ⏳ Pending |
+| DCV-012 | Update API documentation | Low | Low | All | ✅ Complete |
 | **DCV-013** | **Remove Program.learners array** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-014** | **Remove Program.instructors array** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-015** | **Remove Program.courses array** | **High** | **Low** | **None** | ✅ Complete |

@@ -76,25 +76,60 @@ const options: Options = {
             },
           },
         },
-        Admin: {
+        // DCV-001: User schema with roles array
+        User: {
           type: 'object',
+          description: 'User account for authentication. Shares _id with Admin/Staff/Learner (DCV-001).',
           properties: {
             _id: {
               type: 'string',
+              description: 'Shared with Admin/Staff/Learner _id',
               example: '507f1f77bcf86cd799439011',
-            },
-            name: {
-              type: 'string',
-              example: 'John Doe',
             },
             email: {
               type: 'string',
               format: 'email',
-              example: 'admin@example.com',
+              example: 'user@example.com',
             },
-            role: {
+            username: {
               type: 'string',
-              example: 'global-admin',
+              example: 'johndoe',
+            },
+            roles: {
+              type: 'array',
+              description: 'User roles (DCV-001: replaces legacy role field)',
+              items: {
+                type: 'string',
+                enum: ['global-admin', 'staff', 'learner'],
+              },
+              example: ['staff'],
+            },
+            primaryRole: {
+              type: 'string',
+              description: 'Default dashboard role (auto-set from roles[0] if not provided)',
+              enum: ['global-admin', 'staff', 'learner'],
+              example: 'staff',
+            },
+            staffRoles: {
+              type: 'array',
+              description: 'Staff permission roles (DCV-001: renamed from subroles)',
+              items: {
+                type: 'string',
+              },
+              example: ['instructor', 'department-admin'],
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'inactive', 'archived', 'deleted'],
+              example: 'active',
+            },
+            emailVerified: {
+              type: 'boolean',
+              example: true,
+            },
+            lastLoginAt: {
+              type: 'string',
+              format: 'date-time',
             },
             createdAt: {
               type: 'string',
@@ -103,6 +138,319 @@ const options: Options = {
             updatedAt: {
               type: 'string',
               format: 'date-time',
+            },
+          },
+        },
+        // DCV-039: Admin derives email from User
+        Admin: {
+          type: 'object',
+          description: 'Global administrator. Shares _id with User (DCV-039: email derived from User).',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Shared with User._id',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'string',
+              example: 'John Doe',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-021, DCV-022, DCV-025: Staff schema updates
+        Staff: {
+          type: 'object',
+          description: 'Staff member (instructor, admin, etc.). Shares _id with User.',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Shared with User._id',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'object',
+              properties: {
+                first: { type: 'string', example: 'Jane' },
+                middle: { type: 'string', example: 'M' },
+                last: { type: 'string', example: 'Smith' },
+                display: { type: 'string', example: 'Smith, Jane M.' },
+              },
+            },
+            staffId: {
+              type: 'string',
+              example: 'STF001',
+            },
+            departmentMemberships: {
+              type: 'array',
+              description: 'DCV-022: Departments and roles (replaces single department field)',
+              items: {
+                type: 'object',
+                properties: {
+                  department: { type: 'string', example: '507f1f77bcf86cd799439011' },
+                  role: { type: 'string', example: 'instructor' },
+                  isPrimary: { type: 'boolean', example: true },
+                },
+              },
+            },
+            status: {
+              type: 'string',
+              description: 'DCV-040: Status enum replaces isWithdrawn/isSuspended',
+              enum: ['active', 'suspended', 'withdrawn'],
+              example: 'active',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-041, DCV-029: Learner schema updates
+        Learner: {
+          type: 'object',
+          description: 'Learner/student. Shares _id with User.',
+          properties: {
+            _id: {
+              type: 'string',
+              description: 'Shared with User._id',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'object',
+              properties: {
+                first: { type: 'string', example: 'John' },
+                middle: { type: 'string', example: 'A' },
+                last: { type: 'string', example: 'Doe' },
+                display: { type: 'string', example: 'Doe, John A.' },
+              },
+            },
+            learnerId: {
+              type: 'string',
+              example: 'LRN123',
+            },
+            dateAdmitted: {
+              type: 'string',
+              format: 'date-time',
+            },
+            globalStatus: {
+              type: 'string',
+              enum: ['active', 'inactive'],
+              example: 'active',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-026: ProgramEnrollment with credential goals
+        ProgramEnrollment: {
+          type: 'object',
+          description: 'DCV-026: Learner program enrollment with credential tracking',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            learner: {
+              type: 'string',
+              description: 'Reference to Learner',
+              example: '507f1f77bcf86cd799439011',
+            },
+            program: {
+              type: 'string',
+              description: 'Reference to Program',
+              example: '507f1f77bcf86cd799439011',
+            },
+            credentialGoal: {
+              type: 'string',
+              enum: ['certificate', 'degree', 'none'],
+              example: 'certificate',
+            },
+            targetCredential: {
+              type: 'string',
+              description: 'Reference to Credential being pursued',
+            },
+            status: {
+              type: 'string',
+              enum: ['applied', 'enrolled', 'on-leave', 'withdrawn', 'completed'],
+              example: 'enrolled',
+            },
+            statusHistory: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  status: { type: 'string' },
+                  reason: { type: 'string' },
+                  changedAt: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+            enrolledAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            completedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-027: CourseEnrollmentCurrent
+        CourseEnrollmentCurrent: {
+          type: 'object',
+          description: 'DCV-027: Active course enrollment (deleted when course ends)',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            learner: {
+              type: 'string',
+              description: 'Reference to Learner',
+            },
+            course: {
+              type: 'string',
+              description: 'Reference to Course',
+            },
+            programEnrollment: {
+              type: 'string',
+              description: 'Reference to ProgramEnrollment',
+            },
+            enrolledAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            progress: {
+              type: 'object',
+              properties: {
+                examAttempts: { type: 'array', items: { type: 'object' } },
+                mediaProgress: { type: 'array', items: { type: 'object' } },
+                scormAttempts: { type: 'array', items: { type: 'object' } },
+              },
+            },
+            lastActivityAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-028: CourseEnrollmentActivity
+        CourseEnrollmentActivity: {
+          type: 'object',
+          description: 'DCV-028: Completed/withdrawn course history (permanent record)',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            learner: {
+              type: 'string',
+              description: 'Reference to Learner',
+            },
+            course: {
+              type: 'string',
+              description: 'Reference to Course',
+            },
+            programEnrollment: {
+              type: 'string',
+              description: 'Reference to ProgramEnrollment',
+            },
+            outcome: {
+              type: 'string',
+              enum: ['passed', 'failed', 'withdrawn'],
+              example: 'passed',
+            },
+            finalScoring: {
+              type: 'object',
+              properties: {
+                totalPoints: { type: 'number' },
+                maxPoints: { type: 'number' },
+                percentage: { type: 'number' },
+              },
+            },
+            creditsEarned: {
+              type: 'number',
+              example: 3,
+            },
+            completedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+        // DCV-031: Credential model
+        Credential: {
+          type: 'object',
+          description: 'DCV-031: Certificate, degree, or diploma',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'string',
+              example: 'Certificate in Web Development',
+            },
+            type: {
+              type: 'string',
+              enum: ['certificate', 'degree', 'diploma'],
+              example: 'certificate',
+            },
+            program: {
+              type: 'string',
+              description: 'Reference to Program',
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'active', 'archived'],
+              example: 'active',
+            },
+            totalCreditsRequired: {
+              type: 'number',
+              example: 30,
+            },
+          },
+        },
+        // DCV-051: Media model
+        Media: {
+          type: 'object',
+          description: 'DCV-051: External hosted content (videos, documents)',
+          properties: {
+            _id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'string',
+              example: 'Introduction Video',
+            },
+            type: {
+              type: 'string',
+              enum: ['video', 'audio', 'document', 'image', 'embed'],
+              example: 'video',
+            },
+            url: {
+              type: 'string',
+              format: 'uri',
+              example: 'https://youtube.com/watch?v=...',
+            },
+            provider: {
+              type: 'string',
+              example: 'youtube',
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'active', 'archived'],
+              example: 'active',
             },
           },
         },

@@ -307,6 +307,9 @@ lms_node/
 │   ├── auth/                 # Auth routes
 │   ├── staff/                # Staff routes
 │   └── learners/             # Learner routes
+├── services/
+│   ├── programQueryService.ts    # Cached program queries
+│   └── enrollmentService.ts      # Enrollment workflow
 ├── tests/
 │   ├── unit/                 # Unit tests
 │   └── integration/          # Integration tests
@@ -324,6 +327,67 @@ lms_node/
 ├── DEPLOYMENT.md             # Deployment guide
 └── README.md                 # This file
 ```
+
+---
+
+## 🗄️ Data Architecture
+
+### Shared _id Pattern (DCV-001)
+
+The LMS uses a **shared `_id` pattern** for user-related models:
+
+```
+User._id === Admin._id === Staff._id === Learner._id
+```
+
+This means:
+- **User** contains authentication credentials (email, password, roles)
+- **Admin/Staff/Learner** contain profile data specific to each role
+- All share the same MongoDB `_id` for efficient lookups
+- Email is stored in User and derived via `getEmail()` methods
+
+### Multi-Role Support
+
+Users can have multiple roles simultaneously:
+
+```typescript
+// User with multiple roles
+{
+  email: 'jane@example.com',
+  roles: ['staff', 'learner'],      // Can be both
+  primaryRole: 'staff',              // Default dashboard
+  staffRoles: ['instructor']         // Staff-specific permissions
+}
+```
+
+### Enrollment System (DCV-026-028)
+
+The enrollment system uses three models:
+
+| Model | Purpose | Lifecycle |
+|-------|---------|-----------|
+| **ProgramEnrollment** | Program membership, credential tracking | Long-lived |
+| **CourseEnrollmentCurrent** | Active course progress | Temporary (deleted when done) |
+| **CourseEnrollmentActivity** | Completed/withdrawn history | Permanent audit log |
+
+Status flow: `applied → enrolled → (on-leave ↔) → completed/withdrawn`
+
+### Key Models
+
+| Model | Collection | Description |
+|-------|------------|-------------|
+| User | users | Authentication & roles |
+| Admin | admins | Global administrator profiles |
+| Staff | staff | Instructor/staff profiles |
+| Learner | learners | Student profiles |
+| Program | programs | Academic programs |
+| ProgramLevel | programlevels | Levels within programs |
+| Course | courses | Courses within program levels |
+| Class | classes | Cohorts for program levels |
+| Credential | credentials | Certificates, degrees, diplomas |
+| Media | media | External hosted content |
+
+See [Data Dictionary](lms_node_devdocs/Data_Dictionary.md) for complete field-level documentation.
 
 ---
 

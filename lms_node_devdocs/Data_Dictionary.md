@@ -28,12 +28,13 @@
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
-| `_id` | ObjectId | Auto | - | - | Primary key |
+| `_id` | ObjectId | Auto | - | - | Primary key (shared with Admin/Staff/Learner) |
 | `email` | String | ✅ | - | Unique index | Login email address |
 | `username` | String | - | - | Unique, sparse | Alternative login identifier |
 | `passwordHash` | String | ✅ | - | - | Bcrypt hashed password |
-| `role` | String | ✅ | - | enum: `global-admin`, `staff`, `learner` | Primary role type |
-| `subroles` | [String] | - | undefined | - | Additional role permissions |
+| `roles` | [String] | ✅ | - | enum: `global-admin`, `staff`, `learner`; min 1 | Role types (supports multi-role) |
+| `primaryRole` | String | - | roles[0] | enum: same as roles | Default dashboard after login |
+| `staffRoles` | [String] | - | undefined | - | Staff permission roles (e.g., instructor, department-admin) |
 | `status` | String | - | `active` | enum: `active`, `inactive`, `archived`, `deleted` | Account status |
 | `emailVerified` | Boolean | - | false | - | Email verification status |
 | `emailVerifiedAt` | Date | - | null | - | When email was verified |
@@ -42,7 +43,12 @@
 | `createdAt` | Date | Auto | - | - | Record creation time |
 | `updatedAt` | Date | Auto | - | - | Last modification time |
 
-**Indexes**: `email (unique)`, `username (unique, sparse)`, `role`
+**Indexes**: `email (unique)`, `username (unique, sparse)`, `roles`
+
+**Notes**:
+- `roles` replaces deprecated `role` field (DCV-001)
+- `staffRoles` replaces deprecated `subroles` field (DCV-001)
+- `primaryRole` auto-set from `roles[0]` if not provided
 
 ---
 

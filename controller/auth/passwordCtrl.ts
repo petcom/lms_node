@@ -263,7 +263,8 @@ export const resetPassword = AsyncHandler(
 
     const user = await User.findById(tokenData.userId);
 
-    if (!user || user.role !== tokenData.userType) {
+    // DCV-001: Check roles array instead of role field
+    if (!user || !user.roles?.includes(tokenData.userType)) {
       passwordResetTokens.delete(resetTokenHash);
       res.status(404).json({
         status: 'failed',

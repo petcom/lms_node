@@ -51,7 +51,8 @@ describe('Learner admin routes', () => {
 
     const user = await User.findOne({ email: 'learner-ada@example.com' }).lean();
     expect(user).toBeTruthy();
-    expect(user?.role).toBe('learner');
+    // DCV-001: Check roles array instead of role field
+    expect(user?.roles).toContain('learner');
   });
 
   it('lists learners via /learners/admins', async () => {

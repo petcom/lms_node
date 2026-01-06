@@ -11,8 +11,11 @@ type UserAuth = {
   _id: any;
   name: string;
   email: string;
-  role: string;
-  subroles?: string[];
+  // DCV-001: Support both legacy 'role' (for backward compat) and new 'roles' array
+  role: string;           // Primary role (for backward compatibility)
+  roles: string[];        // All roles (new)
+  primaryRole: string;    // Default dashboard role
+  staffRoles?: string[];  // Renamed from subroles
   departmentMemberships?: { departmentId: any; roles?: string[] }[];
 };
 
@@ -107,9 +110,12 @@ const isAuthenticated = () => {
 
       let profile: { name?: string; email?: string; department?: any } | null = null;
 
-      if (user.role === 'global-admin') {
+      // DCV-001: Use primaryRole (or first role) to determine profile lookup
+      const primaryRole = user.primaryRole || (user.roles && user.roles[0]) || 'learner';
+
+      if (primaryRole === 'global-admin') {
         profile = await Admin.findById(user._id).select('name email department').lean();
-      } else if (user.role === 'staff') {
+      } else if (primaryRole === 'staff') {
         profile = await Staff.findById(user._id)
           .select('name email department departmentMemberships')
           .lean();
@@ -122,14 +128,17 @@ const isAuthenticated = () => {
       }
 
       // Save user and token info to request object
+      // DCV-001: Support both legacy 'role' and new 'roles' array
       req.userAuth = {
         _id: user._id,
         name: profile.name || '',
         email: user.email,
-        role: user.role,
-        subroles: user.subroles || undefined,
+        role: primaryRole,                          // Legacy: for backward compatibility
+        roles: user.roles || [primaryRole],         // New: all roles
+        primaryRole: primaryRole,                   // New: explicit primary
+        staffRoles: user.staffRoles || undefined,   // Renamed from subroles
         departmentMemberships:
-          user.role === 'staff'
+          primaryRole === 'staff'
             ? (profile as any).departmentMemberships || undefined
             : undefined,
         department: profile.department,

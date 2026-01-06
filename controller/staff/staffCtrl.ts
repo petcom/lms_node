@@ -108,10 +108,12 @@ export const adminRegisterStaff = expressAsyncHandler(
 
     // hash password
     const hashedPassword = await hashPassword(password);
+    // DCV-001: Use roles array instead of role field
     const user = await User.create({
       email,
       passwordHash: hashedPassword,
-      role: 'staff',
+      roles: ['staff'],
+      primaryRole: 'staff',
       status: 'active',
     });
 
@@ -147,7 +149,7 @@ export const adminRegisterStaff = expressAsyncHandler(
       const roleUnion = Array.from(
         new Set(normalizedMemberships.flatMap((membership) => membership.roles))
       );
-      await User.findByIdAndUpdate(user._id, { $set: { subroles: roleUnion } });
+      await User.findByIdAndUpdate(user._id, { $set: { staffRoles: roleUnion } });
     }
 
     // push staff into admin
@@ -173,7 +175,8 @@ export const loginStaff = expressAsyncHandler(
     const { email, password } = req.body;
 
     // find the staff user obj
-    const staffUser = await User.findOne({ email, role: 'staff' });
+    // DCV-001: Use roles array instead of role field
+    const staffUser = await User.findOne({ email, roles: 'staff' });
     const staff = staffUser ? await Staff.findById(staffUser._id) : null;
     if (!staff) {
       res.json({ message: 'Invalid login credentials' });
@@ -185,7 +188,9 @@ export const loginStaff = expressAsyncHandler(
     if (!isMatched) {
       res.json({ message: 'Invalid login credentials' });
     } else {
-      const accessToken = generateToken(staff._id.toString(), staffUser?.role || 'staff');
+      // DCV-001: Use primaryRole for token generation
+      const primaryRole = staffUser?.primaryRole || 'staff';
+      const accessToken = generateToken(staff._id.toString(), primaryRole);
       await User.updateOne({ _id: staff._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
@@ -193,8 +198,10 @@ export const loginStaff = expressAsyncHandler(
         message: 'Staff logged in successfully',
         data: {
           accessToken,
-          role: staffUser?.role || 'staff',
-          subroles: staffUser?.subroles || [],
+          // DCV-001: Provide both legacy 'role' and new 'roles' for backward compatibility
+          role: staffUser?.primaryRole || 'staff',
+          roles: staffUser?.roles || ['staff'],
+          staffRoles: staffUser?.staffRoles || [],
         },
       });
     }
@@ -328,7 +335,7 @@ export const staffUpdateProfile = expressAsyncHandler(
           ...currentMemberships,
           {
             departmentId: new mongoose.Types.ObjectId(department),
-            roles: (req.userAuth as any)?.subroles || [],
+            roles: (req.userAuth as any)?.staffRoles || [],
             createdAt: now,
             updatedAt: now,
           },
@@ -427,7 +434,7 @@ export const adminUpdateStaff = expressAsyncHandler(
       if (!hasMembership) {
         existingMemberships.push({
           departmentId: new mongoose.Types.ObjectId(department),
-          roles: (req.userAuth as any)?.subroles || [],
+          roles: (req.userAuth as any)?.staffRoles || [],
         });
         staffFound.departmentMemberships = existingMemberships as any;
       }
@@ -449,7 +456,7 @@ export const adminUpdateStaff = expressAsyncHandler(
         const roleUnion = Array.from(
           new Set(normalizedMemberships.flatMap((membership) => membership.roles))
         );
-        await User.findByIdAndUpdate(staffFound._id, { $set: { subroles: roleUnion } });
+        await User.findByIdAndUpdate(staffFound._id, { $set: { staffRoles: roleUnion } });
       }
     }
 

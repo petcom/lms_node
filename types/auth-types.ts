@@ -6,9 +6,11 @@ import { UserRole } from './models-types';
 export { UserRole };
 
 // JWT Payload Interface
+// DCV-001: Support both legacy 'role' and new 'roles' array during migration
 export interface JWTPayload {
   id: string | Types.ObjectId;
-  role: UserRole;
+  role: UserRole;          // Primary role (for backward compatibility)
+  roles?: UserRole[];      // All roles (new)
   iat?: number;
   exp?: number;
 }
@@ -26,13 +28,16 @@ export interface TokenPair {
 }
 
 // Authenticated User (from req.userAuth)
+// DCV-001: Support both legacy 'role' and new 'roles' array for backward compatibility
 export interface AuthenticatedUser {
   _id: Types.ObjectId;
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  subroles?: string[];
+  role: UserRole;              // Primary role (legacy, for backward compatibility)
+  roles: UserRole[];           // All roles (new)
+  primaryRole: UserRole;       // Default dashboard role (new)
+  staffRoles?: string[];       // Renamed from subroles
   department?: Types.ObjectId;
   [key: string]: any;
 }

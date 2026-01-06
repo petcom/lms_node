@@ -482,22 +482,22 @@ const ProgramEnrollmentSchema = new Schema({
 
 ## Tasks Overview
 
-| Task ID | Description | Priority | Effort | Dependencies |
-|---------|-------------|----------|--------|--------------|
-| DCV-001 | Update User schema: role→roles, add primaryRole, rename subroles→staffRoles | High | Medium | None |
-| DCV-002 | Create shared person validation middleware | High | Medium | DCV-001 |
-| DCV-003 | Apply validation to Admin model | High | Low | DCV-002 |
-| DCV-004 | Apply validation to Staff model | High | Low | DCV-002 |
-| DCV-005 | Apply validation to Learner model | High | Low | DCV-002 |
-| DCV-006 | Update User TypeScript types | Medium | Low | DCV-001 |
-| DCV-007 | Update auth middleware for roles array | Medium | Medium | DCV-001, DCV-006 |
-| DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 |
-| DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 |
-| DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 |
-| DCV-011 | Update mock data to use shared _id pattern | Low | Low | DCV-001 |
-| DCV-012 | Update API documentation | Low | Low | All |
-| **DCV-013** | **Remove Program.learners array** | **High** | **Low** | **None** |
-| **DCV-014** | **Remove Program.instructors array** | **High** | **Low** | **None** |
+| Task ID | Description | Priority | Effort | Dependencies | Status |
+|---------|-------------|----------|--------|--------------|--------|
+| DCV-001 | Update User schema: role→roles, add primaryRole, rename subroles→staffRoles | High | Medium | None | ✅ Complete |
+| DCV-002 | Create shared person validation middleware | High | Medium | DCV-001 | ⏳ Pending |
+| DCV-003 | Apply validation to Admin model | High | Low | DCV-002 | ⏳ Pending |
+| DCV-004 | Apply validation to Staff model | High | Low | DCV-002 | ⏳ Pending |
+| DCV-005 | Apply validation to Learner model | High | Low | DCV-002 | ⏳ Pending |
+| DCV-006 | Update User TypeScript types | Medium | Low | DCV-001 | ✅ Complete |
+| DCV-007 | Update auth middleware for roles array | Medium | Medium | DCV-001, DCV-006 | ✅ Complete |
+| DCV-008 | Update roleRestriction middleware | Medium | Medium | DCV-001, DCV-006 | ⏳ Pending |
+| DCV-009 | Update existing tests | Medium | Medium | DCV-001 through DCV-008 | 🔄 In Progress |
+| DCV-010 | Create migration script for existing data | Low | Medium | DCV-001 | ⏳ Pending |
+| DCV-011 | Update mock data to use shared _id pattern | Low | Low | DCV-001 | ✅ Complete |
+| DCV-012 | Update API documentation | Low | Low | All | ⏳ Pending |
+| **DCV-013** | **Remove Program.learners array** | **High** | **Low** | **None** | ⏳ Pending |
+| **DCV-014** | **Remove Program.instructors array** | **High** | **Low** | **None** | ⏳ Pending |
 | **DCV-015** | **Remove Program.courses array** | **High** | **Low** | **None** |
 | **DCV-016** | **Remove all Admin orphaned arrays (programs, learners, courses, etc.)** | **High** | **Low** | **None** |
 | **DCV-017** | **Create cached query service for program aggregations** | **Medium** | **High** | **DCV-013-015** |

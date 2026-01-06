@@ -282,12 +282,14 @@ export const listStaffUsers = AsyncHandler(async (req: Request, res: Response): 
   const adminIds = admins.map((admin) => admin._id);
   const staffIds = staffMembers.map((staff) => staff._id);
   const [adminUsers, staffUsers] = await Promise.all([
-    User.find({ _id: { $in: adminIds }, role: 'global-admin' }).select('_id role').lean(),
-    User.find({ _id: { $in: staffIds }, role: 'staff' }).select('_id subroles').lean(),
+    // DCV-001: Query using roles array
+    User.find({ _id: { $in: adminIds }, roles: 'global-admin' }).select('_id roles primaryRole').lean(),
+    User.find({ _id: { $in: staffIds }, roles: 'staff' }).select('_id staffRoles').lean(),
   ]);
-  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), user.role]));
+  // DCV-001: Use primaryRole for backward compat
+  const adminUserMap = new Map(adminUsers.map((user) => [user._id.toString(), user.primaryRole || 'global-admin']));
   const staffUserMap = new Map(
-    staffUsers.map((user) => [user._id.toString(), user.subroles || []])
+    staffUsers.map((user) => [user._id.toString(), user.staffRoles || []])
   );
 
   const adminItems: StaffUser[] = admins.map((admin) => {
@@ -495,7 +497,8 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
     throw new NotFoundError('Staff member not found');
   }
   const staffUser = await User.findById(staffId).lean();
-  if (!staffUser || staffUser.role !== 'staff') {
+  // DCV-001: Check roles array instead of role field
+  if (!staffUser || !staffUser.roles?.includes('staff')) {
     throw new NotFoundError('Staff user account not found');
   }
 
@@ -544,7 +547,8 @@ export const updateStaffRoles = AsyncHandler(async (req: Request, res: Response)
   await staff.save();
 
   const roleUnion = getUnionRoles(memberships);
-  await User.findByIdAndUpdate(staffId, { $set: { subroles: roleUnion } }, { new: true });
+  // DCV-001: Use staffRoles instead of subroles
+  await User.findByIdAndUpdate(staffId, { $set: { staffRoles: roleUnion } }, { new: true });
 
   res.status(200).json({
     status: 'success',
@@ -613,7 +617,8 @@ export const updateStaffDepartment = AsyncHandler(
 
     const membershipsForUnion = resolveStaffMemberships(staff, []);
     const roleUnion = getUnionRoles(membershipsForUnion);
-    await User.findByIdAndUpdate(staffId, { $set: { subroles: roleUnion } }, { new: true });
+    // DCV-001: Use staffRoles instead of subroles
+    await User.findByIdAndUpdate(staffId, { $set: { staffRoles: roleUnion } }, { new: true });
 
     res.status(200).json({
       status: 'success',

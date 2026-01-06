@@ -93,10 +93,12 @@ export const registerAdminCtrl = expressAsyncHandler(
     }
 
     const hashedPassword = await hashPassword(password);
+    // DCV-001: Use roles array instead of role field
     const user = await User.create({
       email,
       passwordHash: hashedPassword,
-      role: 'global-admin',
+      roles: ['global-admin'],
+      primaryRole: 'global-admin',
       status: 'active',
     });
 
@@ -110,7 +112,9 @@ export const registerAdminCtrl = expressAsyncHandler(
       _id: admin._id,
       name: admin.name,
       email: admin.email,
-      role: user.role,
+      // DCV-001: Provide both role and roles for backward compatibility
+      role: user.primaryRole,
+      roles: user.roles,
     };
 
     res.status(201).json({
@@ -129,7 +133,8 @@ export const registerAdminCtrl = expressAsyncHandler(
 export const loginAdminCtrl = expressAsyncHandler(
   async (req: Request<{}, {}, LoginAdminBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
-    const user = await User.findOne({ email, role: 'global-admin' });
+    // DCV-001: Query using roles array
+    const user = await User.findOne({ email, roles: 'global-admin' });
 
     if (!user) {
       res.status(401).json({
@@ -148,7 +153,8 @@ export const loginAdminCtrl = expressAsyncHandler(
         message: 'Invalid login credentials. Please try again.',
       });
     } else {
-      const accessToken = generateToken(user._id.toString(), user.role);
+      // DCV-001: Use primaryRole for token generation
+      const accessToken = generateToken(user._id.toString(), user.primaryRole);
       await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
@@ -156,7 +162,9 @@ export const loginAdminCtrl = expressAsyncHandler(
         data: {
           token: accessToken,
           accessToken,
-          role: user.role,
+          // DCV-001: Provide both role and roles for backward compatibility
+          role: user.primaryRole,
+          roles: user.roles,
         },
         message: 'Admin logged in successfully. Welcome back!',
       });

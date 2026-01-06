@@ -1,7 +1,7 @@
 // Mongoose document type definitions
 import { Document, Types, Model } from 'mongoose';
 
-// User role types
+// User role types (DCV-001: updated to support roles array)
 export type UserRole = 'global-admin' | 'staff' | 'learner';
 export type UserStatus = 'active' | 'inactive' | 'archived' | 'deleted';
 
@@ -10,8 +10,12 @@ export interface IUser extends Document {
   email: string;
   username?: string;
   passwordHash: string;
-  role: UserRole;
-  subroles?: string[];
+  // DCV-001: role -> roles array (supports multi-role persons)
+  roles: UserRole[];
+  // DCV-001: primaryRole determines default dashboard after login
+  primaryRole: UserRole;
+  // DCV-001: subroles -> staffRoles (permissions within staff role)
+  staffRoles?: string[];
   status: UserStatus;
   emailVerified?: boolean;
   emailVerifiedAt?: Date | null;

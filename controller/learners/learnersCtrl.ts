@@ -63,10 +63,12 @@ export const adminRegisterLearner = AsyncHandler(
     }
     //hash password
     const hashedPassword = await hashPassword(password);
+    // DCV-001: Use roles array instead of role field
     const user = await User.create({
       email,
       passwordHash: hashedPassword,
-      role: 'learner',
+      roles: ['learner'],
+      primaryRole: 'learner',
       status: 'active',
     });
     // Learner created
@@ -96,7 +98,8 @@ export const loginLearner = AsyncHandler(
   async (req: Request<{}, {}, LoginBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
-    const learnerUser = await User.findOne({ email, role: 'learner' });
+    // DCV-001: Query using roles array
+    const learnerUser = await User.findOne({ email, roles: 'learner' });
     const learner = learnerUser ? await Learner.findById(learnerUser._id).lean() : null;
     if (!learner) {
       res.json({ message: 'Invalid login credentials' });
@@ -110,7 +113,8 @@ export const loginLearner = AsyncHandler(
       res.json({ message: 'Invalid login credentials' });
       return;
     } else {
-      const accessToken = generateToken(String(learner?._id), learnerUser?.role || 'learner');
+      // DCV-001: Use primaryRole for token generation
+      const accessToken = generateToken(String(learner?._id), learnerUser?.primaryRole || 'learner');
       await User.updateOne({ _id: learner?._id }, { $set: { lastLoginAt: new Date() } });
 
       res.status(200).json({
@@ -118,7 +122,9 @@ export const loginLearner = AsyncHandler(
         message: 'Learner logged in successfully',
         data: {
           accessToken,
-          role: learnerUser?.role || 'learner',
+          // DCV-001: Provide both role and roles for backward compatibility
+          role: learnerUser?.primaryRole || 'learner',
+          roles: learnerUser?.roles || ['learner'],
         },
       });
     }

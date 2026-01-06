@@ -516,9 +516,9 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-030** | **Create enrollment migration script** | **Medium** | **High** | **DCV-026-028** |
 | **DCV-031** | **Create Credential model (certificates/degrees)** | **Medium** | **Medium** | **None** |
 | **DCV-032** | **Create course completion workflow (Current → Activity)** | **High** | **Medium** | **DCV-027, DCV-028** |
-| **DCV-033** | **Add gradingPolicy + maxAttempts to Exam model** | **High** | **Low** | **None** |
-| **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** |
-| **DCV-035** | **Add defaultGradingPolicy to Course model** | **Medium** | **Low** | **None** |
+| **DCV-033** | **Add gradingPolicy + maxAttempts to Exam model** | **High** | **Low** | **None** | ✅ Complete |
+| **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** | ✅ Complete |
+| **DCV-035** | **Add defaultGradingPolicy to Course model** | **Medium** | **Low** | **None** | ✅ Complete |
 | **DCV-036** | **Remove Staff legacy fields (course, program, programLevel, examsCreated)** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-037** | **Remove Course.description (use short/longDescription)** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-038** | **~~Standardize all createdBy to ref:User~~** | ~~**High**~~ | ~~**Medium**~~ | **SUPERSEDED by DCV-053** |

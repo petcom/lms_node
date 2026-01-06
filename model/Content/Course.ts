@@ -74,6 +74,15 @@ const courseSchema = new Schema<ICourse>(
       ref: 'Admin',
       required: true,
     },
+    // DCV-035: Default grading policy for assessments in this course
+    defaultGradingPolicy: {
+      type: {
+        type: String,
+        enum: ['final-attempt', 'best-attempt', 'average-all', 'average-last-n'],
+        default: 'final-attempt',
+      },
+      averageCount: Number, // Only used when type === 'average-last-n'
+    },
   },
   { timestamps: true }
 );

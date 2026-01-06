@@ -132,6 +132,20 @@ const scormPackageSchema = new Schema<IScormPackage>(
     dueDate: {
       type: Date,
     },
+    // DCV-034: Grading policy for determining final score
+    gradingPolicy: {
+      type: {
+        type: String,
+        enum: ['final-attempt', 'best-attempt', 'average-all', 'average-last-n'],
+        default: 'final-attempt',
+      },
+      averageCount: Number, // Only used when type === 'average-last-n'
+    },
+    // DCV-034: Maximum attempts allowed (null = unlimited)
+    maxAttempts: {
+      type: Number,
+      default: null,
+    },
 
     // Access Control
     createdBy: {

@@ -85,6 +85,20 @@ const examSchema = new Schema<IExam>(
       ref: 'AcademicYear',
       required: true,
     },
+    // DCV-033: Grading policy for determining final score
+    gradingPolicy: {
+      type: {
+        type: String,
+        enum: ['final-attempt', 'best-attempt', 'average-all', 'average-last-n'],
+        default: 'final-attempt',
+      },
+      averageCount: Number, // Only used when type === 'average-last-n'
+    },
+    // DCV-033: Maximum attempts allowed (null = unlimited)
+    maxAttempts: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -417,6 +417,9 @@
 | `secondaryInstructors` | [ObjectId] | - | - | ref: Staff | Assistant instructors |
 | `archivedAt` | Date | - | - | - | When archived |
 | `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
+| `defaultGradingPolicy` | Object | - | `{ type: 'final-attempt' }` | - | Default grading policy for course content (DCV-035) |
+| `defaultGradingPolicy.type` | String | - | `final-attempt` | enum: `final-attempt`, `best-attempt`, `average-all`, `average-last-n` | Grading strategy |
+| `defaultGradingPolicy.averageCount` | Number | - | - | - | Number of attempts for `average-last-n` |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
@@ -693,6 +696,10 @@
 | `programLevel` | ObjectId | - | - | ref: ProgramLevel | Program level |
 | `createdBy` | ObjectId | ✅ | - | ref: Staff | Creator |
 | `academicYear` | ObjectId | ✅ | - | ref: AcademicYear | Academic year |
+| `gradingPolicy` | Object | - | `{ type: 'final-attempt' }` | - | How to calculate final grade (DCV-033) |
+| `gradingPolicy.type` | String | - | `final-attempt` | enum: `final-attempt`, `best-attempt`, `average-all`, `average-last-n` | Grading strategy |
+| `gradingPolicy.averageCount` | Number | - | - | - | Number of attempts for `average-last-n` |
+| `maxAttempts` | Number | - | null | - | Maximum retakes (null = unlimited) |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
@@ -778,6 +785,10 @@
 | `maxScore` | Number | ✅ | 100 | - | Maximum score |
 | `weight` | Number | - | - | min: 0, max: 100 | Grade weight |
 | `dueDate` | Date | - | - | - | Due date |
+| `gradingPolicy` | Object | - | `{ type: 'final-attempt' }` | - | How to calculate final grade (DCV-034) |
+| `gradingPolicy.type` | String | - | `final-attempt` | enum: `final-attempt`, `best-attempt`, `average-all`, `average-last-n` | Grading strategy |
+| `gradingPolicy.averageCount` | Number | - | - | - | Number of attempts for `average-last-n` |
+| `maxAttempts` | Number | - | null | - | Maximum retakes (null = unlimited) |
 | `createdBy` | ObjectId | ✅ | - | - | Creator |
 | `uploadedBy` | ObjectId | - | - | refPath: uploadedByModel | Uploader |
 | `uploadedByModel` | String | - | `Staff` | enum: `Admin`, `Staff`, `Instructor`, `Learner` | Uploader type |

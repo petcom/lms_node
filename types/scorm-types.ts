@@ -158,6 +158,13 @@ export interface IScormPackage {
   maxScore: number;
   weight?: number;
   dueDate?: Date;
+  // DCV-034: Grading policy for determining final score
+  gradingPolicy?: {
+    type: 'final-attempt' | 'best-attempt' | 'average-all' | 'average-last-n';
+    averageCount?: number;
+  };
+  // DCV-034: Maximum attempts allowed (null = unlimited)
+  maxAttempts?: number | null;
 
   // Access Control
   createdBy: Types.ObjectId;

@@ -313,6 +313,7 @@ export interface IClassEnrollment extends Document {
 
 // Course Interface
 // DCV-037: description removed - use shortDescription/longDescription
+// DCV-035: Added defaultGradingPolicy
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   title: string;
@@ -329,6 +330,7 @@ export interface ICourse extends Document {
   primaryInstructors?: Types.ObjectId[];
   secondaryInstructors?: Types.ObjectId[];
   createdBy: Types.ObjectId;
+  defaultGradingPolicy?: IGradingPolicy;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -423,7 +425,15 @@ export interface IAudit extends Document {
   createdAt: Date;
 }
 
+// Grading Policy Types (DCV-033, DCV-034, DCV-035)
+export type GradingPolicyType = 'final-attempt' | 'best-attempt' | 'average-all' | 'average-last-n';
+export interface IGradingPolicy {
+  type: GradingPolicyType;
+  averageCount?: number; // Only used when type === 'average-last-n'
+}
+
 // Exam Interface
+// DCV-033: Added gradingPolicy and maxAttempts
 export interface IExam extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -443,6 +453,8 @@ export interface IExam extends Document {
   academicYear: Types.ObjectId;
   questions?: Types.ObjectId[];
   isPublished: boolean;
+  gradingPolicy?: IGradingPolicy;
+  maxAttempts?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

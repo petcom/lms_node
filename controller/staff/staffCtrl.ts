@@ -32,12 +32,13 @@ interface UpdateStaffProfileBody {
   department?: string;
 }
 
+/**
+ * DCV-036: Removed deprecated fields from AdminUpdateStaffBody
+ * - program, programLevel, course: Use Course.primaryInstructors/assistantInstructors
+ * - academicYear: Context from Calendar/Class
+ * - department: Derived from departmentMemberships[0].departmentId
+ */
 interface AdminUpdateStaffBody {
-  program?: Types.ObjectId;
-  programLevel?: Types.ObjectId;
-  academicYear?: Types.ObjectId;
-  course?: Types.ObjectId;
-  department?: string;
   departmentMemberships?: { departmentId: string; roles: string[] }[];
 }
 
@@ -387,14 +388,17 @@ export const staffUpdateProfile = expressAsyncHandler(
  * @description Admin updating Staff Profile
  * @route       UPDATE /api/v1/staff/admins/staff/:staffID/update
  * @access      Private admin only
+ * 
+ * DCV-022: department removed - use departmentMemberships
+ * DCV-023: academicYear removed - context from Calendar/Class
+ * DCV-036: course, program, programLevel removed - use Course assignment APIs
  */
 export const adminUpdateStaff = expressAsyncHandler(
   async (
     req: Request<{ staffID: string }, {}, AdminUpdateStaffBody>,
     res: Response
   ): Promise<void> => {
-    const { program, programLevel, academicYear, course, department, departmentMemberships } =
-      req.body;
+    const { departmentMemberships } = req.body;
 
     // find staff
     const staffFound = await Staff.findById(req.params.staffID);
@@ -407,32 +411,6 @@ export const adminUpdateStaff = expressAsyncHandler(
       throw new Error('Action denied, staff member is withdrawn');
     }
 
-    // department reassignment with scope checks
-    if (department) {
-      const scope = req.departmentScope?.accessibleDepartmentIds;
-      if (!mongoose.isValidObjectId(department)) {
-        throw new ValidationError('Invalid department id');
-      }
-      if (scope && scope !== 'all' && !scope.includes(department)) {
-        throw new AuthorizationError('Access denied for this department');
-      }
-      staffFound.department = new mongoose.Types.ObjectId(department);
-      const existingMemberships = Array.isArray(staffFound.departmentMemberships)
-        ? staffFound.departmentMemberships
-        : [];
-      const hasMembership = existingMemberships.some(
-        (membership) => membership.departmentId?.toString() === department
-      );
-      if (!hasMembership) {
-        existingMemberships.push({
-          departmentId: new mongoose.Types.ObjectId(department),
-          roles: (req.userAuth as any)?.staffRoles || [],
-        });
-        staffFound.departmentMemberships = existingMemberships as any;
-      }
-      await staffFound.save();
-    }
-
     if (departmentMemberships) {
       const scope = req.departmentScope?.accessibleDepartmentIds;
       const normalizedMemberships = await normalizeDepartmentMemberships(
@@ -441,9 +419,6 @@ export const adminUpdateStaff = expressAsyncHandler(
       );
       if (normalizedMemberships) {
         staffFound.departmentMemberships = normalizedMemberships as any;
-        if (!staffFound.department && normalizedMemberships.length > 0) {
-          staffFound.department = normalizedMemberships[0].departmentId;
-        }
         await staffFound.save();
         const roleUnion = Array.from(
           new Set(normalizedMemberships.flatMap((membership) => membership.roles))
@@ -452,59 +427,11 @@ export const adminUpdateStaff = expressAsyncHandler(
       }
     }
 
-    // assign a program
-    if (program) {
-      staffFound.program = program;
-      await staffFound.save();
+    // DCV-022, DCV-023, DCV-036: Legacy field assignments removed
+    // - department: Now derived from departmentMemberships[0].departmentId
+    // - academicYear: Contextual from Calendar/Class, not stored on Staff
+    // - program, programLevel, course: Use Course.primaryInstructors/assistantInstructors
 
-      res.status(200).json({
-        success: 'success',
-        data: staffFound,
-        message: 'Staff profile updated successfully',
-      });
-      return;
-    }
-
-    // assign program level
-    if (programLevel) {
-      staffFound.programLevel = programLevel;
-      await staffFound.save();
-
-      res.status(200).json({
-        success: 'success',
-        data: staffFound,
-        message: 'Staff program level updated successfully',
-      });
-      return;
-    }
-
-    // assign academic year
-    if (academicYear) {
-      staffFound.academicYear = academicYear;
-      await staffFound.save();
-
-      res.status(200).json({
-        success: 'success',
-        data: staffFound,
-        message: 'Staff profile updated successfully',
-      });
-      return;
-    }
-
-    // assign course
-    if (course) {
-      staffFound.course = course;
-      await staffFound.save();
-
-      res.status(200).json({
-        success: 'success',
-        data: staffFound,
-        message: 'Staff course updated successfully',
-      });
-      return;
-    }
-
-    // default response when department only update
     res.status(200).json({
       success: 'success',
       data: staffFound,

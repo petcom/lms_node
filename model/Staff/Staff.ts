@@ -127,33 +127,15 @@ const staffSchema = new Schema<IStaff>(
       type: honorSchema,
       default: undefined,
     },
-    course: {
-      type: Schema.Types.ObjectId,
-      ref: 'Course',
-    },
+    // DCV-022: department field removed - use departmentMemberships
+    // DCV-023: academicYear field removed - context from Calendar/Class
+    // DCV-036: course, program, programLevel, examsCreated removed - use CourseAssignment queries
     // When you are registered, staff goes through approval stage
     applicationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
-    program: {
-      type: Schema.Types.ObjectId,
-      ref: 'Program',
-    },
-    // An instructor can teach in more than one program level
-    programLevel: {
-      type: Schema.Types.ObjectId,
-      ref: 'ProgramLevel',
-    },
-    // DCV-022: department field removed - use departmentMemberships
-    // DCV-023: academicYear field removed - context from Calendar/Class
-    examsCreated: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Exam',
-      },
-    ],
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'Admin',
@@ -164,16 +146,14 @@ const staffSchema = new Schema<IStaff>(
 
 // Indexes for query performance
 // DCV-021: email index removed - email now in User collection
+// DCV-036: course, programLevel indexes removed - fields removed
 staffSchema.index({ instructorId: 1 }, { unique: true });
-staffSchema.index({ course: 1 });
-staffSchema.index({ programLevel: 1 });
 staffSchema.index({ applicationStatus: 1 });
 staffSchema.index({ isSuspended: 1 });
 staffSchema.index({ isWithdrawn: 1 });
 staffSchema.index({ 'departmentMemberships.departmentId': 1 });
 staffSchema.index({ createdAt: -1 });
 // Compound indexes for common queries
-staffSchema.index({ course: 1, programLevel: 1 });
 staffSchema.index({ applicationStatus: 1, createdAt: -1 });
 
 // DCV-021: getEmail method - derives email from User via shared _id

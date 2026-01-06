@@ -519,7 +519,7 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-033** | **Add gradingPolicy + maxAttempts to Exam model** | **High** | **Low** | **None** |
 | **DCV-034** | **Add gradingPolicy to ScormPackage model** | **Medium** | **Low** | **None** |
 | **DCV-035** | **Add defaultGradingPolicy to Course model** | **Medium** | **Low** | **None** |
-| **DCV-036** | **Remove Staff legacy fields (course, program, programLevel, examsCreated)** | **High** | **Low** | **None** |
+| **DCV-036** | **Remove Staff legacy fields (course, program, programLevel, examsCreated)** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-037** | **Remove Course.description (use short/longDescription)** | **High** | **Low** | **None** |
 | **DCV-038** | **~~Standardize all createdBy to ref:User~~** | ~~**High**~~ | ~~**Medium**~~ | **SUPERSEDED by DCV-053** |
 | **DCV-039** | **Remove Admin.email - derive from User** | **Medium** | **Low** | **DCV-002** |

@@ -87,13 +87,11 @@ export const createExam = AsyncHandler(
       program,
     });
 
-    // push the exam into instructor
-    if (instructorFound.examsCreated) {
-      instructorFound.examsCreated.push(examCreated._id);
-    }
+    // DCV-036: Removed examsCreated push - exams track their creator via createdBy
+    // Query Exam.find({ createdBy: instructorId }) to get instructor's exams
+    
     // save the exam
     await examCreated.save();
-    await instructorFound.save();
     // send response
     res.status(201).json({
       status: 'success',

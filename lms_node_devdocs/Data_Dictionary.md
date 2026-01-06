@@ -147,25 +147,26 @@
 | `departmentMemberships[].roles` | [String] | - | [] | - | Roles in that department |
 | `addresses` | [Address] | - | undefined | - | Contact addresses |
 | `honor` | Object | - | undefined | - | Demographics (same as Admin) |
-| `course` | ObjectId | - | - | ref: Course | ⚠️ Legacy - unclear purpose |
 | `applicationStatus` | String | - | `pending` | enum: `pending`, `approved`, `rejected` | Onboarding status |
-| `program` | ObjectId | - | - | ref: Program | ⚠️ Legacy - unclear purpose |
-| `programLevel` | ObjectId | - | - | ref: ProgramLevel | ⚠️ Legacy - unclear purpose |
-| `examsCreated` | [ObjectId] | - | - | ref: Exam | ⚠️ Legacy - unclear purpose |
 | `createdBy` | ObjectId | - | - | ref: Admin | Who created this record |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
 
-**Removed Fields (DCV-021-023)**:
+**Removed Fields (DCV-021-023, DCV-036)**:
 - `email` - Derive from User via `getEmail()` method
 - `department` - Use `departmentMemberships[0].departmentId` via `primaryDepartment` virtual
 - `academicYear` - Context comes from Calendar/Class, not Staff
+- `course` - Use Course.primaryInstructors/assistantInstructors instead
+- `program` - Query courses to find program assignments
+- `programLevel` - Query courses to find program level assignments
+- `examsCreated` - Query Exam.find({ createdBy: staffId }) instead
 
 **Virtual Getters**:
 - `primaryDepartment` - Returns first department membership's departmentId
 
 **Instance Methods**:
 - `getEmail()` - Fetches email from User collection
+- `getPrimaryDepartment()` - Returns first department membership's departmentId
 
 **Pre-save Validation**: Requires matching User to exist (DCV-004)
 

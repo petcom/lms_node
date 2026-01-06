@@ -183,6 +183,71 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
     });
   });
 
+  describe('DCV-036: Remove Staff legacy fields (course, program, programLevel, examsCreated)', () => {
+    it('should not have course field in Staff schema', () => {
+      const schemaObj = Staff.schema.obj;
+      expect(schemaObj).not.toHaveProperty('course');
+    });
+
+    it('should not have program field in Staff schema', () => {
+      const schemaObj = Staff.schema.obj;
+      expect(schemaObj).not.toHaveProperty('program');
+    });
+
+    it('should not have programLevel field in Staff schema', () => {
+      const schemaObj = Staff.schema.obj;
+      expect(schemaObj).not.toHaveProperty('programLevel');
+    });
+
+    it('should not have examsCreated field in Staff schema', () => {
+      const schemaObj = Staff.schema.obj;
+      expect(schemaObj).not.toHaveProperty('examsCreated');
+    });
+
+    it('should not persist legacy fields when creating Staff', async () => {
+      const user = await User.create({
+        email: 'staff@test.com',
+        passwordHash: '$2a$10$mockhashedpassword',
+        roles: ['staff'],
+        primaryRole: 'staff',
+        status: 'active',
+      });
+
+      const courseId = new mongoose.Types.ObjectId();
+      const programId = new mongoose.Types.ObjectId();
+      const programLevelId = new mongoose.Types.ObjectId();
+      const examId = new mongoose.Types.ObjectId();
+
+      const staff = await Staff.create({
+        _id: user._id,
+        name: { first: 'Test', last: 'Staff' },
+        course: courseId,               // Try to set legacy field
+        program: programId,             // Try to set legacy field
+        programLevel: programLevelId,   // Try to set legacy field
+        examsCreated: [examId],         // Try to set legacy field
+        isWithdrawn: false,
+        isSuspended: false,
+        applicationStatus: 'approved',
+      } as any);
+
+      const found = await Staff.findById(staff._id).lean();
+      expect(found).not.toHaveProperty('course');
+      expect(found).not.toHaveProperty('program');
+      expect(found).not.toHaveProperty('programLevel');
+      expect(found).not.toHaveProperty('examsCreated');
+    });
+
+    it('should not have indexes on removed legacy fields', () => {
+      const indexes = Staff.schema.indexes();
+      const indexFields = indexes.map(([fields]) => Object.keys(fields)).flat();
+      
+      expect(indexFields).not.toContain('course');
+      expect(indexFields).not.toContain('program');
+      expect(indexFields).not.toContain('programLevel');
+      expect(indexFields).not.toContain('examsCreated');
+    });
+  });
+
   describe('Essential fields preserved', () => {
     it('Staff should still have essential fields', () => {
       const schemaObj = Staff.schema.obj;
@@ -193,6 +258,7 @@ describe('Staff Schema Cleanup (DCV-021-023)', () => {
       expect(schemaObj).toHaveProperty('isSuspended');
       expect(schemaObj).toHaveProperty('departmentMemberships');
       expect(schemaObj).toHaveProperty('applicationStatus');
+      expect(schemaObj).toHaveProperty('createdBy');
     });
 
     it('should still require User to exist (DCV-004)', async () => {

@@ -71,17 +71,14 @@ export interface IAdmin extends IPerson {
 // DCV-021: email removed - derive from User via getEmail()
 // DCV-022: department removed - use departmentMemberships / primaryDepartment
 // DCV-023: academicYear removed - context from Calendar/Class
+// DCV-036: course, program, programLevel, examsCreated removed - use CourseAssignment queries
 export interface IStaff extends IPerson {
   dateEmployed?: Date;
   instructorId?: string;
   isWithdrawn: boolean;
   isSuspended: boolean;
   departmentMemberships?: IDepartmentMembership[];
-  course?: Types.ObjectId;
   applicationStatus: 'pending' | 'approved' | 'rejected';
-  program?: Types.ObjectId;
-  programLevel?: Types.ObjectId;
-  examsCreated?: Types.ObjectId[];
   createdBy?: Types.ObjectId;
   
   // DCV-021: Method to get email from User

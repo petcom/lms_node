@@ -507,7 +507,7 @@ const ProgramEnrollmentSchema = new Schema({
 | **DCV-021** | **Remove Staff.email - derive from User** | **High** | **Low** | **DCV-002** | ✅ Complete |
 | **DCV-022** | **Remove Staff.department - use departmentMemberships** | **High** | **Low** | **None** | ✅ Complete |
 | **DCV-023** | **Remove Staff.academicYear - context from Calendar/Class** | **High** | **Low** | **DCV-024** | ✅ Complete |
-| **DCV-024** | **Document Class model definition and Calendar integration** | **Medium** | **Medium** | **None** | ⏳ Pending |
+| **DCV-024** | **Document Class model definition and Calendar integration** | **Medium** | **Medium** | **None** | ✅ Complete |
 | **DCV-025** | **Create Staff virtual getter for email from User** | **Medium** | **Low** | **DCV-021** | ✅ Complete |
 | **DCV-026** | **Redesign ProgramEnrollment with status history + credentialGoal** | **High** | **High** | **None** |
 | **DCV-027** | **Create CourseEnrollmentCurrent model** | **High** | **Medium** | **DCV-026** |

@@ -376,7 +376,10 @@ As of the DCV-053 implementation, **all `createdBy` fields now reference the `Us
 
 **Collection**: `classes`  
 **File**: `model/Academic/Class.ts`  
-**Purpose**: Class sections within program levels
+**Purpose**: Class sections within program levels - cohorts of learners moving through a program together
+**DCV-024**: Documented Class model definition and Calendar integration
+
+> A **Class** is a group of students attending a program (or program level) at the same time. Classes exist within AcademicTerms which are part of AcademicYears. Staff academic year context comes from their Class assignments.
 
 | Field | Type | Required | Default | Validation | Description |
 |-------|------|----------|---------|------------|-------------|
@@ -385,12 +388,25 @@ As of the DCV-053 implementation, **all `createdBy` fields now reference the `Us
 | `program` | ObjectId | ✅ | - | ref: Program | Parent program |
 | `programLevel` | ObjectId | ✅ | - | ref: ProgramLevel | Parent level |
 | `department` | ObjectId | - | - | ref: Department | Department |
+| `academicYear` | ObjectId | - | - | ref: AcademicYear | Calendar year (DCV-024) |
+| `academicTerm` | ObjectId | - | - | ref: AcademicTerm | Calendar term (DCV-024) |
 | `instructors` | [ObjectId] | - | - | ref: Staff | Class instructors |
 | `startDate` | Date | - | - | - | Class start date |
 | `endDate` | Date | - | - | - | Class end date |
-| `createdBy` | ObjectId | ✅ | - | ref: Admin | Creator |
+| `duration` | String | - | - | - | Class duration (DCV-043: moved from Program) |
+| `createdBy` | ObjectId | ✅ | - | ref: User | Creator (DCV-053) |
 | `createdAt` | Date | Auto | - | - | Record creation |
 | `updatedAt` | Date | Auto | - | - | Last modification |
+
+**Indexes**:
+- `{ program: 1, programLevel: 1, createdAt: -1 }`
+- `{ department: 1, createdAt: -1 }`
+- `{ academicYear: 1, academicTerm: 1 }` (DCV-024)
+
+**Calendar Integration**:
+- `academicYear`: Links to the AcademicYear this class runs in
+- `academicTerm`: Optionally links to a specific term (for term-based programs)
+- `startDate`/`endDate`: Actual class dates (may differ from term dates)
 
 ---
 

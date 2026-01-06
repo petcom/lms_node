@@ -290,15 +290,21 @@ export interface IProgramEnrollment extends Document {
 }
 
 // Class Interface (cohort for a ProgramLevel)
+// DCV-024: Class model definition with Calendar integration
 export interface IClass extends Document {
   _id: Types.ObjectId;
   name: string;
   program: Types.ObjectId;
   programLevel: Types.ObjectId;
   department?: Types.ObjectId;
+  // DCV-024: Calendar integration
+  academicYear?: Types.ObjectId;
+  academicTerm?: Types.ObjectId;
   instructors?: Types.ObjectId[];
   startDate?: Date;
   endDate?: Date;
+  // DCV-043: duration tracked at Class level (removed from Program)
+  duration?: string;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;

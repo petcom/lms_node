@@ -62,6 +62,35 @@ const programSchema = new Schema<IProgram>(
   { timestamps: true }
 );
 
+// DCV-018: Instance methods for backwards compatibility
+// These replace the removed orphaned arrays with derived queries
+import { getProgramQueryService } from '../../services/programQueryService';
+
+programSchema.methods.getLearners = async function() {
+  const service = getProgramQueryService();
+  return service.getLearners(this._id.toString());
+};
+
+programSchema.methods.getInstructors = async function() {
+  const service = getProgramQueryService();
+  return service.getInstructors(this._id.toString());
+};
+
+programSchema.methods.getCourses = async function() {
+  const service = getProgramQueryService();
+  return service.getCourses(this._id.toString());
+};
+
+programSchema.methods.getLearnerCount = async function() {
+  const service = getProgramQueryService();
+  return service.getLearnerCount(this._id.toString());
+};
+
+programSchema.methods.getCourseCount = async function() {
+  const service = getProgramQueryService();
+  return service.getCourseCount(this._id.toString());
+};
+
 const Program = mongoose.model<IProgram>('Program', programSchema);
 
 export default Program;

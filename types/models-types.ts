@@ -233,6 +233,13 @@ export interface IProgram extends Document {
   archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  
+  // DCV-018: Instance methods for backwards compatibility
+  getLearners(): Promise<ILearner[]>;
+  getInstructors(): Promise<IStaff[]>;
+  getCourses(): Promise<ICourse[]>;
+  getLearnerCount(): Promise<number>;
+  getCourseCount(): Promise<number>;
 }
 
 // Program Level Interface

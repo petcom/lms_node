@@ -166,6 +166,153 @@ Historical record for completed/withdrawn courses.
 
 ---
 
+## Batch Enrollment Endpoints (V2)
+
+Efficient bulk enrollment operations for creating multiple enrollments at once.
+
+### POST `/program-enrollments/batch`
+
+Create multiple program enrollments in a single request.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "enrollments": [
+    { "learnerId": "learner-id-1", "programId": "program-id" },
+    { "learnerId": "learner-id-2", "programId": "program-id" }
+  ]
+}
+```
+
+**Constraints:**
+- Maximum 100 enrollments per request
+- All learner IDs must exist
+- All program IDs must exist
+- Duplicates are skipped (not treated as errors)
+
+**Response (207 Multi-Status):**
+```json
+{
+  "status": "partial" | "success",
+  "message": "Batch enrollment complete",
+  "data": {
+    "created": [
+      { "_id": "enrollment-id-1", "learner": "learner-id-1", "program": "program-id" }
+    ],
+    "failed": [
+      { "learnerId": "invalid-id", "reason": "Learner not found" }
+    ]
+  }
+}
+```
+
+### POST `/class-enrollments/batch`
+
+Create multiple class enrollments in a single request.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "enrollments": [
+    { "learnerId": "learner-id-1", "classId": "class-id" },
+    { "learnerId": "learner-id-2", "classId": "class-id" }
+  ]
+}
+```
+
+**Constraints:**
+- Maximum 100 enrollments per request
+- Duplicates are skipped
+
+**Response:** Same structure as program batch (207 Multi-Status).
+
+### POST `/course-enrollments/batch`
+
+Create multiple course enrollments in a single request.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "enrollments": [
+    { "learnerId": "learner-id-1", "courseId": "course-id", "programEnrollmentId": "pe-id" },
+    { "learnerId": "learner-id-2", "courseId": "course-id", "programEnrollmentId": "pe-id" }
+  ]
+}
+```
+
+**Constraints:**
+- Maximum 100 enrollments per request
+- Requires valid program enrollment
+- Creates CourseEnrollmentCurrent records
+
+**Response:** Same structure as program batch (207 Multi-Status).
+
+---
+
+## Unified Course History Endpoint (V2)
+
+### GET `/learners/:id/course-history`
+
+Get combined current and historical course enrollments for a learner.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Path Parameters:**
+- `id` - Learner ID
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | String | Filter: `active`, `passed`, `failed`, `withdrawn` |
+| `programId` | ObjectId | Filter by program |
+| `page` | Number | Page number (default: 1) |
+| `limit` | Number | Items per page (default: 20) |
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Course history fetched successfully",
+  "pagination": {
+    "total": 15,
+    "pages": 2,
+    "next": { "page": 2, "limit": 10 }
+  },
+  "data": [
+    {
+      "_id": "current-id",
+      "learner": "learner-id",
+      "course": { "_id": "course-id", "title": "Course Title" },
+      "status": "active",
+      "enrolledAt": "2025-01-01T00:00:00Z",
+      "progress": { "examAttempts": [], "mediaProgress": [] }
+    },
+    {
+      "_id": "activity-id",
+      "learner": "learner-id",
+      "course": { "_id": "course-id", "title": "Another Course" },
+      "outcome": "passed",
+      "enrolledAt": "2024-09-01T00:00:00Z",
+      "completedAt": "2024-12-15T00:00:00Z",
+      "finalScoring": { "percentage": 92 }
+    }
+  ]
+}
+```
+
+**Notes:**
+- Current enrollments have `status: "active"`
+- Historical enrollments have `outcome` field (`passed`, `failed`, `withdrawn`)
+- Results sorted by enrolledAt descending (most recent first)
+
+---
+
 ## Program Enrollment Endpoints
 
 ### GET `/program-enrollments`

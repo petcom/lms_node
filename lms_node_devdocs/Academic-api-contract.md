@@ -443,6 +443,8 @@ List all courses.
 - `includeArchived` - Include archived courses
 - `page`, `limit`
 
+**V2 Enhancement:** Each course in the response includes a `department` convenience field derived from the program. This eliminates the need to look up the program to get department info.
+
 ### POST `/courses`
 
 Create a new course.
@@ -484,10 +486,14 @@ Get course by ID with content composition.
     "publishedAt": "2025-01-01T00:00:00Z",
     "program": { "_id": "prog-id", "name": "SE" },
     "programLevel": { "_id": "level-id", "name": "Level 1" },
+    "department": { "_id": "dept-id", "name": "Computer Science", "code": "CS" },
     "primaryInstructors": [...],
-    "courseContents": [...]
+    "segments": [...]
   }
 }
+```
+
+**V2 Enhancement:** The `department` field is a convenience field derived from the course's program. It includes `_id`, `name`, and `code`. If the program has no department (edge case), this field will be `null`.
 ```
 
 ### PUT `/courses/:id`

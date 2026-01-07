@@ -74,7 +74,10 @@ This document serves as the master index for all LMS Node API documentation. The
 | GET/POST | `/program-enrollments` | global-admin | Program enrollments |
 | GET/POST | `/class-enrollments` | global-admin | Class enrollments |
 | GET/POST | `/course-enrollments` | global-admin | Course enrollments |
-| POST | `/program-enrollments/batch` | global-admin | Batch create enrollments |
+| POST | `/program-enrollments/batch` | global-admin | Batch create program enrollments (V2) |
+| POST | `/class-enrollments/batch` | global-admin | Batch create class enrollments (V2) |
+| POST | `/course-enrollments/batch` | global-admin | Batch create course enrollments (V2) |
+| GET | `/learners/:id/course-history` | global-admin | Unified course history (V2) |
 
 ### Content & SCORM
 

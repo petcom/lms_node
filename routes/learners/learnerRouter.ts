@@ -8,6 +8,7 @@ import {
   learnerUpdateProfile,
   adminUpdateLearner,
   writeExam,
+  getCourseHistory,
 } from '../../controller/learners/learnersCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import Learner from '../../model/Academic/Learner';
@@ -140,5 +141,58 @@ learnerRouter.put(
   roleRestriction('global-admin'),
   adminUpdateLearner
 ); // Admin only
+
+/**
+ * @swagger
+ * /api/v1/learners/{id}/course-history:
+ *   get:
+ *     summary: Get unified course history for a learner
+ *     tags: [Learners]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Learner ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, passed, failed, withdrawn]
+ *         description: Filter by enrollment status
+ *       - in: query
+ *         name: programId
+ *         schema:
+ *           type: string
+ *         description: Filter by program ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Course history fetched successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Learner not found
+ */
+learnerRouter.get(
+  '/:id/course-history',
+  isAuthenticated(),
+  roleRestriction('global-admin'),
+  getCourseHistory
+);
 
 export default learnerRouter;

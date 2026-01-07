@@ -8,8 +8,12 @@ import ExamResult from '../../model/Academic/ExamResults';
 // DCV-016: Admin import removed - no longer pushing to admin.learners array
 import User from '../../model/Auth/User';
 import ProgramEnrollment from '../../model/Academic/ProgramEnrollment';
+import CourseEnrollmentCurrent from '../../model/Academic/CourseEnrollmentCurrent';
+import CourseEnrollmentActivity from '../../model/Academic/CourseEnrollmentActivity';
 import { ILearner } from '../../types/models-types';
 import { normalizePersonName, PersonNameInput } from '../../utils/person';
+import { NotFoundError } from '../../utils/errors';
+import { normalizePage, resolvePagination } from '../../utils/pagination';
 
 // Request body interfaces
 interface RegisterLearnerBody {
@@ -475,6 +479,116 @@ export const writeExam = AsyncHandler(
     res.status(200).json({
       status: 'success',
       data: 'You have submitted your exam successfully. Check later for your results.',
+    });
+  }
+);
+
+/**
+ * V2 API: Get unified course history for a learner
+ * Combines CourseEnrollmentCurrent (active) and CourseEnrollmentActivity (completed/withdrawn)
+ * 
+ * @route GET /api/v1/learners/:id/course-history
+ * @query status - Filter by 'active' | 'passed' | 'failed' | 'withdrawn'
+ * @query programId - Filter by program
+ * @query page, limit - Pagination
+ */
+export const getCourseHistory = AsyncHandler(
+  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    const learnerId = req.params.id;
+    const { status: statusFilter, programId, page: pageQuery, limit: limitQuery } = req.query;
+
+    // Verify learner exists
+    const learner = await Learner.findById(learnerId);
+    if (!learner) {
+      throw new NotFoundError('Learner not found');
+    }
+
+    const page = normalizePage(pageQuery);
+    const { limit } = await resolvePagination('courseHistory', limitQuery);
+
+    // Build query filters
+    const baseFilter: Record<string, any> = { learner: learnerId };
+    
+    // If programId filter, find program enrollments first
+    let programEnrollmentIds: string[] | undefined;
+    if (programId && typeof programId === 'string') {
+      const programEnrollments = await ProgramEnrollment.find({ 
+        learner: learnerId, 
+        program: programId 
+      }).select('_id').lean();
+      programEnrollmentIds = programEnrollments.map(pe => pe._id.toString());
+    }
+
+    // Fetch current enrollments (active)
+    let currentEnrollments: any[] = [];
+    if (!statusFilter || statusFilter === 'active') {
+      const currentFilter = { ...baseFilter };
+      if (programEnrollmentIds) {
+        currentFilter.programEnrollment = { $in: programEnrollmentIds };
+      }
+      
+      currentEnrollments = await CourseEnrollmentCurrent.find(currentFilter)
+        .populate('course', 'title description')
+        .populate('programEnrollment')
+        .lean();
+      
+      // Add status field for unified response
+      currentEnrollments = currentEnrollments.map(e => ({
+        ...e,
+        status: 'active',
+      }));
+    }
+
+    // Fetch activity enrollments (passed/failed/withdrawn)
+    let activityEnrollments: any[] = [];
+    if (!statusFilter || ['passed', 'failed', 'withdrawn'].includes(statusFilter as string)) {
+      const activityFilter: Record<string, any> = { ...baseFilter };
+      if (programEnrollmentIds) {
+        activityFilter.programEnrollment = { $in: programEnrollmentIds };
+      }
+      if (statusFilter && statusFilter !== 'active') {
+        activityFilter.outcome = statusFilter;
+      }
+      
+      activityEnrollments = await CourseEnrollmentActivity.find(activityFilter)
+        .populate('course', 'title description')
+        .populate('programEnrollment')
+        .lean();
+    }
+
+    // If filtering by 'active', exclude activity enrollments
+    const allEnrollments = statusFilter === 'active' 
+      ? currentEnrollments 
+      : [...currentEnrollments, ...activityEnrollments];
+
+    // Sort by most recent first (enrolledAt)
+    allEnrollments.sort((a, b) => {
+      const dateA = new Date(a.enrolledAt || a.createdAt).getTime();
+      const dateB = new Date(b.enrolledAt || b.createdAt).getTime();
+      return dateB - dateA;
+    });
+
+    // Pagination
+    const total = allEnrollments.length;
+    const pages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedData = allEnrollments.slice(startIndex, endIndex);
+
+    // Build pagination info
+    const pagination: any = { total, pages };
+    if (endIndex < total) {
+      pagination.next = { page: page + 1, limit };
+    }
+    if (startIndex > 0) {
+      pagination.prev = { page: page - 1, limit };
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Course history fetched successfully',
+      pagination,
+      data: paginatedData,
     });
   }
 );

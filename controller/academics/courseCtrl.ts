@@ -5,6 +5,7 @@ import Course from '../../model/Content/Course';
 import CourseContent from '../../model/Academic/CourseContent';
 import Program from '../../model/Academic/Program';
 import ProgramLevel from '../../model/Academic/ProgramLevel';
+import Department from '../../model/Academic/Department';
 import { ICourse } from '../../types/models-types';
 import { AuthorizationError, NotFoundError, ValidationError } from '../../utils/errors';
 import RenderedCourse from '../../model/Content/RenderedCourse';
@@ -39,6 +40,24 @@ const assertScopeAccess = (scope: string[] | 'all' | undefined, departmentId?: s
   if (scope && scope !== 'all' && !scope.includes(departmentId)) {
     throw new AuthorizationError('Access denied for this department');
   }
+};
+
+/**
+ * V2 API: Helper to get department info from Course via Program
+ * Returns populated department object { _id, name, code } or null
+ */
+const getCourseDepartmentInfo = async (course: { program?: mongoose.Types.ObjectId | any }) => {
+  if (!course?.program) return null;
+  
+  // Get program with department populated
+  const programId = course.program._id || course.program;
+  const program = await Program.findById(programId).select('department').lean() as { department?: mongoose.Types.ObjectId } | null;
+  
+  if (!program?.department) return null;
+  
+  // Get department info
+  const department = await Department.findById(program.department).select('_id name code').lean();
+  return department;
 };
 
 export const createCourse = AsyncHandler(
@@ -102,6 +121,22 @@ export const createCourse = AsyncHandler(
 );
 
 export const getCourses = AsyncHandler(async (_req: Request, res: Response): Promise<void> => {
+  // V2 API: Enrich courses with department convenience field
+  const results = res.results as any;
+  if (results?.data && Array.isArray(results.data)) {
+    // Process each course to add department info
+    const coursesWithDepartment = await Promise.all(
+      results.data.map(async (course: any) => {
+        const department = await getCourseDepartmentInfo(course);
+        return {
+          ...course._doc || course,
+          department,
+        };
+      })
+    );
+    results.data = coursesWithDepartment;
+  }
+  
   res.status(200).json(res.results);
 });
 
@@ -113,7 +148,10 @@ export const getCourse = AsyncHandler(
     }
 
     const scope = req.departmentScope?.accessibleDepartmentIds;
-    const departmentId = (course as any)?.department?.toString();
+    
+    // V2 API: Get department info from Program
+    const department = await getCourseDepartmentInfo(course);
+    const departmentId = department?._id?.toString();
     assertScopeAccess(scope, departmentId);
 
     // Fetch segments (CourseContent) for this course, ordered by order field
@@ -126,6 +164,7 @@ export const getCourse = AsyncHandler(
       message: 'Course fetched successfully',
       data: {
         ...course,
+        department,
         segments,
       },
     });

@@ -7,6 +7,7 @@ import {
   updateClassEnrollment,
   deleteClassEnrollment,
 } from '../../controller/academics/classEnrollmentCtrl';
+import { batchCreateClassEnrollments } from '../../controller/academics/enrollmentBatchCtrl';
 import advancedResults from '../../middlewares/advancedResults';
 import ClassEnrollment from '../../model/Academic/ClassEnrollment';
 import isAuthenticated from '../../middlewares/isAuthenticated';
@@ -18,8 +19,20 @@ import {
   updateClassEnrollment as updateClassEnrollmentValidation,
   idParam,
 } from '../../validators/academicValidation';
+import { batchCreateClassEnrollments as batchCreateClassEnrollmentsValidation } from '../../validators/batchValidators';
 
 const classEnrollmentRouter: Router = express.Router();
+
+// Batch endpoint - must be before /:id route
+classEnrollmentRouter
+  .route('/batch')
+  .post(
+    isAuthenticated(),
+    departmentScope(),
+    roleRestriction('global-admin'),
+    validate(batchCreateClassEnrollmentsValidation),
+    batchCreateClassEnrollments
+  );
 
 classEnrollmentRouter
   .route('/')

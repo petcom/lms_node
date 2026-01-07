@@ -103,3 +103,62 @@ DELETE `/course-enrollments/:id`
 
 ## Changes (Phase 4)
 - Program enrollment completion now updates when all course enrollments in a program are completed.
+
+---
+
+## Important Notes (EVIP Phase 5)
+
+### Batch Enrollment Pattern
+
+For efficiency when enrolling multiple learners, the system supports batch operations using MongoDB's `insertMany`:
+
+**Batch Create:**
+```javascript
+// Create multiple program enrollments at once
+const enrollments = [
+  { learner: learnerId1, program: programId, status: 'enrolled' },
+  { learner: learnerId2, program: programId, status: 'enrolled' },
+  // ... up to 100 per batch
+];
+
+const created = await ProgramEnrollment.insertMany(enrollments);
+```
+
+**Validation:**
+- Maximum 100 enrollments per batch request
+- Duplicate enrollments are skipped (learner already enrolled in program)
+- All learner IDs validated before insertion
+- Returns summary of created and failed enrollments
+
+**Response Pattern:**
+```json
+{
+  "status": "success" | "partial",
+  "data": {
+    "created": ["enrollmentId1", "enrollmentId2"],
+    "failed": [
+      { "index": 3, "error": "Learner not found" }
+    ]
+  }
+}
+```
+
+### Staff Role Batch Update Pattern
+
+For bulk role updates using `bulkWrite`:
+
+```javascript
+const bulkOps = updates.map(update => ({
+  updateOne: {
+    filter: { 
+      _id: update.staffId,
+      'departmentMemberships.departmentId': update.departmentId
+    },
+    update: { 
+      $set: { 'departmentMemberships.$.roles': update.roles }
+    }
+  }
+}));
+
+await Staff.bulkWrite(bulkOps);
+```

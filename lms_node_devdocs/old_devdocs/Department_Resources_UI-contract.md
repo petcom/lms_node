@@ -414,3 +414,31 @@ The `buildCounts` function used in `GET /departments/:id` has been updated to us
 
 ### Response Shape (Unchanged)
 The response shape remains the same - only the underlying queries have been fixed to return accurate counts.
+
+---
+
+## Important Notes (EVIP Phase 4)
+
+### Deprecated Endpoints
+
+The following `department-resources` endpoints have been deprecated and will be removed on **2026-06-01**:
+
+| Deprecated Endpoint | Use Instead |
+|---------------------|-------------|
+| `POST /api/v1/department-resources/programs` | `POST /api/v1/programs` |
+| `PATCH /api/v1/department-resources/programs/:id` | `PUT /api/v1/programs/:id` |
+| `POST /api/v1/department-resources/courses` | `POST /api/v1/courses` |
+| `PATCH /api/v1/department-resources/courses/:id` | `PUT /api/v1/courses/:id` |
+
+### Deprecation Headers
+
+When calling deprecated endpoints, the response will include these headers:
+- `Deprecation: date="2026-06-01"` - RFC 8594 deprecation notice
+- `Sunset: 2026-06-01` - Date when endpoint will be removed
+- `Link: </api/v1/programs>; rel="successor-version"` - RFC 8288 successor link
+
+### Migration Guide
+
+1. Update client code to use the canonical endpoints (`/api/v1/programs`, `/api/v1/courses`)
+2. Monitor for deprecation warnings in logs
+3. Complete migration before the sunset date

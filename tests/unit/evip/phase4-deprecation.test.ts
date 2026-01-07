@@ -111,8 +111,11 @@ describe('EVIP Phase 4: Deprecation Middleware', () => {
 
     it('should work with different alternative endpoints', () => {
       const middleware = deprecatedEndpoint('/api/v1/courses/:id', '2026-09-15');
-      const req = mockRequest();
-      req.path = '/api/v1/department-resources/courses/123';
+      const req = {
+        method: 'PATCH',
+        path: '/api/v1/department-resources/courses/123',
+        originalUrl: '/api/v1/department-resources/courses/123'
+      } as Request;
       const res = mockResponse();
       
       middleware(req, res, mockNext);
